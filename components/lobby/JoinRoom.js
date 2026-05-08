@@ -1,0 +1,131 @@
+// Join Room component
+import { useState } from 'react';
+import { useRouter } from 'next/router';
+
+export default function JoinRoom() {
+  const router = useRouter();
+  const [name, setName] = useState('');
+  const [code, setCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleJoin = async (e) => {
+    e.preventDefault();
+    if (!name.trim() || !code.trim()) return;
+    
+    setLoading(true);
+    setError('');
+    
+    // Store player name in localStorage
+    localStorage.setItem('richdown_playerName', name.trim());
+    localStorage.setItem('richdown_isHost', 'false');
+    
+    // Navigate to room
+    router.push(`/room/${code.toUpperCase().trim()}?name=${encodeURIComponent(name.trim())}&host=false`);
+  };
+
+  return (
+    <form onSubmit={handleJoin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div>
+        <label
+          style={{
+            display: 'block',
+            marginBottom: '8px',
+            fontFamily: 'Inter, sans-serif',
+            fontWeight: '600',
+            color: '#2B2D42',
+          }}
+        >
+          Your Name
+        </label>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Enter your name"
+          maxLength={20}
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            border: '2px solid #E8E4D8',
+            fontSize: '16px',
+            fontFamily: 'Inter, sans-serif',
+            backgroundColor: 'white',
+            outline: 'none',
+            transition: 'border-color 0.2s',
+          }}
+          onFocus={(e) => e.target.style.borderColor = '#2D6A4F'}
+          onBlur={(e) => e.target.style.borderColor = '#E8E4D8'}
+        />
+      </div>
+      
+      <div>
+        <label
+          style={{
+            display: 'block',
+            marginBottom: '8px',
+            fontFamily: 'Inter, sans-serif',
+            fontWeight: '600',
+            color: '#2B2D42',
+          }}
+        >
+          Room Code
+        </label>
+        <input
+          type="text"
+          value={code}
+          onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+          placeholder="Enter 6-char code"
+          maxLength={6}
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            border: '2px solid #E8E4D8',
+            fontSize: '20px',
+            fontFamily: 'JetBrains Mono, monospace',
+            textAlign: 'center',
+            letterSpacing: '4px',
+            backgroundColor: 'white',
+            outline: 'none',
+            transition: 'border-color 0.2s',
+          }}
+          onFocus={(e) => e.target.style.borderColor = '#2D6A4F'}
+          onBlur={(e) => e.target.style.borderColor = '#E8E4D8'}
+        />
+      </div>
+      
+      {error && (
+        <p style={{ color: '#E63946', fontFamily: 'Inter, sans-serif', fontSize: '14px', margin: 0 }}>
+          {error}
+        </p>
+      )}
+      
+      <button
+        type="submit"
+        disabled={!name.trim() || code.length !== 6 || loading}
+        style={{
+          padding: '14px 24px',
+          backgroundColor: name.trim() && code.length === 6 ? '#1D3557' : '#8D99AE',
+          color: 'white',
+          border: 'none',
+          borderRadius: '12px',
+          fontSize: '16px',
+          fontWeight: '600',
+          fontFamily: 'Inter, sans-serif',
+          cursor: name.trim() && code.length === 6 ? 'pointer' : 'not-allowed',
+          transition: 'background-color 0.2s',
+        }}
+        onMouseEnter={(e) => {
+          if (name.trim() && code.length === 6) e.target.style.backgroundColor = '#15263E';
+        }}
+        onMouseLeave={(e) => {
+          e.target.style.backgroundColor = name.trim() && code.length === 6 ? '#1D3557' : '#8D99AE';
+        }}
+      >
+        {loading ? 'Joining...' : '🚀 Join Room'}
+      </button>
+    </form>
+  );
+}
