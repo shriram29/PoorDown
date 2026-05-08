@@ -1,40 +1,128 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# RichDown 🏠
+
+> The board game you know, anywhere you are.
+
+An open-source multiplayer Monopoly clone built with Next.js, PartyKit, and Y.js. Play with friends via room codes — no accounts required, no database needed.
+
+**Note:** This is a work-in-progress. Phase 1 (MVP) is complete but multiplayer sync via PartyKit is not yet connected.
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | Next.js 14 (JavaScript, Pages Router) |
+| Styling | Tailwind CSS |
+| Animation | Framer Motion |
+| Real-time | PartyKit + Y.js (WebSocket + CRDT) |
+| Icons | Lucide React |
+| Fonts | Playfair Display, Inter, JetBrains Mono |
+
+## Features
+
+- 🎲 Real-time multiplayer Monopoly gameplay
+- 🔗 Database-less rooms — share a 6-char code
+- 🤖 Bot players (Easy difficulty)
+- 🏠 Buy properties, build houses/hotels
+- 🔄 Trading between players
+- 💰 Full rent system with color sets
+- 🏆 Win condition detection
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- npm or yarn
+
+### Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/richdown.git
+cd richdown
+
+# Install dependencies
+npm install
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
+### PartyKit Setup (for multiplayer)
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.js`.
+```bash
+# Install PartyKit CLI
+npm install -g partykit
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+# Deploy PartyKit server
+npx partykit deploy
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+# Set your PartyKit host in .env.local
+echo "NEXT_PUBLIC_PARTYKIT_HOST=your-name.partykit.dev" > .env.local
+```
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+richdown/
+├── pages/
+│   ├── index.js          # Lobby: Create/Join room
+│   └── room/[code].js    # Game room
+├── components/
+│   ├── board/            # SVG Monopoly board
+│   ├── dice/            # 3D CSS dice
+│   ├── hud/             # Player HUD, ActionBar
+│   ├── modals/          # Property purchase modal
+│   ├── lobby/            # CreateRoom, JoinRoom
+│   └── ui/              # Generic Modal component
+├── lib/
+│   ├── game/
+│   │   ├── board.js      # 40-space board data
+│   │   └── state.js     # Y.js game state + moves
+│   └── partykit/        # (future) PartyKit client
+├── party/
+│   └── index.js          # PartyKit server
+├── styles/
+│   └── globals.css       # Tailwind + custom CSS
+├── SPEC.md               # Technical specification
+└── prd.md               # Product requirements
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## TODO
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+### Phase 1 ✅ (MVP - Complete)
+- [x] Next.js project setup + Tailwind
+- [x] Board data (40 spaces)
+- [x] SVG board rendering
+- [x] Dice component
+- [x] Player tokens
+- [x] Basic game state (Y.js)
+- [x] Lobby (create/join room)
+- [x] Turn flow (roll → move → buy)
+- [x] Bot players (Easy)
 
-## Deploy on Vercel
+### Phase 2 — Full Game
+- [ ] All 40 space mechanics (chance, community, tax, jail)
+- [ ] Rent system with color sets
+- [ ] House/hotel building + selling
+- [ ] Trading UI
+- [ ] Bankruptcy handling
+- [ ] Win condition
+- [ ] All bot difficulties (Easy/Medium/Hard)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Phase 3 — Polish
+- [ ] Rule configuration UI (host settings)
+- [ ] How to Play tutorial
+- [ ] Mobile responsive
+- [ ] Animations refinement
+- [ ] Production PartyKit deployment
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+## License
+
+MIT © Shriram
+
+## Contributing
+
+Pull requests welcome! Please read SPEC.md before making major changes.
