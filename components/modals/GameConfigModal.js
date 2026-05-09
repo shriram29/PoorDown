@@ -179,7 +179,7 @@ export default function GameConfigModal({ isOpen, onClose, onSave, isHost, curre
               <h2
                 style={{
                   margin: 0,
-                  fontFamily: 'Playfair Display, serif',
+                  fontFamily: 'Nunito, sans-serif',
                   fontSize: '24px',
                   fontWeight: '700',
                   color: '#2B2D42',

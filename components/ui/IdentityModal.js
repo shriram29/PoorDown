@@ -84,7 +84,7 @@ export default function IdentityModal({ isOpen, onComplete }) {
               <div style={{ fontSize: '52px', marginBottom: '16px' }}>{selectedToken.emoji}</div>
               <h1
                 style={{
-                  fontFamily: 'Playfair Display, serif',
+                  fontFamily: 'Nunito, sans-serif',
                   fontSize: '28px',
                   fontWeight: '800',
                   color: '#2B2D42',

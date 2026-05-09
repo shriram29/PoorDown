@@ -74,7 +74,7 @@ function SectionHeading({ children }) {
     <h3
       style={{
         margin: '0 0 10px 0',
-        fontFamily: 'Playfair Display, serif',
+        fontFamily: 'Nunito, sans-serif',
         fontSize: '16px',
         fontWeight: '700',
         color: '#2B2D42',
@@ -522,7 +522,7 @@ export default function TradeModal({
               <h2
                 style={{
                   margin: 0,
-                  fontFamily: 'Playfair Display, serif',
+                  fontFamily: 'Nunito, sans-serif',
                   fontSize: '22px',
                   fontWeight: '700',
                   color: '#2B2D42',

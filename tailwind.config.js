@@ -39,7 +39,7 @@ module.exports = {
         },
       },
       fontFamily: {
-        display: ['Playfair Display', 'serif'],
+        display: [Nunito, 'serif'],
         body: ['Inter', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },

@@ -12,6 +12,7 @@ import PropertyModal from '../../components/modals/PropertyModal';
 import TradeModal from '../../components/modals/TradeModal';
 import PropertyManagementModal from '../../components/modals/PropertyManagementModal';
 import GameConfigModal from '../../components/modals/GameConfigModal';
+import SpaceDetailModal from '../../components/modals/SpaceDetailModal';
 import { BOARD_SPACES, PLAYER_COLORS, GROUP_COLORS } from '../../lib/game/board';
 import {
   addPlayer,
@@ -70,6 +71,7 @@ export default function GameRoom() {
   const [configModal, setConfigModal] = useState(false);
   const [confettiActive, setConfettiActive] = useState(false);
   const [disconnectedPlayers, setDisconnectedPlayers] = useState([]);
+  const [spaceDetailModal, setSpaceDetailModal] = useState({ isOpen: false, spaceId: null });
   const { toasts, toast } = useToast();
 
   useEffect(() => {
@@ -582,13 +584,14 @@ export default function GameRoom() {
 
       <style>{`
         @media (max-width: 768px) {
-          .game-grid { grid-template-columns: 1fr !important; }
-          .player-sidebar { max-height: none !important; flex-direction: row !important; flex-wrap: wrap !important; overflow-x: auto !important; overflow-y: visible !important; }
+          .game-grid { grid-template-columns: 1fr !important; height: auto !important; }
+          .player-sidebar { height: auto !important; max-height: 50vh !important; }
+          .board-container { max-height: 100vw !important; }
           .room-header { flex-direction: column !important; gap: 8px !important; }
           .room-header-players { display: none !important; }
         }
       `}</style>
-      <div style={{ minHeight: '100vh', backgroundColor: '#F8F4E8', padding: '20px' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: '#F8F4E8', padding: '16px 20px' }}>
         <div
           style={{
             display: 'flex',
@@ -602,7 +605,7 @@ export default function GameRoom() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <h1
               style={{
-                fontFamily: 'Playfair Display, serif',
+                fontFamily: 'Nunito, sans-serif',
                 fontSize: '24px',
                 fontWeight: '700',
                 color: '#2B2D42',
@@ -649,7 +652,7 @@ export default function GameRoom() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <div className="room-header-players" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {players.map((player, idx) => (
               <div
                 key={player.uuid}
@@ -836,7 +839,7 @@ export default function GameRoom() {
           >
             <h3
               style={{
-                fontFamily: 'Playfair Display, serif',
+                fontFamily: 'Nunito, sans-serif',
                 fontSize: '18px',
                 fontWeight: '700',
                 color: '#2B2D42',
@@ -957,7 +960,7 @@ export default function GameRoom() {
               >
                 <h2
                   style={{
-                    fontFamily: 'Playfair Display, serif',
+                    fontFamily: 'Nunito, sans-serif',
                     fontSize: '24px',
                     fontWeight: '700',
                     color: '#2B2D42',
@@ -1116,7 +1119,7 @@ export default function GameRoom() {
                 <div style={{ fontSize: '64px', marginBottom: '16px' }}>🏆</div>
                 <h2
                   style={{
-                    fontFamily: 'Playfair Display, serif',
+                    fontFamily: 'Nunito, sans-serif',
                     fontSize: '36px',
                     fontWeight: '800',
                     color: '#2B2D42',

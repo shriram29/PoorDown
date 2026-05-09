@@ -55,7 +55,7 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             style={{
-              fontFamily: 'Playfair Display, serif',
+              fontFamily: 'Nunito, sans-serif',
               fontSize: '64px',
               fontWeight: '800',
               color: '#2B2D42',
@@ -164,7 +164,7 @@ export default function Home() {
               <span style={{ fontSize: '48px' }}>🎮</span>
               <h2
                 style={{
-                  fontFamily: 'Playfair Display, serif',
+                  fontFamily: 'Nunito, sans-serif',
                   fontSize: '28px',
                   fontWeight: '700',
                   color: '#2B2D42',
@@ -203,7 +203,7 @@ export default function Home() {
               <span style={{ fontSize: '48px' }}>🚀</span>
               <h2
                 style={{
-                  fontFamily: 'Playfair Display, serif',
+                  fontFamily: 'Nunito, sans-serif',
                   fontSize: '28px',
                   fontWeight: '700',
                   color: '#2B2D42',
@@ -243,7 +243,7 @@ export default function Home() {
         >
           <h3
             style={{
-              fontFamily: 'Playfair Display, serif',
+              fontFamily: 'Nunito, sans-serif',
               fontSize: '22px',
               fontWeight: '700',
               color: '#2B2D42',

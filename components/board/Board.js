@@ -196,7 +196,7 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
           textAnchor="middle"
           fontSize={id === 10 || id === 20 ? 18 : 22}
           fill="white"
-          fontFamily="Playfair Display, serif"
+          fontFamily="Nunito, sans-serif"
           fontWeight="800"
         >
           {style.text.split(' ').map((line, i) => (
@@ -260,7 +260,7 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
             dominantBaseline="middle"
             fontSize="20"
             fill="white"
-            fontFamily="Playfair Display, serif"
+            fontFamily="Nunito, sans-serif"
             fontWeight="800"
           >
             {icon}
@@ -450,7 +450,7 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
           textAnchor="middle"
           fontSize="14"
           fill="#2B2D42"
-          fontFamily="Playfair Display, serif"
+          fontFamily="Nunito, sans-serif"
           fontWeight="700"
         >
           PoorDown
@@ -460,7 +460,7 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
           textAnchor="middle"
           fontSize="24"
           fill="#E63946"
-          fontFamily="Playfair Display, serif"
+          fontFamily="Nunito, sans-serif"
           fontWeight="800"
         >
           🎲
