@@ -1,10 +1,33 @@
-// Home / Lobby page
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { motion } from 'framer-motion';
 import CreateRoom from '../components/lobby/CreateRoom';
 import JoinRoom from '../components/lobby/JoinRoom';
+import IdentityModal from '../components/ui/IdentityModal';
 
 export default function Home() {
+  const [identity, setIdentity] = useState(null);
+  const [showIdentityModal, setShowIdentityModal] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const stored = localStorage.getItem('poordown_identity');
+    if (stored) {
+      try {
+        setIdentity(JSON.parse(stored));
+      } catch {
+        setShowIdentityModal(true);
+      }
+    } else {
+      setShowIdentityModal(true);
+    }
+  }, []);
+
+  const handleIdentityComplete = (newIdentity) => {
+    setIdentity(newIdentity);
+    setShowIdentityModal(false);
+  };
+
   return (
     <>
       <Head>
@@ -12,6 +35,8 @@ export default function Home() {
         <meta name="description" content="The board game you know, anywhere you are. Play multiplayer Monopoly online with friends." />
         <link rel="icon" href="/favicon.ico" />
       </Head>
+
+      <IdentityModal isOpen={showIdentityModal} onComplete={handleIdentityComplete} />
 
       <div
         style={{
@@ -37,7 +62,7 @@ export default function Home() {
           >
             Poor<span style={{ color: '#E63946' }}>Down</span>
           </motion.h1>
-          
+
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -51,6 +76,56 @@ export default function Home() {
           >
             The board game you know, anywhere you are.
           </motion.p>
+
+          {identity && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.4 }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginTop: '16px',
+                backgroundColor: 'white',
+                borderRadius: '100px',
+                padding: '6px 14px 6px 10px',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+              }}
+            >
+              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#8D99AE' }}>Playing as</span>
+              <span
+                style={{
+                  fontFamily: 'Inter, sans-serif',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#2B2D42',
+                }}
+              >
+                {identity.name}
+              </span>
+              <button
+                onClick={() => setShowIdentityModal(true)}
+                title="Change name"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '2px 4px',
+                  fontSize: '13px',
+                  color: '#8D99AE',
+                  lineHeight: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  transition: 'color 0.2s',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#E63946')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = '#8D99AE')}
+              >
+                ✏️
+              </button>
+            </motion.div>
+          )}
         </div>
 
         {/* Main content */}
@@ -99,7 +174,7 @@ export default function Home() {
                 Start a new game and invite your friends
               </p>
             </div>
-            <CreateRoom />
+            <CreateRoom defaultName={identity?.name ?? ''} />
           </motion.div>
 
           {/* Join Room */}
@@ -138,7 +213,7 @@ export default function Home() {
                 Enter a room code to join an existing game
               </p>
             </div>
-            <JoinRoom />
+            <JoinRoom defaultName={identity?.name ?? ''} />
           </motion.div>
         </div>
 

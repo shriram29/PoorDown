@@ -1,27 +1,40 @@
-// Join Room component
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 
-export default function JoinRoom() {
+export default function JoinRoom({ defaultName = '' }) {
   const router = useRouter();
-  const [name, setName] = useState('');
+  const [name, setName] = useState(defaultName);
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    setName(defaultName);
+  }, [defaultName]);
+
   const handleJoin = async (e) => {
     e.preventDefault();
-    if (!name.trim() || !code.trim()) return;
-    
+    const trimmed = name.trim();
+    if (!trimmed || code.length !== 6) return;
+
     setLoading(true);
     setError('');
-    
-    // Store player name in localStorage
-    localStorage.setItem('poordown_playerName', name.trim());
-    localStorage.setItem('poordown_isHost', 'false');
-    
-    // Navigate to room
-    router.push(`/room/${code.toUpperCase().trim()}?name=${encodeURIComponent(name.trim())}&host=false`);
+
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('poordown_identity');
+      if (stored) {
+        try {
+          const identity = JSON.parse(stored);
+          if (identity.name !== trimmed) {
+            localStorage.setItem('poordown_identity', JSON.stringify({ ...identity, name: trimmed }));
+          }
+        } catch {
+          // identity was malformed; leave it alone
+        }
+      }
+    }
+
+    router.push(`/room/${code.toUpperCase().trim()}`);
   };
 
   return (
@@ -53,13 +66,14 @@ export default function JoinRoom() {
             fontFamily: 'Inter, sans-serif',
             backgroundColor: 'white',
             outline: 'none',
+            boxSizing: 'border-box',
             transition: 'border-color 0.2s',
           }}
-          onFocus={(e) => e.target.style.borderColor = '#2D6A4F'}
-          onBlur={(e) => e.target.style.borderColor = '#E8E4D8'}
+          onFocus={(e) => (e.target.style.borderColor = '#2D6A4F')}
+          onBlur={(e) => (e.target.style.borderColor = '#E8E4D8')}
         />
       </div>
-      
+
       <div>
         <label
           style={{
@@ -89,19 +103,20 @@ export default function JoinRoom() {
             letterSpacing: '4px',
             backgroundColor: 'white',
             outline: 'none',
+            boxSizing: 'border-box',
             transition: 'border-color 0.2s',
           }}
-          onFocus={(e) => e.target.style.borderColor = '#2D6A4F'}
-          onBlur={(e) => e.target.style.borderColor = '#E8E4D8'}
+          onFocus={(e) => (e.target.style.borderColor = '#2D6A4F')}
+          onBlur={(e) => (e.target.style.borderColor = '#E8E4D8')}
         />
       </div>
-      
+
       {error && (
         <p style={{ color: '#E63946', fontFamily: 'Inter, sans-serif', fontSize: '14px', margin: 0 }}>
           {error}
         </p>
       )}
-      
+
       <button
         type="submit"
         disabled={!name.trim() || code.length !== 6 || loading}

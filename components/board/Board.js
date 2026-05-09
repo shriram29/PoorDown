@@ -15,42 +15,38 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
   // Going clockwise: bottom (0-9), right (10-19), top (20-29), left (30-39)
   
   const getSpacePosition = (id) => {
-    const cornerSize = CORNER_SIZE;
-    const trackWidth = TRACK_WIDTH;
-    const spaceWidth = SPACE_WIDTH;
-    
-    // Bottom row (0): left to right, y = HEIGHT - cornerSize to HEIGHT
-    if (id >= 0 && id <= 9) {
-      const x = cornerSize + (id - 1) * spaceWidth;
-      const y = HEIGHT - trackWidth;
-      return { x, y, width: spaceWidth, height: trackWidth, rotation: 0 };
+    // Spaces 1-9: bottom row, right to left (space 1 is adjacent to GO at bottom-right)
+    if (id >= 1 && id <= 9) {
+      const x = WIDTH - CORNER_SIZE - id * SPACE_WIDTH;
+      const y = HEIGHT - CORNER_SIZE;
+      return { x, y, width: SPACE_WIDTH, height: CORNER_SIZE, rotation: 0 };
     }
-    // Right column (10): bottom to top, x = WIDTH - trackWidth to WIDTH
-    if (id >= 10 && id <= 19) {
-      const y = HEIGHT - cornerSize - (id - 10) * spaceWidth;
-      const x = WIDTH - trackWidth;
-      return { x, y, width: trackWidth, height: spaceWidth, rotation: 90 };
-    }
-    // Top row (20): right to left, y = 0 to trackWidth
-    if (id >= 20 && id <= 29) {
-      const x = WIDTH - cornerSize - (id - 20 + 1) * spaceWidth;
-      const y = 0;
-      return { x, y, width: spaceWidth, height: trackWidth, rotation: 0 };
-    }
-    // Left column (30): top to bottom, x = 0 to trackWidth
-    if (id >= 30 && id <= 39) {
-      const y = cornerSize + (id - 30) * spaceWidth;
+    // Spaces 11-19: left column, bottom to top (space 11 is adjacent to Jail at bottom-left)
+    if (id >= 11 && id <= 19) {
+      const y = HEIGHT - CORNER_SIZE - (id - 10) * SPACE_WIDTH;
       const x = 0;
-      return { x, y, width: trackWidth, height: spaceWidth, rotation: 90 };
+      return { x, y, width: CORNER_SIZE, height: SPACE_WIDTH, rotation: -90 };
+    }
+    // Spaces 21-29: top row, left to right (space 21 is adjacent to Free Parking at top-left)
+    if (id >= 21 && id <= 29) {
+      const x = CORNER_SIZE + (id - 20 - 1) * SPACE_WIDTH;
+      const y = 0;
+      return { x, y, width: SPACE_WIDTH, height: CORNER_SIZE, rotation: 180 };
+    }
+    // Spaces 31-39: right column, top to bottom (space 31 is adjacent to Go To Jail at top-right)
+    if (id >= 31 && id <= 39) {
+      const y = CORNER_SIZE + (id - 30 - 1) * SPACE_WIDTH;
+      const x = WIDTH - CORNER_SIZE;
+      return { x, y, width: CORNER_SIZE, height: SPACE_WIDTH, rotation: 90 };
     }
     return { x: 0, y: 0, width: 0, height: 0, rotation: 0 };
   };
 
   const getCornerPosition = (id) => {
-    if (id === 0) return { x: 0, y: HEIGHT - CORNER_SIZE, width: CORNER_SIZE, height: CORNER_SIZE, corner: 'bl' };
-    if (id === 10) return { x: 0, y: HEIGHT - CORNER_SIZE, width: CORNER_SIZE, height: CORNER_SIZE, corner: 'tl' };
-    if (id === 20) return { x: 0, y: 0, width: CORNER_SIZE, height: CORNER_SIZE, corner: 'tr' };
-    if (id === 30) return { x: WIDTH - CORNER_SIZE, y: 0, width: CORNER_SIZE, height: CORNER_SIZE, corner: 'br' };
+    if (id === 0)  return { x: WIDTH - CORNER_SIZE, y: HEIGHT - CORNER_SIZE, width: CORNER_SIZE, height: CORNER_SIZE, corner: 'br' };
+    if (id === 10) return { x: 0, y: HEIGHT - CORNER_SIZE, width: CORNER_SIZE, height: CORNER_SIZE, corner: 'bl' };
+    if (id === 20) return { x: 0, y: 0, width: CORNER_SIZE, height: CORNER_SIZE, corner: 'tl' };
+    if (id === 30) return { x: WIDTH - CORNER_SIZE, y: 0, width: CORNER_SIZE, height: CORNER_SIZE, corner: 'tr' };
     return { x: 0, y: 0, width: 0, height: 0 };
   };
 
