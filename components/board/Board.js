@@ -9,35 +9,31 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
   const CORNER_SIZE = 120;
   const TRACK_WIDTH = 110;
   const SPACE_WIDTH = 88;
-  const SPACE_HEIGHT = TRACK_WIDTH;
 
-  // Calculate positions for all 40 spaces
-  // Going clockwise: bottom (0-9), right (10-19), top (20-29), left (30-39)
-  
   const getSpacePosition = (id) => {
     // Spaces 1-9: bottom row, right to left (space 1 is adjacent to GO at bottom-right)
     if (id >= 1 && id <= 9) {
       const x = WIDTH - CORNER_SIZE - id * SPACE_WIDTH;
-      const y = HEIGHT - CORNER_SIZE;
-      return { x, y, width: SPACE_WIDTH, height: CORNER_SIZE, rotation: 0 };
+      const y = HEIGHT - TRACK_WIDTH;
+      return { x, y, width: SPACE_WIDTH, height: TRACK_WIDTH, rotation: 0 };
     }
     // Spaces 11-19: left column, bottom to top (space 11 is adjacent to Jail at bottom-left)
     if (id >= 11 && id <= 19) {
       const y = HEIGHT - CORNER_SIZE - (id - 10) * SPACE_WIDTH;
       const x = 0;
-      return { x, y, width: CORNER_SIZE, height: SPACE_WIDTH, rotation: -90 };
+      return { x, y, width: TRACK_WIDTH, height: SPACE_WIDTH, rotation: -90 };
     }
     // Spaces 21-29: top row, left to right (space 21 is adjacent to Free Parking at top-left)
     if (id >= 21 && id <= 29) {
-      const x = CORNER_SIZE + (id - 20 - 1) * SPACE_WIDTH;
+      const x = CORNER_SIZE + (id - 21) * SPACE_WIDTH;
       const y = 0;
-      return { x, y, width: SPACE_WIDTH, height: CORNER_SIZE, rotation: 180 };
+      return { x, y, width: SPACE_WIDTH, height: TRACK_WIDTH, rotation: 180 };
     }
     // Spaces 31-39: right column, top to bottom (space 31 is adjacent to Go To Jail at top-right)
     if (id >= 31 && id <= 39) {
-      const y = CORNER_SIZE + (id - 30 - 1) * SPACE_WIDTH;
-      const x = WIDTH - CORNER_SIZE;
-      return { x, y, width: CORNER_SIZE, height: SPACE_WIDTH, rotation: 90 };
+      const y = CORNER_SIZE + (id - 31) * SPACE_WIDTH;
+      const x = WIDTH - TRACK_WIDTH;
+      return { x, y, width: TRACK_WIDTH, height: SPACE_WIDTH, rotation: 90 };
     }
     return { x: 0, y: 0, width: 0, height: 0, rotation: 0 };
   };
@@ -58,14 +54,17 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
     const pos = getSpacePosition(space.id);
     const groupColor = GROUP_COLORS[space.group] || '#8D99AE';
     
+    const cx = pos.width / 2;
+    const cy = pos.height / 2;
+    const nameStr = space.name.length > 12 ? space.name.substring(0, 11) : space.name;
+
     return (
-      <g 
-        key={space.id} 
+      <g
+        key={space.id}
         transform={`translate(${pos.x}, ${pos.y})`}
         onClick={() => onPropertyClick && onPropertyClick(space.id)}
         style={{ cursor: onPropertyClick ? 'pointer' : 'default' }}
       >
-        {/* Property background */}
         <rect
           width={pos.width}
           height={pos.height}
@@ -74,104 +73,58 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
           strokeWidth="2"
           className="property-space"
         />
-        
-        {/* Property name - rotated based on position */}
-        {space.id < 10 && (
+        <g transform={`rotate(${pos.rotation}, ${cx}, ${cy})`}>
           <text
-            x={pos.width / 2}
-            y={pos.height / 2 + 5}
+            x={cx}
+            y={cy}
             textAnchor="middle"
-            fontSize="9"
-            fill="white"
-            fontFamily="Inter, sans-serif"
-            fontWeight="600"
-            style={{ textShadow: '1px 1px 1px rgba(0,0,0,0.5)' }}
-          >
-            {space.name.length > 12 ? space.name.substring(0, 11) : space.name}
-          </text>
-        )}
-        {space.id >= 10 && space.id < 20 && (
-          <text
-            x={pos.width / 2}
-            y={pos.height / 2}
-            textAnchor="middle"
+            dominantBaseline="middle"
             fontSize="8"
             fill="white"
             fontFamily="Inter, sans-serif"
             fontWeight="600"
-            transform={`rotate(90, ${pos.width / 2}, ${pos.height / 2})`}
           >
-            {space.name.length > 12 ? space.name.substring(0, 11) : space.name}
+            {nameStr}
           </text>
-        )}
-        {space.id >= 20 && space.id < 30 && (
-          <text
-            x={pos.width / 2}
-            y={pos.height / 2 - 5}
-            textAnchor="middle"
-            fontSize="9"
-            fill="white"
-            fontFamily="Inter, sans-serif"
-            fontWeight="600"
-          >
-            {space.name.length > 12 ? space.name.substring(0, 11) : space.name}
-          </text>
-        )}
-        {space.id >= 30 && (
-          <text
-            x={pos.width / 2}
-            y={pos.height / 2}
-            textAnchor="middle"
-            fontSize="8"
-            fill="white"
-            fontFamily="Inter, sans-serif"
-            fontWeight="600"
-            transform={`rotate(90, ${pos.width / 2}, ${pos.height / 2})`}
-          >
-            {space.name.length > 12 ? space.name.substring(0, 11) : space.name}
-          </text>
-        )}
-        
-        {/* Price tag */}
-        {space.price && (
-          <text
-            x={pos.width / 2}
-            y={space.id < 10 ? pos.height / 2 + 18 : space.id >= 30 ? pos.height - 8 : pos.height / 2 + 20}
-            textAnchor="middle"
-            fontSize="7"
-            fill="white"
-            fontFamily="JetBrains Mono, monospace"
-            opacity="0.9"
-          >
-            ${space.price}
-          </text>
-        )}
-        
-        {/* Railroad icon */}
-        {isRailroad(space.id) && (
-          <text
-            x={pos.width / 2}
-            y={space.id >= 10 && space.id < 20 ? 12 : space.id >= 30 ? pos.height - 10 : 12}
-            textAnchor="middle"
-            fontSize="14"
-            fill="white"
-          >
-            🚂
-          </text>
-        )}
-        
-        {/* Utility icon */}
-        {isUtility(space.id) && (
-          <text
-            x={pos.width / 2}
-            y={space.id >= 10 && space.id < 20 ? 12 : space.id >= 30 ? pos.height - 10 : 12}
-            textAnchor="middle"
-            fontSize="12"
-            fill="white"
-          >
-            ⚡
-          </text>
-        )}
+          {space.price && (
+            <text
+              x={cx}
+              y={cy + 12}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fontSize="7"
+              fill="white"
+              fontFamily="JetBrains Mono, monospace"
+              opacity="0.9"
+            >
+              ${space.price}
+            </text>
+          )}
+          {isRailroad(space.id) && (
+            <text
+              x={cx}
+              y={cy - 12}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fontSize="14"
+              fill="white"
+            >
+              🚂
+            </text>
+          )}
+          {isUtility(space.id) && (
+            <text
+              x={cx}
+              y={cy - 12}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fontSize="12"
+              fill="white"
+            >
+              ⚡
+            </text>
+          )}
+        </g>
       </g>
     );
   };
@@ -236,7 +189,6 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
     
     let bgColor = '#F8F4E8';
     let icon = '';
-    let textColor = '#2B2D42';
     
     if (isChance) {
       bgColor = '#E63946';
@@ -249,6 +201,9 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
       icon = '$';
     }
     
+    const cx = pos.width / 2;
+    const cy = pos.height / 2;
+
     return (
       <g key={space.id} transform={`translate(${pos.x}, ${pos.y})`}>
         <rect
@@ -258,40 +213,45 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
           stroke="#2B2D42"
           strokeWidth="2"
         />
-        <text
-          x={pos.width / 2}
-          y={pos.height / 2}
-          textAnchor="middle"
-          fontSize="20"
-          fill={isChance || isTax ? 'white' : 'white'}
-          fontFamily="Playfair Display, serif"
-          fontWeight="800"
-        >
-          {icon}
-        </text>
-        <text
-          x={pos.width / 2}
-          y={space.id < 10 ? pos.height - 10 : space.id >= 30 ? 10 : pos.height - 5}
-          textAnchor="middle"
-          fontSize="6"
-          fill="white"
-          fontFamily="Inter, sans-serif"
-          opacity="0.9"
-        >
-          {space.name.length > 12 ? space.name.substring(0, 10) : space.name}
-        </text>
-        {space.amount && (
+        <g transform={`rotate(${pos.rotation}, ${cx}, ${cy})`}>
           <text
-            x={pos.width / 2}
-            y={space.id < 10 ? pos.height - 22 : space.id >= 30 ? pos.height - 20 : pos.height - 20}
+            x={cx}
+            y={cy - 8}
             textAnchor="middle"
-            fontSize="7"
+            dominantBaseline="middle"
+            fontSize="20"
             fill="white"
-            fontFamily="JetBrains Mono, monospace"
+            fontFamily="Playfair Display, serif"
+            fontWeight="800"
           >
-            -${space.amount}
+            {icon}
           </text>
-        )}
+          <text
+            x={cx}
+            y={cy + 14}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize="6"
+            fill="white"
+            fontFamily="Inter, sans-serif"
+            opacity="0.9"
+          >
+            {space.name.length > 12 ? space.name.substring(0, 10) : space.name}
+          </text>
+          {space.amount && (
+            <text
+              x={cx}
+              y={cy + 24}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fontSize="7"
+              fill="white"
+              fontFamily="JetBrains Mono, monospace"
+            >
+              -${space.amount}
+            </text>
+          )}
+        </g>
       </g>
     );
   };
@@ -312,14 +272,10 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
     Object.entries(positionGroups).forEach(([pos, playersAtPos]) => {
       const position = parseInt(pos);
       const space = BOARD_SPACES[position];
-      const isProp = space.type === 'property' || space.type === 'railroad' || space.type === 'utility';
-      
       // Calculate token position
       let tokenX, tokenY;
-      const spacePos = isProp ? getSpacePosition(position) : getCornerPosition(position);
+      const spacePos = isCorner(position) ? getCornerPosition(position) : getSpacePosition(position);
       
-      // Offset tokens based on how many are on this space
-      const offsetAngle = (playersAtPos.length > 1) ? Math.PI / 4 : 0;
       const radius = 12;
       
       playersAtPos.forEach((player, i) => {
@@ -332,7 +288,7 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
           tokenY = spacePos.y + spacePos.height / 2 + Math.sin(angle) * radius;
         }
         
-        const isActive = idx === currentPlayerIndex;
+        const isActive = player.index === currentPlayerIndex;
         
         tokens.push(
           <g key={`token-${player.id}`} transform={`translate(${tokenX}, ${tokenY})`}>
