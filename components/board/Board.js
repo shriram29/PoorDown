@@ -1,5 +1,5 @@
-// Monopoly Board SVG Component
-// Renders a full Monopoly board with all 40 spaces
+import { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { BOARD_SPACES, GROUP_COLORS } from '../../lib/game/board';
 
 export default function Board({ players = [], currentPlayerIndex = -1, onPropertyClick }) {
@@ -9,6 +9,36 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
   const CORNER_SIZE = 120;
   const TRACK_WIDTH = 110;
   const SPACE_WIDTH = 88;
+
+  const [displayPositions, setDisplayPositions] = useState(
+    () => Object.fromEntries(players.map(p => [p.uuid, p.position]))
+  );
+  const animatingRef = useRef({});
+
+  useEffect(() => {
+    players.forEach((player) => {
+      const key = player.uuid;
+      const current = displayPositions[key] ?? player.position;
+      const target = player.position;
+
+      if (current === target || animatingRef.current[key]) return;
+
+      animatingRef.current[key] = true;
+      let step = current;
+
+      const animate = () => {
+        if (step === target) {
+          animatingRef.current[key] = false;
+          return;
+        }
+        step = (step + 1) % 40;
+        setDisplayPositions(prev => ({ ...prev, [key]: step }));
+        setTimeout(animate, 180);
+      };
+
+      setTimeout(animate, 50);
+    });
+  }, [players]);
 
   const getSpacePosition = (id) => {
     // Spaces 1-9: bottom row, right to left (space 1 is adjacent to GO at bottom-right)
@@ -44,6 +74,15 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
     if (id === 20) return { x: 0, y: 0, width: CORNER_SIZE, height: CORNER_SIZE, corner: 'tl' };
     if (id === 30) return { x: WIDTH - CORNER_SIZE, y: 0, width: CORNER_SIZE, height: CORNER_SIZE, corner: 'tr' };
     return { x: 0, y: 0, width: 0, height: 0 };
+  };
+
+  const getTokenCenter = (id) => {
+    if (id === 0)  return { cx: WIDTH - CORNER_SIZE / 2, cy: HEIGHT - CORNER_SIZE / 2 };
+    if (id === 10) return { cx: CORNER_SIZE / 2,         cy: HEIGHT - CORNER_SIZE / 2 };
+    if (id === 20) return { cx: CORNER_SIZE / 2,         cy: CORNER_SIZE / 2 };
+    if (id === 30) return { cx: WIDTH - CORNER_SIZE / 2, cy: CORNER_SIZE / 2 };
+    const pos = getSpacePosition(id);
+    return { cx: pos.x + pos.width / 2, cy: pos.y + pos.height / 2 };
   };
 
   const isCorner = (id) => [0, 10, 20, 30].includes(id);
@@ -256,73 +295,71 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
     );
   };
 
-  // Render players on the board
   const renderPlayers = () => {
-    // Group players by position
     const positionGroups = {};
     players.forEach((player, idx) => {
-      if (!positionGroups[player.position]) {
-        positionGroups[player.position] = [];
-      }
-      positionGroups[player.position].push({ ...player, index: idx });
+      const displayPos = displayPositions[player.uuid] ?? player.position;
+      if (!positionGroups[displayPos]) positionGroups[displayPos] = [];
+      positionGroups[displayPos].push({ ...player, index: idx });
     });
 
     const tokens = [];
-    
-    Object.entries(positionGroups).forEach(([pos, playersAtPos]) => {
-      const position = parseInt(pos);
-      const space = BOARD_SPACES[position];
-      // Calculate token position
-      let tokenX, tokenY;
-      const spacePos = isCorner(position) ? getCornerPosition(position) : getSpacePosition(position);
-      
-      const radius = 12;
-      
-      playersAtPos.forEach((player, i) => {
-        if (playersAtPos.length === 1) {
-          tokenX = spacePos.x + spacePos.width / 2;
-          tokenY = spacePos.y + spacePos.height / 2;
-        } else {
-          const angle = (i / playersAtPos.length) * Math.PI * 2 - Math.PI / 2;
-          tokenX = spacePos.x + spacePos.width / 2 + Math.cos(angle) * radius;
-          tokenY = spacePos.y + spacePos.height / 2 + Math.sin(angle) * radius;
-        }
-        
-        const isActive = player.index === currentPlayerIndex;
-        
-        tokens.push(
-          <g key={`token-${player.id}`} transform={`translate(${tokenX}, ${tokenY})`}>
-            {isActive && (
-              <circle
-                r="16"
-                fill="none"
-                stroke={player.color}
-                strokeWidth="3"
-                opacity="0.8"
-                className="player-token active"
-              />
-            )}
+
+    players.forEach((player, idx) => {
+      const displayPos = displayPositions[player.uuid] ?? player.position;
+      const groupAtPos = positionGroups[displayPos] || [];
+      const posIndex = groupAtPos.findIndex(p => p.uuid === player.uuid);
+      const groupSize = groupAtPos.length;
+
+      const { cx: baseCx, cy: baseCy } = getTokenCenter(displayPos);
+
+      let cx, cy;
+      if (groupSize === 1) {
+        cx = baseCx;
+        cy = baseCy;
+      } else {
+        const angle = (posIndex / groupSize) * Math.PI * 2 - Math.PI / 2;
+        cx = baseCx + Math.cos(angle) * 14;
+        cy = baseCy + Math.sin(angle) * 14;
+      }
+
+      const isActive = idx === currentPlayerIndex;
+
+      tokens.push(
+        <motion.g
+          key={player.uuid}
+          animate={{ x: cx, y: cy }}
+          transition={{ type: 'spring', stiffness: 200, damping: 25 }}
+        >
+          {isActive && (
             <circle
-              r="10"
-              fill={player.color}
-              stroke="#2B2D42"
-              strokeWidth="2"
+              r="16"
+              fill="none"
+              stroke={player.color}
+              strokeWidth="3"
+              opacity="0.8"
             />
-            <text
-              y="4"
-              textAnchor="middle"
-              fontSize="10"
-              fill="white"
-              fontWeight="bold"
-              fontFamily="Inter, sans-serif"
-            >
-              {player.name.charAt(0).toUpperCase()}
-            </text>
-          </g>
-        );
-      });
+          )}
+          <circle
+            r="10"
+            fill={player.color}
+            stroke="#2B2D42"
+            strokeWidth="2"
+          />
+          <text
+            y="4"
+            textAnchor="middle"
+            fontSize="10"
+            fill="white"
+            fontWeight="bold"
+            fontFamily="Inter, sans-serif"
+          >
+            {player.name ? player.name.charAt(0).toUpperCase() : '?'}
+          </text>
+        </motion.g>
+      );
     });
-    
+
     return tokens;
   };
 
