@@ -35,7 +35,7 @@ export default function Home() {
               letterSpacing: '-2px',
             }}
           >
-            Rich<span style={{ color: '#E63946' }}>Down</span>
+            Poor<span style={{ color: '#E63946' }}>Down</span>
           </motion.h1>
           
           <motion.p

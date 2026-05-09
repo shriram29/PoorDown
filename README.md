@@ -1,128 +1,95 @@
-# PoorDown 🏠
+# PoorDown
 
 > The board game you know, anywhere you are.
 
-An open-source multiplayer Monopoly clone built with Next.js, PartyKit, and Y.js. Play with friends via room codes — no accounts required, no database needed.
+PoorDown is an open-source multiplayer Monopoly clone you can play in the browser with friends — no account, no install, no cost. Share a link. Everyone joins. Play.
 
-**Note:** This is a work-in-progress. Phase 1 (MVP) is complete but multiplayer sync via PartyKit is not yet connected.
+Built with Next.js and Y.js. Game state syncs peer-to-peer over WebRTC. Deploys to Vercel for free. No server, no database.
 
-## Tech Stack
+---
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | Next.js 14 (JavaScript, Pages Router) |
+## How it works
+
+1. Open the app and enter your name (saved for next time)
+2. Click **Create Room** — you get a 6-character room code
+3. Share the link with friends
+4. Friends open the link, enter their names, and join
+5. Host clicks **Start Game** when everyone's ready (2–8 players)
+6. Play standard Monopoly — buy properties, collect rent, build houses, bankrupt your friends
+
+Game state is synced directly between players' browsers over WebRTC. No server holds your game data. If the host disconnects, the next player in line automatically becomes host.
+
+---
+
+## Tech stack
+
+| | |
+|--|--|
+| Framework | Next.js 14 (Pages Router) |
+| Real-time sync | Y.js + y-webrtc (WebRTC P2P) |
+| Animations | Framer Motion |
 | Styling | Tailwind CSS |
-| Animation | Framer Motion |
-| Real-time | PartyKit + Y.js (WebSocket + CRDT) |
-| Icons | Lucide React |
-| Fonts | Playfair Display, Inter, JetBrains Mono |
+| Hosting | Vercel |
 
-## Features
+No backend. No database. No paid services. Free STUN servers for WebRTC, free public signaling server for initial peer handshake.
 
-- 🎲 Real-time multiplayer Monopoly gameplay
-- 🔗 Database-less rooms — share a 6-char code
-- 🤖 Bot players (Easy difficulty)
-- 🏠 Buy properties, build houses/hotels
-- 🔄 Trading between players
-- 💰 Full rent system with color sets
-- 🏆 Win condition detection
+---
 
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- npm or yarn
-
-### Installation
+## Running locally
 
 ```bash
-# Clone the repository
-git clone https://github.com/YOUR_USERNAME/poordown.git
+git clone https://github.com/YOUR_USERNAME/poordown
 cd poordown
-
-# Install dependencies
 npm install
-
-# Run development server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000). No environment variables needed.
 
-### PartyKit Setup (for multiplayer)
+---
+
+## Deploying
 
 ```bash
-# Install PartyKit CLI
-npm install -g partykit
-
-# Deploy PartyKit server
-npx partykit deploy
-
-# Set your PartyKit host in .env.local
-echo "NEXT_PUBLIC_PARTYKIT_HOST=your-name.partykit.dev" > .env.local
+npm install -g vercel
+vercel
 ```
 
-## Project Structure
+That's it. No other services to deploy or configure.
 
-```
-poordown/
-├── pages/
-│   ├── index.js          # Lobby: Create/Join room
-│   └── room/[code].js    # Game room
-├── components/
-│   ├── board/            # SVG Monopoly board
-│   ├── dice/            # 3D CSS dice
-│   ├── hud/             # Player HUD, ActionBar
-│   ├── modals/          # Property purchase modal
-│   ├── lobby/            # CreateRoom, JoinRoom
-│   └── ui/              # Generic Modal component
-├── lib/
-│   ├── game/
-│   │   ├── board.js      # 40-space board data
-│   │   └── state.js     # Y.js game state + moves
-│   └── partykit/        # (future) PartyKit client
-├── party/
-│   └── index.js          # PartyKit server
-├── styles/
-│   └── globals.css       # Tailwind + custom CSS
-├── SPEC.md               # Technical specification
-└── prd.md               # Product requirements
-```
+---
 
-## TODO
+## Project status
 
-### Phase 1 ✅ (MVP - Complete)
-- [x] Next.js project setup + Tailwind
-- [x] Board data (40 spaces)
-- [x] SVG board rendering
-- [x] Dice component
-- [x] Player tokens
-- [x] Basic game state (Y.js)
-- [x] Lobby (create/join room)
-- [x] Turn flow (roll → move → buy)
-- [x] Bot players (Easy)
+Active development. Core board and game logic are implemented. Real-time multiplayer is the current focus.
 
-### Phase 2 — Full Game
-- [ ] All 40 space mechanics (chance, community, tax, jail)
-- [ ] Rent system with color sets
-- [ ] House/hotel building + selling
-- [ ] Trading UI
-- [ ] Bankruptcy handling
-- [ ] Win condition
-- [ ] All bot difficulties (Easy/Medium/Hard)
+See [`wiki/implementation-status.md`](./wiki/implementation-status.md) for a detailed breakdown of what works, what's broken, and what's next.
 
-### Phase 3 — Polish
-- [ ] Rule configuration UI (host settings)
-- [ ] How to Play tutorial
-- [ ] Mobile responsive
-- [ ] Animations refinement
-- [ ] Production PartyKit deployment
+---
 
-## License
+## Documentation
 
-MIT © Shriram
+Everything lives in [`wiki/`](./wiki/):
+
+| | |
+|--|--|
+| [`wiki/prd.md`](./wiki/prd.md) | Product vision, design language, features |
+| [`wiki/architecture.md`](./wiki/architecture.md) | Tech decisions, Y.js schema, P2P design, host system |
+| [`wiki/game-mechanics.md`](./wiki/game-mechanics.md) | Full Monopoly rules reference |
+| [`wiki/design.md`](./wiki/design.md) | Brand, colors, typography, SVG assets, component specs |
+| [`wiki/implementation-status.md`](./wiki/implementation-status.md) | Current state, known bugs |
+| [`wiki/roadmap.md`](./wiki/roadmap.md) | What's being built next |
+
+---
 
 ## Contributing
 
-Pull requests welcome! Please read SPEC.md before making major changes.
+Read [`CLAUDE.md`](./CLAUDE.md) before making changes — it covers the key architectural decisions and what not to break.
+
+Pull requests welcome.
+
+---
+
+## License
+
+MIT

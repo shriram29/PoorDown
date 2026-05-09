@@ -394,7 +394,7 @@ export default function GameRoom() {
                 margin: 0,
               }}
             >
-              Rich<span style={{ color: '#E63946' }}>Down</span>
+              Poor<span style={{ color: '#E63946' }}>Down</span>
             </h1>
             
             <div
