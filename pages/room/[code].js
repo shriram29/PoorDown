@@ -682,7 +682,6 @@ export default function GameRoom() {
             maxWidth: '1600px',
             margin: '0 auto',
             height: 'calc(100vh - 100px)',
-            alignItems: 'start',
           }}
         >
           <div
@@ -692,14 +691,13 @@ export default function GameRoom() {
               alignItems: 'center',
               justifyContent: 'center',
               height: '100%',
-              minHeight: '500px',
             }}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
-              style={{ width: '100%', aspectRatio: '1 / 1', maxHeight: 'calc(100vh - 120px)' }}
+              style={{ height: '100%', aspectRatio: '1 / 1', maxWidth: '100%' }}
             >
               <Board
                 players={players}

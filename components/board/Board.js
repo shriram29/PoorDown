@@ -2,8 +2,13 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { BOARD_SPACES, GROUP_COLORS } from '../../lib/game/board';
 
+const CELL_BG = '#1e2140';
+const CELL_STROKE = '#2a2d50';
+const TEXT_MAIN = '#d0d0ec';
+const TEXT_DIM = '#5a5d7a';
+const STRIP_SIZE = 18;
+
 export default function Board({ players = [], currentPlayerIndex = -1, onPropertyClick }) {
-  // Board dimensions
   const WIDTH = 1000;
   const HEIGHT = 1000;
   const CORNER_SIZE = 120;
@@ -41,25 +46,21 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
   }, [players]);
 
   const getSpacePosition = (id) => {
-    // Spaces 1-9: bottom row, right to left (space 1 is adjacent to GO at bottom-right)
     if (id >= 1 && id <= 9) {
       const x = WIDTH - CORNER_SIZE - id * SPACE_WIDTH;
       const y = HEIGHT - TRACK_WIDTH;
       return { x, y, width: SPACE_WIDTH, height: TRACK_WIDTH, rotation: 0 };
     }
-    // Spaces 11-19: left column, bottom to top (space 11 is adjacent to Jail at bottom-left)
     if (id >= 11 && id <= 19) {
       const y = HEIGHT - CORNER_SIZE - (id - 10) * SPACE_WIDTH;
       const x = 0;
       return { x, y, width: TRACK_WIDTH, height: SPACE_WIDTH, rotation: -90 };
     }
-    // Spaces 21-29: top row, left to right (space 21 is adjacent to Free Parking at top-left)
     if (id >= 21 && id <= 29) {
       const x = CORNER_SIZE + (id - 21) * SPACE_WIDTH;
       const y = 0;
       return { x, y, width: SPACE_WIDTH, height: TRACK_WIDTH, rotation: 180 };
     }
-    // Spaces 31-39: right column, top to bottom (space 31 is adjacent to Go To Jail at top-right)
     if (id >= 31 && id <= 39) {
       const y = CORNER_SIZE + (id - 31) * SPACE_WIDTH;
       const x = WIDTH - TRACK_WIDTH;
@@ -89,13 +90,21 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
   const isRailroad = (id) => BOARD_SPACES[id]?.type === 'railroad';
   const isUtility = (id) => BOARD_SPACES[id]?.type === 'utility';
 
+  const getStrip = (id, pos) => {
+    if (id >= 1 && id <= 9)   return { x: 0, y: 0, w: pos.width, h: STRIP_SIZE };
+    if (id >= 11 && id <= 19) return { x: pos.width - STRIP_SIZE, y: 0, w: STRIP_SIZE, h: pos.height };
+    if (id >= 21 && id <= 29) return { x: 0, y: pos.height - STRIP_SIZE, w: pos.width, h: STRIP_SIZE };
+    if (id >= 31 && id <= 39) return { x: 0, y: 0, w: STRIP_SIZE, h: pos.height };
+    return null;
+  };
+
   const renderPropertySpace = (space) => {
     const pos = getSpacePosition(space.id);
-    const groupColor = GROUP_COLORS[space.group] || '#8D99AE';
-    
+    const groupColor = GROUP_COLORS[space.group] || '#6a6d9a';
     const cx = pos.width / 2;
     const cy = pos.height / 2;
-    const nameStr = space.name.length > 12 ? space.name.substring(0, 11) : space.name;
+    const nameStr = space.name.length > 11 ? space.name.substring(0, 10) + '…' : space.name;
+    const strip = getStrip(space.id, pos);
 
     return (
       <g
@@ -104,63 +113,29 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
         onClick={() => onPropertyClick && onPropertyClick(space.id)}
         style={{ cursor: onPropertyClick ? 'pointer' : 'default' }}
       >
-        <rect
-          width={pos.width}
-          height={pos.height}
-          fill={groupColor}
-          stroke="#2B2D42"
-          strokeWidth="2"
-          className="property-space"
-        />
+        <rect width={pos.width} height={pos.height} fill={CELL_BG} stroke={CELL_STROKE} strokeWidth="1" />
+        {strip && <rect x={strip.x} y={strip.y} width={strip.w} height={strip.h} fill={groupColor} />}
         <g transform={`rotate(${pos.rotation}, ${cx}, ${cy})`}>
-          <text
-            x={cx}
-            y={cy}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fontSize="8"
-            fill="white"
-            fontFamily="Inter, sans-serif"
-            fontWeight="600"
-          >
-            {nameStr}
-          </text>
-          {space.price && (
-            <text
-              x={cx}
-              y={cy + 12}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fontSize="7"
-              fill="white"
-              fontFamily="JetBrains Mono, monospace"
-              opacity="0.9"
-            >
-              ${space.price}
-            </text>
-          )}
           {isRailroad(space.id) && (
-            <text
-              x={cx}
-              y={cy - 12}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fontSize="14"
-              fill="white"
-            >
+            <text x={cx} y={cy - 14} textAnchor="middle" dominantBaseline="middle" fontSize="12" fill={TEXT_MAIN}>
               🚂
             </text>
           )}
           {isUtility(space.id) && (
-            <text
-              x={cx}
-              y={cy - 12}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fontSize="12"
-              fill="white"
-            >
+            <text x={cx} y={cy - 14} textAnchor="middle" dominantBaseline="middle" fontSize="11" fill={TEXT_MAIN}>
               ⚡
+            </text>
+          )}
+          <text x={cx} y={cy + (isRailroad(space.id) || isUtility(space.id) ? 2 : -4)}
+            textAnchor="middle" dominantBaseline="middle"
+            fontSize="7.5" fill={TEXT_MAIN} fontFamily="Inter, sans-serif" fontWeight="600">
+            {nameStr}
+          </text>
+          {space.price && (
+            <text x={cx} y={cy + (isRailroad(space.id) || isUtility(space.id) ? 14 : 8)}
+              textAnchor="middle" dominantBaseline="middle"
+              fontSize="7" fill={TEXT_DIM} fontFamily="Inter, sans-serif">
+              ${space.price}
             </text>
           )}
         </g>
@@ -170,51 +145,33 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
 
   const renderCorner = (id) => {
     const pos = getCornerPosition(id);
-    const space = BOARD_SPACES[id];
-    
     const cornerStyles = {
-      0: { bg: '#2D6A4F', text: 'GO', subtext: 'Collect $200' }, // GO - green
-      10: { bg: '#E76F51', text: 'JAIL', subtext: 'Just Visiting' }, // Jail - orange
-      20: { bg: '#2D6A4F', text: 'FREE', subtext: 'PARKING' }, // Free Parking - green
-      30: { bg: '#E76F51', text: 'GO TO', subtext: 'JAIL' }, // Go To Jail - orange
+      0:  { bg: '#16422e', accent: '#22c55e', text: 'GO',     sub: 'Collect $200' },
+      10: { bg: '#1c2a4a', accent: '#6366f1', text: 'JAIL',   sub: 'Just Visiting' },
+      20: { bg: '#1a3040', accent: '#06b6d4', text: 'FREE',   sub: 'PARKING' },
+      30: { bg: '#3d1818', accent: '#ef4444', text: 'GO TO',  sub: 'JAIL' },
     };
-    
-    const style = cornerStyles[id] || { bg: '#8D99AE', text: space.name };
-    
+    const style = cornerStyles[id] || { bg: '#252648', accent: '#6a6d9a', text: '', sub: '' };
+
     return (
       <g key={`corner-${id}`} transform={`translate(${pos.x}, ${pos.y})`}>
-        <rect
-          width={pos.width}
-          height={pos.height}
-          fill={style.bg}
-          stroke="#2B2D42"
-          strokeWidth="2"
-        />
+        <rect width={pos.width} height={pos.height} fill={style.bg} stroke={CELL_STROKE} strokeWidth="1" />
         <text
           x={pos.width / 2}
-          y={pos.height / 2 - (id === 0 || id === 30 ? 8 : 0)}
+          y={pos.height / 2 - 8}
           textAnchor="middle"
-          fontSize={id === 10 || id === 20 ? 18 : 22}
-          fill="white"
-          fontFamily="Nunito, sans-serif"
+          fontSize="18"
+          fill={style.accent}
+          fontFamily="Inter, sans-serif"
           fontWeight="800"
         >
           {style.text.split(' ').map((line, i) => (
-            <tspan key={i} x={pos.width / 2} dy={i === 0 ? 0 : 14}>
-              {line}
-            </tspan>
+            <tspan key={i} x={pos.width / 2} dy={i === 0 ? 0 : 18}>{line}</tspan>
           ))}
         </text>
-        <text
-          x={pos.width / 2}
-          y={pos.height - 15}
-          textAnchor="middle"
-          fontSize="9"
-          fill="white"
-          fontFamily="Inter, sans-serif"
-          opacity="0.9"
-        >
-          {style.subtext}
+        <text x={pos.width / 2} y={pos.height - 16} textAnchor="middle"
+          fontSize="8" fill={TEXT_DIM} fontFamily="Inter, sans-serif">
+          {style.sub}
         </text>
       </g>
     );
@@ -225,68 +182,31 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
     const isChance = space.type === 'chance';
     const isCommunity = space.type === 'communityChest';
     const isTax = space.type === 'tax';
-    
-    let bgColor = '#F8F4E8';
-    let icon = '';
-    
-    if (isChance) {
-      bgColor = '#E63946';
-      icon = '?';
-    } else if (isCommunity) {
-      bgColor = '#1D3557';
-      icon = 'C';
-    } else if (isTax) {
-      bgColor = '#F4A261';
-      icon = '$';
-    }
-    
+
+    let accent = '#6a6d9a';
+    let icon = '?';
+    if (isChance)    { accent = '#ef4444'; icon = '?'; }
+    if (isCommunity) { accent = '#818cf8'; icon = 'CC'; }
+    if (isTax)       { accent = '#f59e0b'; icon = '$'; }
+
     const cx = pos.width / 2;
     const cy = pos.height / 2;
 
     return (
       <g key={space.id} transform={`translate(${pos.x}, ${pos.y})`}>
-        <rect
-          width={pos.width}
-          height={pos.height}
-          fill={bgColor}
-          stroke="#2B2D42"
-          strokeWidth="2"
-        />
+        <rect width={pos.width} height={pos.height} fill="#252648" stroke={CELL_STROKE} strokeWidth="1" />
         <g transform={`rotate(${pos.rotation}, ${cx}, ${cy})`}>
-          <text
-            x={cx}
-            y={cy - 8}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fontSize="20"
-            fill="white"
-            fontFamily="Nunito, sans-serif"
-            fontWeight="800"
-          >
+          <text x={cx} y={cy - 8} textAnchor="middle" dominantBaseline="middle"
+            fontSize="18" fill={accent} fontFamily="Inter, sans-serif" fontWeight="800">
             {icon}
           </text>
-          <text
-            x={cx}
-            y={cy + 14}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fontSize="6"
-            fill="white"
-            fontFamily="Inter, sans-serif"
-            opacity="0.9"
-          >
-            {space.name.length > 12 ? space.name.substring(0, 10) : space.name}
+          <text x={cx} y={cy + 12} textAnchor="middle" dominantBaseline="middle"
+            fontSize="6" fill={TEXT_DIM} fontFamily="Inter, sans-serif">
+            {space.name.length > 10 ? space.name.substring(0, 9) : space.name}
           </text>
           {space.amount && (
-            <text
-              x={cx}
-              y={cy + 24}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fontSize="7"
-              fill="white"
-              fontFamily="JetBrains Mono, monospace"
-            >
+            <text x={cx} y={cy + 22} textAnchor="middle" dominantBaseline="middle"
+              fontSize="7" fill={accent} fontFamily="Inter, sans-serif">
               -${space.amount}
             </text>
           )}
@@ -297,15 +217,13 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
 
   const renderPlayers = () => {
     const positionGroups = {};
-    players.forEach((player, idx) => {
+    players.forEach((player) => {
       const displayPos = displayPositions[player.uuid] ?? player.position;
       if (!positionGroups[displayPos]) positionGroups[displayPos] = [];
-      positionGroups[displayPos].push({ ...player, index: idx });
+      positionGroups[displayPos].push(player);
     });
 
-    const tokens = [];
-
-    players.forEach((player, idx) => {
+    return players.map((player, idx) => {
       const displayPos = displayPositions[player.uuid] ?? player.position;
       const groupAtPos = positionGroups[displayPos] || [];
       const posIndex = groupAtPos.findIndex(p => p.uuid === player.uuid);
@@ -325,158 +243,52 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
 
       const isActive = idx === currentPlayerIndex;
 
-      tokens.push(
+      return (
         <motion.g
           key={player.uuid}
           animate={{ x: cx, y: cy }}
           transition={{ type: 'spring', stiffness: 200, damping: 25 }}
         >
           {isActive && (
-            <circle
-              r="16"
-              fill="none"
-              stroke={player.color}
-              strokeWidth="3"
-              opacity="0.8"
-            />
+            <circle r="16" fill="none" stroke={player.color} strokeWidth="2.5" opacity="0.7" />
           )}
-          <circle
-            r="10"
-            fill={player.color}
-            stroke="#2B2D42"
-            strokeWidth="2"
-          />
-          <text
-            y="4"
-            textAnchor="middle"
-            fontSize="10"
-            fill="white"
-            fontWeight="bold"
-            fontFamily="Inter, sans-serif"
-          >
+          <circle r="10" fill={player.color} stroke="#16172a" strokeWidth="2" />
+          <text y="4" textAnchor="middle" fontSize="10" fill="white" fontWeight="bold" fontFamily="Inter, sans-serif">
             {player.name ? player.name.charAt(0).toUpperCase() : '?'}
           </text>
         </motion.g>
       );
     });
-
-    return tokens;
   };
 
   return (
     <svg
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-      style={{
-        width: '100%',
-        maxWidth: '800px',
-        height: 'auto',
-        borderRadius: '8px',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-      }}
+      style={{ width: '100%', height: '100%', borderRadius: '6px' }}
     >
-      {/* Board background */}
-      <rect
-        x="0"
-        y="0"
-        width={WIDTH}
-        height={HEIGHT}
-        fill="#2B2D42"
-        rx="4"
-      />
-      
-      {/* Track background */}
-      <rect
-        x={CORNER_SIZE}
-        y={HEIGHT - TRACK_WIDTH}
-        width={WIDTH - 2 * CORNER_SIZE}
-        height={TRACK_WIDTH}
-        fill="#F8F4E8"
-      />
-      <rect
-        x={WIDTH - TRACK_WIDTH}
-        y={CORNER_SIZE}
-        width={TRACK_WIDTH}
-        height={HEIGHT - 2 * CORNER_SIZE}
-        fill="#F8F4E8"
-      />
-      <rect
-        x={CORNER_SIZE}
-        y="0"
-        width={WIDTH - 2 * CORNER_SIZE}
-        height={TRACK_WIDTH}
-        fill="#F8F4E8"
-      />
-      <rect
-        x="0"
-        y={CORNER_SIZE}
-        width={TRACK_WIDTH}
-        height={HEIGHT - 2 * CORNER_SIZE}
-        fill="#F8F4E8"
-      />
-      
-      {/* Render special spaces first (under properties) */}
+      <rect x="0" y="0" width={WIDTH} height={HEIGHT} fill="#16172a" rx="4" />
+
+      {/* Track backgrounds */}
+      <rect x={CORNER_SIZE} y={HEIGHT - TRACK_WIDTH} width={WIDTH - 2 * CORNER_SIZE} height={TRACK_WIDTH} fill="#1e2038" />
+      <rect x={WIDTH - TRACK_WIDTH} y={CORNER_SIZE} width={TRACK_WIDTH} height={HEIGHT - 2 * CORNER_SIZE} fill="#1e2038" />
+      <rect x={CORNER_SIZE} y="0" width={WIDTH - 2 * CORNER_SIZE} height={TRACK_WIDTH} fill="#1e2038" />
+      <rect x="0" y={CORNER_SIZE} width={TRACK_WIDTH} height={HEIGHT - 2 * CORNER_SIZE} fill="#1e2038" />
+
       {BOARD_SPACES.filter(s => s.type === 'chance' || s.type === 'communityChest' || s.type === 'tax').map(renderSpecialSpace)}
-      
-      {/* Render property spaces */}
       {BOARD_SPACES.filter(s => s.type === 'property' || s.type === 'railroad' || s.type === 'utility').map(renderPropertySpace)}
-      
-      {/* Render corners */}
       {[0, 10, 20, 30].map(renderCorner)}
-      
+
       {/* Center area */}
-      <rect
-        x={CORNER_SIZE}
-        y={CORNER_SIZE}
-        width={WIDTH - 2 * CORNER_SIZE}
-        height={HEIGHT - 2 * CORNER_SIZE}
-        fill="#2D6A4F"
-        rx="4"
-      />
-      
-      {/* Center dice area */}
-      <g transform={`translate(${WIDTH / 2}, ${HEIGHT / 2})`}>
-        <rect
-          x="-80"
-          y="-60"
-          width="160"
-          height="120"
-          fill="#F8F4E8"
-          rx="8"
-          stroke="#2B2D42"
-          strokeWidth="2"
-        />
-        <text
-          y="-25"
-          textAnchor="middle"
-          fontSize="14"
-          fill="#2B2D42"
-          fontFamily="Nunito, sans-serif"
-          fontWeight="700"
-        >
-          PoorDown
-        </text>
-        <text
-          y="-5"
-          textAnchor="middle"
-          fontSize="24"
-          fill="#E63946"
-          fontFamily="Nunito, sans-serif"
-          fontWeight="800"
-        >
-          🎲
-        </text>
-        <text
-          y="25"
-          textAnchor="middle"
-          fontSize="10"
-          fill="#8D99AE"
-          fontFamily="Inter, sans-serif"
-        >
-          Monopoly Clone
-        </text>
-      </g>
-      
-      {/* Render player tokens */}
+      <rect x={CORNER_SIZE} y={CORNER_SIZE} width={WIDTH - 2 * CORNER_SIZE} height={HEIGHT - 2 * CORNER_SIZE} fill="#1a1c35" rx="4" />
+      <text x={WIDTH / 2} y={HEIGHT / 2 - 18} textAnchor="middle"
+        fontSize="32" fill="#e2e2f0" fontFamily="Inter, sans-serif" fontWeight="800">
+        Poor<tspan fill="#ef4444">Down</tspan>
+      </text>
+      <text x={WIDTH / 2} y={HEIGHT / 2 + 14} textAnchor="middle"
+        fontSize="13" fill="#3a3d5c" fontFamily="Inter, sans-serif">
+        MONOPOLY CLONE
+      </text>
+
       {renderPlayers()}
     </svg>
   );
