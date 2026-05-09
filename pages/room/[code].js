@@ -9,7 +9,10 @@ import Dice from '../../components/dice/Dice';
 import PlayerHUD from '../../components/hud/PlayerHUD';
 import ActionBar from '../../components/hud/ActionBar';
 import PropertyModal from '../../components/modals/PropertyModal';
-import { BOARD_SPACES, PLAYER_COLORS } from '../../lib/game/board';
+import TradeModal from '../../components/modals/TradeModal';
+import PropertyManagementModal from '../../components/modals/PropertyManagementModal';
+import GameConfigModal from '../../components/modals/GameConfigModal';
+import { BOARD_SPACES, PLAYER_COLORS, GROUP_COLORS } from '../../lib/game/board';
 import {
   addPlayer,
   getPlayerById,
@@ -29,6 +32,13 @@ import {
   escapeJail,
   eliminatePlayer,
   setCurrentPlayer,
+  proposeTrade,
+  acceptTrade,
+  rejectTrade,
+  setPropertyHouses,
+  mortgageProperty,
+  unmortgageProperty,
+  canBuildHouse,
 } from '../../lib/game/state';
 import { initCardDecks, drawCard, applyCardEffect } from '../../lib/game/cards';
 
@@ -51,6 +61,9 @@ export default function GameRoom() {
   const [hasRolled, setHasRolled] = useState(false);
   const [lastCard, setLastCard] = useState(null);
   const [auctionState, setAuctionState] = useState(null);
+  const [tradeModal, setTradeModal] = useState({ isOpen: false, mode: 'propose', tradeOffer: null });
+  const [propertyMgmtModal, setPropertyMgmtModal] = useState(false);
+  const [configModal, setConfigModal] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -477,11 +490,36 @@ export default function GameRoom() {
     }
   }, [ydoc]);
 
+  const handleProposeTrade = useCallback((tradeOffer) => {
+    if (!ydoc) return;
+    proposeTrade(ydoc, tradeOffer);
+    setTradeModal({ isOpen: false, mode: 'propose', tradeOffer: null });
+  }, [ydoc]);
+
+  const handleAcceptTrade = useCallback((tradeId) => {
+    if (!ydoc) return;
+    acceptTrade(ydoc, tradeId);
+    setTradeModal({ isOpen: false, mode: 'propose', tradeOffer: null });
+  }, [ydoc]);
+
+  const handleRejectTrade = useCallback((tradeId) => {
+    if (!ydoc) return;
+    rejectTrade(ydoc, tradeId);
+    setTradeModal({ isOpen: false, mode: 'propose', tradeOffer: null });
+  }, [ydoc]);
+
+  const handleSaveConfig = useCallback((config) => {
+    if (!ydoc || !isHost) return;
+    const yConfig = ydoc.getMap('config');
+    Object.entries(config).forEach(([k, v]) => yConfig.set(k, v));
+  }, [ydoc, isHost]);
+
   const isMyTurn = players[currentPlayerIndex]?.uuid === myPlayerId;
   const currentPlayerObj = players[currentPlayerIndex];
   const currentPlayerInJail = currentPlayerObj?.inJail && currentPlayerObj?.uuid === myPlayerId;
   const canRoll = isMyTurn && !hasRolled && phase === 'rolling' && !propertyModal.isOpen;
   const canEndTurn = isMyTurn && hasRolled && phase === 'rolling' && !propertyModal.isOpen;
+  const myPlayer = players.find(p => p.uuid === myPlayerId) ?? null;
 
   if (!code || !myIdentity) {
     return (
@@ -813,6 +851,33 @@ export default function GameRoom() {
                 </p>
               )}
             </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+              {phase !== 'setup' && phase !== 'connecting' && isMyTurn && myPlayer && !myPlayer.isEliminated && (
+                <button
+                  onClick={() => setTradeModal({ isOpen: true, mode: 'propose', tradeOffer: null })}
+                  style={{ padding: '10px', backgroundColor: '#1D3557', color: 'white', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '600', fontFamily: 'Inter, sans-serif', cursor: 'pointer' }}
+                >
+                  Trade
+                </button>
+              )}
+              {myPlayer && myPlayer.properties.length > 0 && (
+                <button
+                  onClick={() => setPropertyMgmtModal(true)}
+                  style={{ padding: '10px', backgroundColor: '#2D6A4F', color: 'white', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '600', fontFamily: 'Inter, sans-serif', cursor: 'pointer' }}
+                >
+                  Manage Properties
+                </button>
+              )}
+              {(isHost || phase === 'setup') && (
+                <button
+                  onClick={() => setConfigModal(true)}
+                  style={{ padding: '10px', backgroundColor: '#8D99AE', color: 'white', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '600', fontFamily: 'Inter, sans-serif', cursor: 'pointer' }}
+                >
+                  ⚙ Game Settings
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -947,6 +1012,42 @@ export default function GameRoom() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        <TradeModal
+          isOpen={tradeModal.isOpen}
+          onClose={() => setTradeModal({ isOpen: false, mode: 'propose', tradeOffer: null })}
+          mode={tradeModal.mode}
+          myPlayer={myPlayer}
+          otherPlayer={tradeModal.mode === 'review' ? players.find(p => p.uuid === tradeModal.tradeOffer?.fromUuid) : null}
+          ydoc={ydoc}
+          onPropose={handleProposeTrade}
+          onAccept={handleAcceptTrade}
+          onReject={handleRejectTrade}
+          tradeOffer={tradeModal.tradeOffer}
+          allPlayers={players}
+          boardSpaces={BOARD_SPACES}
+        />
+
+        <PropertyManagementModal
+          isOpen={propertyMgmtModal}
+          onClose={() => setPropertyMgmtModal(false)}
+          playerUuid={myPlayerId}
+          ydoc={ydoc}
+          boardSpaces={BOARD_SPACES}
+          groupColors={GROUP_COLORS}
+          onBuildHouse={(propId) => { if (ydoc && myPlayerId && canBuildHouse(ydoc, myPlayerId, propId)) { const s = getPropertyState(ydoc, propId); setPropertyHouses(ydoc, propId, s.houses + 1); updatePlayerCash(ydoc, myPlayerId, -(BOARD_SPACES[propId]?.housePrice ?? 0)); } }}
+          onSellHouse={(propId) => { if (ydoc && myPlayerId) { const s = getPropertyState(ydoc, propId); if (s.houses > 0) { setPropertyHouses(ydoc, propId, s.houses - 1); updatePlayerCash(ydoc, myPlayerId, Math.floor((BOARD_SPACES[propId]?.housePrice ?? 0) / 2)); } } }}
+          onMortgage={(propId) => { if (ydoc && myPlayerId) mortgageProperty(ydoc, myPlayerId, propId); }}
+          onUnmortgage={(propId) => { if (ydoc && myPlayerId) unmortgageProperty(ydoc, myPlayerId, propId); }}
+        />
+
+        <GameConfigModal
+          isOpen={configModal}
+          onClose={() => setConfigModal(false)}
+          onSave={handleSaveConfig}
+          isHost={isHost}
+          currentConfig={ydoc ? Object.fromEntries(ydoc.getMap('config').entries()) : {}}
+        />
 
         <AnimatePresence>
           {phase === 'gameOver' && gameWinner && (
