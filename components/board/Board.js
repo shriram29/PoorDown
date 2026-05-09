@@ -464,7 +464,7 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
           fontFamily="Playfair Display, serif"
           fontWeight="700"
         >
-          RichDown
+          PoorDown
         </text>
         <text
           y="-5"

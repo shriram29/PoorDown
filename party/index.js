@@ -1,4 +1,4 @@
-// PartyKit server for RichDown
+// PartyKit server for PoorDown
 // Handles real-time multiplayer state sync via Y.js
 //
 // Each room = one Y.js document

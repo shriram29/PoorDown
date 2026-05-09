@@ -17,8 +17,8 @@ export default function JoinRoom() {
     setError('');
     
     // Store player name in localStorage
-    localStorage.setItem('richdown_playerName', name.trim());
-    localStorage.setItem('richdown_isHost', 'false');
+    localStorage.setItem('poordown_playerName', name.trim());
+    localStorage.setItem('poordown_isHost', 'false');
     
     // Navigate to room
     router.push(`/room/${code.toUpperCase().trim()}?name=${encodeURIComponent(name.trim())}&host=false`);

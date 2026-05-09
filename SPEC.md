@@ -1,7 +1,7 @@
-# RichDown — Technical Specification
+# PoorDown — Technical Specification
 
 ## Overview
-RichDown is a real-time multiplayer Monopoly clone. No database — room state lives in PartyKit server memory. Players join via 6-char room codes. All game logic runs client-side + Y.js CRDT sync via PartyKit.
+PoorDown is a real-time multiplayer Monopoly clone. No database — room state lives in PartyKit server memory. Players join via 6-char room codes. All game logic runs client-side + Y.js CRDT sync via PartyKit.
 
 ---
 
@@ -173,7 +173,7 @@ Bot behavior: `setTimeout`-based with configurable delay (3-10s), injects moves 
 ## 4. File Structure
 
 ```
-richdown/
+poordown/
 ├── party/
 │   └── index.ts              # PartyKit server (Y.js room handler)
 ├── pages/
@@ -360,7 +360,7 @@ richdown/
 ### `partykit.json`
 ```json
 {
-  "name": "richdown",
+  "name": "poordown",
   "main": "party/index.ts",
   "compatibilityDate": "2023-11-01"
 }
@@ -373,7 +373,7 @@ npx partykit deploy
 
 ### Vercel Integration
 - PartyKit can be linked to Vercel project
-- PartyKit URL: `https://richdown.[user].partykit.dev`
+- PartyKit URL: `https://poordown.[user].partykit.dev`
 - Configured in `next.config.js` rewrites or env var
 
 ---
@@ -381,8 +381,8 @@ npx partykit deploy
 ## 10. Environment Variables
 
 ```env
-NEXT_PUBLIC_PARTYKIT_HOST=richdown.[user].partykit.dev
-NEXT_PUBLIC_APP_URL=https://richdown.vercel.app
+NEXT_PUBLIC_PARTYKIT_HOST=poordown.[user].partykit.dev
+NEXT_PUBLIC_APP_URL=https://poordown.vercel.app
 ```
 
 ---

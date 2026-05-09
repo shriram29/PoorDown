@@ -18,8 +18,8 @@ export default function CreateRoom() {
     const roomCode = nanoid(6).toUpperCase();
     
     // Store player name in localStorage
-    localStorage.setItem('richdown_playerName', name.trim());
-    localStorage.setItem('richdown_isHost', 'true');
+    localStorage.setItem('poordown_playerName', name.trim());
+    localStorage.setItem('poordown_isHost', 'true');
     
     // Navigate to room
     router.push(`/room/${roomCode}?name=${encodeURIComponent(name.trim())}&host=true`);

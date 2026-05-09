@@ -8,7 +8,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>RichDown - Online Monopoly Clone</title>
+        <title>PoorDown - Online Monopoly Clone</title>
         <meta name="description" content="The board game you know, anywhere you are. Play multiplayer Monopoly online with friends." />
         <link rel="icon" href="/favicon.ico" />
       </Head>

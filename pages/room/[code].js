@@ -64,7 +64,7 @@ export default function GameRoom() {
     
     // Initialize Y.js
     const doc = new Y.Doc();
-    const roomId = `richdown-${code}`;
+    const roomId = `poordown-${code}`;
     
     // For MVP, we'll use a simple in-memory approach
     // In production, this would connect to PartyKit
@@ -362,7 +362,7 @@ export default function GameRoom() {
   return (
     <>
       <Head>
-        <title>Room {code} - RichDown</title>
+        <title>Room {code} - PoorDown</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 

@@ -1,4 +1,4 @@
-# RichDown 🏠
+# PoorDown 🏠
 
 > The board game you know, anywhere you are.
 
@@ -38,8 +38,8 @@ An open-source multiplayer Monopoly clone built with Next.js, PartyKit, and Y.js
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/richdown.git
-cd richdown
+git clone https://github.com/YOUR_USERNAME/poordown.git
+cd poordown
 
 # Install dependencies
 npm install
@@ -66,7 +66,7 @@ echo "NEXT_PUBLIC_PARTYKIT_HOST=your-name.partykit.dev" > .env.local
 ## Project Structure
 
 ```
-richdown/
+poordown/
 ├── pages/
 │   ├── index.js          # Lobby: Create/Join room
 │   └── room/[code].js    # Game room

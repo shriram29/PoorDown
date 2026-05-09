@@ -1,8 +1,8 @@
-# RichDown — PRD
+# PoorDown — PRD
 
 ## 1. Concept & Vision
 
-**RichDown** is an open-source, browser-based multiplayer Monopoly clone inspired by Richup.io. It runs entirely client-side for game logic, uses P2P or lightweight serverless infrastructure for real-time sync, and requires no database — rooms are created ad-hoc with shareable codes. The personality is nostalgic but modern: classic board game feel with crisp SVG visuals and smooth animations. The goal is to make a faithful Monopoly experience that anyone can join in seconds, fork, and deploy.
+**PoorDown** is an open-source, browser-based multiplayer Monopoly clone inspired by Richup.io. It runs entirely client-side for game logic, uses P2P or lightweight serverless infrastructure for real-time sync, and requires no database — rooms are created ad-hoc with shareable codes. The personality is nostalgic but modern: classic board game feel with crisp SVG visuals and smooth animations. The goal is to make a faithful Monopoly experience that anyone can join in seconds, fork, and deploy.
 
 **Tagline:** *"The board game you know, anywhere you are."*
 
@@ -296,7 +296,7 @@ Standard Monopoly board (40 spaces) in clockwise spiral:
 
 ### File Structure
 ```
-richdown/
+poordown/
 ├── pages/
 │   ├── index.js          # Landing / lobby
 │   ├── room/[code].js    # Game room

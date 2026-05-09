@@ -51,7 +51,7 @@ Workarounds:
 
 ---
 
-## Recommended Architecture for RichDown
+## Recommended Architecture for PoorDown
 
 Given **Next.js + Vercel** requirement with database-less room concept:
 
