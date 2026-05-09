@@ -4,10 +4,12 @@ import { motion } from 'framer-motion';
 import CreateRoom from '../components/lobby/CreateRoom';
 import JoinRoom from '../components/lobby/JoinRoom';
 import IdentityModal from '../components/ui/IdentityModal';
+import HowToPlayModal from '../components/ui/HowToPlayModal';
 
 export default function Home() {
   const [identity, setIdentity] = useState(null);
   const [showIdentityModal, setShowIdentityModal] = useState(false);
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -37,6 +39,7 @@ export default function Home() {
       </Head>
 
       <IdentityModal isOpen={showIdentityModal} onComplete={handleIdentityComplete} />
+      <HowToPlayModal isOpen={showHowToPlay} onClose={() => setShowHowToPlay(false)} />
 
       <div
         style={{
@@ -93,6 +96,13 @@ export default function Home() {
                 boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
               }}
             >
+              {identity.token && (
+                <span style={{ fontSize: '16px', lineHeight: 1 }}>
+                  {(['hat','car','dog','iron','ship','boot','thimble','wheelbarrow'].includes(identity.token)
+                    ? { hat: '🎩', car: '🚗', dog: '🐶', iron: '🧲', ship: '🚢', boot: '👟', thimble: '🪡', wheelbarrow: '🛒' }[identity.token]
+                    : '🎩')}
+                </span>
+              )}
               <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#8D99AE' }}>Playing as</span>
               <span
                 style={{
@@ -243,23 +253,41 @@ export default function Home() {
           >
             📖 How to Play
           </h3>
-          <ol
+          <p
             style={{
               fontFamily: 'Inter, sans-serif',
               fontSize: '14px',
-              color: '#2B2D42',
-              lineHeight: '1.8',
-              paddingLeft: '20px',
-              margin: 0,
+              color: '#8D99AE',
+              margin: '0 0 20px 0',
+              textAlign: 'center',
+              lineHeight: '1.6',
             }}
           >
-            <li>Create a room or join one with a 6-character code</li>
-            <li>Share the code with friends so they can join</li>
-            <li>Start the game when everyone is ready (2-6 players)</li>
-            <li>Roll dice and move around the board</li>
-            <li>Buy properties, collect rent, build houses!</li>
-            <li>Last player not bankrupt wins!</li>
-          </ol>
+            Roll dice, buy properties, build houses, and bankrupt your friends. Classic Monopoly rules.
+          </p>
+          <div style={{ textAlign: 'center' }}>
+            <button
+              onClick={() => setShowHowToPlay(true)}
+              style={{
+                padding: '12px 28px',
+                backgroundColor: '#1D3557',
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                fontSize: '15px',
+                fontWeight: '600',
+                fontFamily: 'Inter, sans-serif',
+                cursor: 'pointer',
+                transition: 'background-color 0.2s, transform 0.1s',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#162840')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#1D3557')}
+              onMouseDown={(e) => (e.currentTarget.style.transform = 'scale(0.97)')}
+              onMouseUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+            >
+              Read Full Rules
+            </button>
+          </div>
         </motion.div>
 
         {/* Footer */}

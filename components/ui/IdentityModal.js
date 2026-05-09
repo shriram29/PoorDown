@@ -2,8 +2,20 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { nanoid } from 'nanoid';
 
+const TOKENS = [
+  { id: 'hat',         label: 'Top Hat',      emoji: '🎩' },
+  { id: 'car',         label: 'Race Car',     emoji: '🚗' },
+  { id: 'dog',         label: 'Scottie Dog',  emoji: '🐶' },
+  { id: 'iron',        label: 'Iron',         emoji: '🧲' },
+  { id: 'ship',        label: 'Battleship',   emoji: '🚢' },
+  { id: 'boot',        label: 'Boot',         emoji: '👟' },
+  { id: 'thimble',     label: 'Thimble',      emoji: '🪡' },
+  { id: 'wheelbarrow', label: 'Wheelbarrow',  emoji: '🛒' },
+];
+
 export default function IdentityModal({ isOpen, onComplete }) {
   const [name, setName] = useState('');
+  const [token, setToken] = useState('hat');
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -21,7 +33,7 @@ export default function IdentityModal({ isOpen, onComplete }) {
     const trimmed = name.trim();
     if (!trimmed) return;
 
-    const identity = { uuid: nanoid(21), name: trimmed };
+    const identity = { uuid: nanoid(21), name: trimmed, token };
     if (typeof window !== 'undefined') {
       localStorage.setItem('poordown_identity', JSON.stringify(identity));
     }
@@ -29,6 +41,7 @@ export default function IdentityModal({ isOpen, onComplete }) {
   };
 
   const isValid = name.trim().length > 0;
+  const selectedToken = TOKENS.find((t) => t.id === token) || TOKENS[0];
 
   return (
     <AnimatePresence>
@@ -61,14 +74,14 @@ export default function IdentityModal({ isOpen, onComplete }) {
               borderRadius: '16px',
               padding: '40px',
               width: '100%',
-              maxWidth: '420px',
+              maxWidth: '460px',
               zIndex: 201,
               boxShadow: '0 24px 80px rgba(0,0,0,0.35)',
             }}
             onKeyDown={handleKeyDown}
           >
-            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-              <div style={{ fontSize: '52px', marginBottom: '16px' }}>🎩</div>
+            <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+              <div style={{ fontSize: '52px', marginBottom: '16px' }}>{selectedToken.emoji}</div>
               <h1
                 style={{
                   fontFamily: 'Playfair Display, serif',
@@ -89,11 +102,11 @@ export default function IdentityModal({ isOpen, onComplete }) {
                   margin: 0,
                 }}
               >
-                Pick a name for this and future sessions.
+                Pick a name and token for this and future sessions.
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <input
                 ref={inputRef}
                 type="text"
@@ -119,6 +132,74 @@ export default function IdentityModal({ isOpen, onComplete }) {
                 onFocus={(e) => (e.target.style.borderColor = '#E63946')}
                 onBlur={(e) => (e.target.style.borderColor = '#E8E4D8')}
               />
+
+              <div>
+                <p
+                  style={{
+                    fontFamily: 'Inter, sans-serif',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    color: '#2B2D42',
+                    margin: '0 0 10px 0',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  Choose your token
+                </p>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(4, 1fr)',
+                    gap: '8px',
+                  }}
+                >
+                  {TOKENS.map((t) => {
+                    const selected = t.id === token;
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => setToken(t.id)}
+                        title={t.label}
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: '10px 4px 8px',
+                          borderRadius: '10px',
+                          border: selected ? '2px solid #2D6A4F' : '2px solid #E8E4D8',
+                          backgroundColor: selected ? '#EDF7F2' : '#FAFAF8',
+                          cursor: 'pointer',
+                          transition: 'border-color 0.15s, background-color 0.15s',
+                          outline: 'none',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!selected) e.currentTarget.style.borderColor = '#8D99AE';
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!selected) e.currentTarget.style.borderColor = '#E8E4D8';
+                        }}
+                      >
+                        <span style={{ fontSize: '24px', lineHeight: 1 }}>{t.emoji}</span>
+                        <span
+                          style={{
+                            fontFamily: 'Inter, sans-serif',
+                            fontSize: '10px',
+                            color: selected ? '#2D6A4F' : '#8D99AE',
+                            fontWeight: selected ? '700' : '400',
+                            textAlign: 'center',
+                            lineHeight: 1.2,
+                          }}
+                        >
+                          {t.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
               <button
                 type="submit"
