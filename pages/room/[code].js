@@ -1,48 +1,43 @@
-// Game Room page - /room/[code]
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as Y from 'yjs';
-import { nanoid } from 'nanoid';
+import { WebrtcProvider } from 'y-webrtc';
 import Board from '../../components/board/Board';
 import Dice from '../../components/dice/Dice';
 import PlayerHUD from '../../components/hud/PlayerHUD';
 import ActionBar from '../../components/hud/ActionBar';
 import PropertyModal from '../../components/modals/PropertyModal';
-import { BOARD_SPACES, PLAYER_COLORS, DEFAULT_CONFIG } from '../../lib/game/board';
+import { BOARD_SPACES, PLAYER_COLORS } from '../../lib/game/board';
 import {
-  initGame,
   addPlayer,
-  getPlayers,
   getPlayerById,
-  rollDice as rollDiceState,
+  rollDice,
   movePlayer,
   buyProperty,
   endTurn,
-  setPhase,
-  setCurrentPlayer,
-  getSpace,
   getPropertyState,
   calculateRent,
   addPropertyToPlayer,
+  removePropertyFromPlayer,
   updatePlayerCash,
   setPropertyOwner,
   getActivePlayers,
   checkWin,
   sendToJail,
   escapeJail,
-  ownsColorSet,
-  canBuildHouse,
-  setPropertyHouses,
+  eliminatePlayer,
+  setCurrentPlayer,
 } from '../../lib/game/state';
+import { initCardDecks, drawCard, applyCardEffect } from '../../lib/game/cards';
 
 export default function GameRoom() {
   const router = useRouter();
-  const { code, name, host } = router.query;
-  
+  const { code } = router.query;
+
+  const [myIdentity, setMyIdentity] = useState(null);
   const [ydoc, setYdoc] = useState(null);
-  const [provider, setProvider] = useState(null);
   const [players, setPlayers] = useState([]);
   const [phase, setPhaseState] = useState('connecting');
   const [dice, setDice] = useState([0, 0]);
@@ -51,310 +46,469 @@ export default function GameRoom() {
   const [myPlayerId, setMyPlayerId] = useState(null);
   const [isHost, setIsHostState] = useState(false);
   const [propertyModal, setPropertyModal] = useState({ isOpen: false, propertyId: null });
-  const [landingSpace, setLandingSpace] = useState(null);
   const [gameWinner, setGameWinner] = useState(null);
   const [doublesCount, setDoublesCount] = useState(0);
+  const [hasRolled, setHasRolled] = useState(false);
+  const [lastCard, setLastCard] = useState(null);
+  const [auctionState, setAuctionState] = useState(null);
 
-  // Initialize game
   useEffect(() => {
-    if (!code || !name) return;
+    if (typeof window === 'undefined') return;
+    const stored = localStorage.getItem('poordown_identity');
+    if (stored) {
+      try { setMyIdentity(JSON.parse(stored)); } catch {}
+    }
+  }, []);
 
-    const isHostPlayer = host === 'true';
-    const playerId = nanoid();
-    
-    // Initialize Y.js
+  useEffect(() => {
+    if (!code || !myIdentity) return;
+
     const doc = new Y.Doc();
     const roomId = `poordown-${code}`;
-    
-    // For MVP, we'll use a simple in-memory approach
-    // In production, this would connect to PartyKit
-    
-    // Set up shared types
-    const yPlayers = doc.getArray('players');
-    const yPhase = doc.getText('phase');
-    const yDice = doc.getArray('dice');
-    const yCurrentPlayer = doc.getNumber('currentPlayer');
-    const yDoublesCount = doc.getNumber('doublesCount');
-    
-    // Initialize phase if new room
-    if (yPhase.length === 0) {
-      yPhase.insert(0, 'setup');
-    }
-    
-    // Add player
-    const colorIndex = yPlayers.length % PLAYER_COLORS.length;
-    const player = {
-      id: playerId,
-      name: decodeURIComponent(name),
-      color: PLAYER_COLORS[colorIndex],
-      cash: DEFAULT_CONFIG.startingCash,
-      position: 0,
-      properties: [],
-      inJail: false,
-      jailTurns: 0,
-      getOutOfJailFree: false,
-      isBot: false,
-      isEliminated: false,
-    };
-    
-    yPlayers.push([player]);
-    
-    setYdoc(doc);
-    setMyPlayerId(playerId);
-    setIsHostState(isHostPlayer);
-    
-    // Listen for changes
-    const updatePlayers = () => {
-      setPlayers([...yPlayers.toArray()]);
-    };
-    
-    const updatePhase = () => {
-      setPhaseState(yPhase.toString() || 'setup');
-    };
-    
-    const updateDice = () => {
-      setDice([...yDice.toArray()]);
-    };
-    
-    const updateCurrentPlayer = () => {
-      setCurrentPlayerIndex(doc.getNumber('currentPlayer') || 0);
-    };
-    
-    const updateDoubles = () => {
-      setDoublesCount(doc.getNumber('doublesCount') || 0);
-    };
-    
-    yPlayers.observe(updatePlayers);
-    yPhase.observe(updatePhase);
-    yDice.observe(updateDice);
-    
-    // Update current player observable
-    const n = doc.getNumber('currentPlayer');
-    if (n._observers) n._observers.push(updateCurrentPlayer);
-    
-    updatePlayers();
-    updatePhase();
-    
-    // For MVP, simulate a WebSocket connection with local state
-    // In production, this would use PartyKit
-    
-    return () => {
-      yPlayers.unobserve(updatePlayers);
-      yPhase.unobserve(updatePhase);
-    };
-  }, [code, name, host]);
 
-  // Handle roll dice
-  const handleRoll = useCallback(() => {
-    if (!ydoc || isRolling) return;
-    
-    setIsRolling(true);
-    
-    setTimeout(() => {
-      const die1 = Math.floor(Math.random() * 6) + 1;
-      const die2 = Math.floor(Math.random() * 6) + 1;
-      const isDoubles = die1 === die2;
-      
-      const yDice = ydoc.getArray('dice');
-      const yDoublesCount = ydoc.getNumber('doublesCount') || 0;
-      const yCurrentPlayer = ydoc.getNumber('currentPlayer') || 0;
-      
-      // Clear and set new dice
-      while (yDice.length > 0) yDice.delete(0);
-      yDice.push([die1, die2]);
-      
-      // Get current player
-      const currentPlayers = ydoc.getArray('players').toArray();
-      const currentPlayer = currentPlayers[yCurrentPlayer];
-      
-      if (!currentPlayer) {
-        setIsRolling(false);
-        return;
-      }
-      
-      // Check for doubles and jail
-      if (isDoubles && doublesCount >= 2) {
-        // Third doubles - go to jail
-        sendToJail(ydoc, currentPlayer.id);
-        setDoublesCount(0);
-        setIsRolling(false);
-        setPhaseState('rolling');
-        return;
-      }
-      
-      let newDoublesCount = isDoubles ? doublesCount + 1 : 0;
-      
-      if (isDoubles) {
-        setDoublesCount(newDoublesCount);
-      } else {
-        setDoublesCount(0);
-      }
-      
-      // Move player
-      const newPosition = (currentPlayer.position + die1 + die2) % 40;
-      
-      // Handle passing Go
-      let cashBonus = 0;
-      if (newPosition < currentPlayer.position && !currentPlayer.inJail) {
-        cashBonus = 200;
-      }
-      
-      // Update position
-      const yPlayers = ydoc.getArray('players');
-      const playersArr = yPlayers.toArray();
-      const idx = playersArr.findIndex(p => p.id === currentPlayer.id);
-      
-      if (idx !== -1) {
-        const updatedPlayer = { 
-          ...playersArr[idx], 
-          position: newPosition,
-          cash: playersArr[idx].cash + cashBonus 
-        };
-        yPlayers.delete(idx, 1);
-        yPlayers.insert(idx, [updatedPlayer]);
-      }
-      
-      // Update state
-      setDice([die1, die2]);
-      setPhaseState('moving');
-      setIsRolling(false);
-      
-      // Show property modal after movement
-      setTimeout(() => {
-        const space = BOARD_SPACES[newPosition];
-        if (space.type === 'property' || space.type === 'railroad' || space.type === 'utility') {
-          const propertyState = getPropertyState(ydoc, newPosition);
-          if (!propertyState.owner) {
-            setPropertyModal({ isOpen: true, propertyId: newPosition });
-          } else {
-            // Landed on owned property - pay rent
-            const owner = getPlayerById(ydoc, propertyState.owner);
-            if (owner && owner.id !== currentPlayer.id) {
-              const rent = calculateRent(newPosition, currentPlayer.id, ydoc);
-              if (rent > 0) {
-                // Deduct rent
-                const playerIdx = playersArr.findIndex(p => p.id === currentPlayer.id);
-                const ownerIdx = playersArr.findIndex(p => p.id === owner.id);
-                
-                if (playerIdx !== -1 && ownerIdx !== -1) {
-                  const updatedPlayer2 = { ...playersArr[playerIdx], cash: playersArr[playerIdx].cash - rent };
-                  const updatedOwner = { ...playersArr[ownerIdx], cash: playersArr[ownerIdx].cash + rent };
-                  
-                  yPlayers.delete(playerIdx, 1);
-                  yPlayers.insert(playerIdx, [updatedPlayer2]);
-                  yPlayers.delete(ownerIdx, 1);
-                  yPlayers.insert(ownerIdx, [updatedOwner]);
-                }
-              }
-            }
-            setPhaseState('rolling');
-          }
-        } else {
-          setPhaseState('rolling');
+    const webrtcProvider = new WebrtcProvider(roomId, doc, {
+      signaling: ['wss://signaling.yjs.dev'],
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun.cloudflare.com:3478' },
+      ],
+      maxConns: 8,
+    });
+
+    const awareness = webrtcProvider.awareness;
+
+    awareness.setLocalStateField('player', {
+      uuid: myIdentity.uuid,
+      name: myIdentity.name,
+    });
+
+    awareness.on('change', () => {
+      const meta = doc.getMap('meta');
+      const hostId = meta.get('hostId');
+      if (!hostId) return;
+
+      const connected = Array.from(awareness.getStates().values())
+        .map(s => s.player?.uuid)
+        .filter(Boolean);
+
+      if (!connected.includes(hostId)) {
+        const playersList = doc.getArray('players').toArray()
+          .filter(p => !p.isEliminated)
+          .sort((a, b) => a.joinedAt - b.joinedAt);
+
+        const newHost = playersList.find(p => connected.includes(p.uuid));
+        if (newHost && newHost.uuid === myIdentity.uuid) {
+          meta.set('hostId', myIdentity.uuid);
+          setIsHostState(true);
         }
-      }, 500);
-    }, 400);
-  }, [ydoc, isRolling, doublesCount, players]);
+      }
+    });
 
-  // Handle buy property
-  const handleBuy = useCallback(() => {
-    if (!ydoc || !propertyModal.propertyId) return;
-    
-    const yPlayers = ydoc.getArray('players');
-    const playersArr = yPlayers.toArray();
-    const currentPlayer = playersArr[currentPlayerIndex];
-    
-    if (!currentPlayer) return;
-    
-    const space = BOARD_SPACES[propertyModal.propertyId];
-    if (!space || !space.price) return;
-    
-    if (currentPlayer.cash < space.price) return;
-    
-    // Update player cash
-    const idx = playersArr.findIndex(p => p.id === currentPlayer.id);
-    if (idx !== -1) {
-      const updatedPlayer = { 
-        ...playersArr[idx], 
-        cash: playersArr[idx].cash - space.price,
-        properties: [...playersArr[idx].properties, propertyModal.propertyId]
+    setTimeout(() => {
+      const meta = doc.getMap('meta');
+      const yPlayers = doc.getArray('players');
+
+      if (!meta.get('hostId')) {
+        meta.set('hostId', myIdentity.uuid);
+        meta.set('phase', 'setup');
+        meta.set('currentPlayer', 0);
+        meta.set('doublesCount', 0);
+        meta.set('dice', [0, 0]);
+        meta.set('gameOver', false);
+        meta.set('winner', null);
+        meta.set('turnNumber', 0);
+        const yConfig = doc.getMap('config');
+        yConfig.set('startingCash', 1500);
+        yConfig.set('auctionEnabled', true);
+        yConfig.set('mortgageEnabled', true);
+        yConfig.set('freeParkingJackpot', 0);
+        yConfig.set('jailFine', 50);
+        yConfig.set('maxPlayers', 8);
+        setIsHostState(true);
+      } else {
+        setIsHostState(meta.get('hostId') === myIdentity.uuid);
+      }
+
+      const existingPlayer = yPlayers.toArray().find(p => p.uuid === myIdentity.uuid);
+      if (!existingPlayer) {
+        const colorIndex = yPlayers.length % PLAYER_COLORS.length;
+        addPlayer(doc, myIdentity.uuid, myIdentity.name, PLAYER_COLORS[colorIndex]);
+      }
+
+      const updateState = () => {
+        setPlayers(yPlayers.toArray());
+        const currentPhase = meta.get('phase') ?? 'setup';
+        setPhaseState(currentPhase);
+        setDice(meta.get('dice') ?? [0, 0]);
+        setCurrentPlayerIndex(meta.get('currentPlayer') ?? 0);
+        setDoublesCount(meta.get('doublesCount') ?? 0);
+        if (meta.get('gameOver')) setGameWinner(meta.get('winner'));
+        setIsHostState(meta.get('hostId') === myIdentity.uuid);
+
+        const auctionPropId = meta.get('auctionPropertyId');
+        if (auctionPropId != null) {
+          setAuctionState({
+            propertyId: auctionPropId,
+            currentBid: meta.get('auctionBid') ?? 0,
+            highBidder: meta.get('auctionHighBidder') ?? null,
+            passed: meta.get('auctionPassed') ?? [],
+          });
+        } else {
+          setAuctionState(null);
+        }
       };
-      yPlayers.delete(idx, 1);
-      yPlayers.insert(idx, [updatedPlayer]);
-    }
-    
-    // Update property ownership
-    const yBoard = ydoc.getMap('board');
-    yBoard.set(propertyModal.propertyId.toString(), { owner: currentPlayer.id, houses: 0, mortgaged: false });
-    
-    setPropertyModal({ isOpen: false, propertyId: null });
-    setPhaseState('rolling');
-  }, [ydoc, propertyModal, currentPlayerIndex]);
 
-  // Handle end turn
-  const handleEndTurn = useCallback(() => {
+      meta.observe(updateState);
+      yPlayers.observe(updateState);
+      updateState();
+
+      setYdoc(doc);
+      setMyPlayerId(myIdentity.uuid);
+
+      doc._cleanupObservers = () => {
+        meta.unobserve(updateState);
+        yPlayers.unobserve(updateState);
+      };
+    }, 500);
+
+    return () => {
+      if (doc._cleanupObservers) doc._cleanupObservers();
+      webrtcProvider.destroy();
+      doc.destroy();
+    };
+  }, [code, myIdentity]);
+
+  useEffect(() => {
+    if (!lastCard) return;
+    const t = setTimeout(() => setLastCard(null), 4000);
+    return () => clearTimeout(t);
+  }, [lastCard]);
+
+  const checkBankruptcy = useCallback((playerUuid, creditorUuid) => {
     if (!ydoc) return;
-    
-    const yCurrentPlayer = ydoc.getNumber('currentPlayer') || 0;
-    const yPlayers = ydoc.getArray('players');
-    const playersArr = yPlayers.toArray();
-    
-    // Find next active player
-    let next = (yCurrentPlayer + 1) % playersArr.length;
-    let attempts = 0;
-    while (playersArr[next]?.isEliminated && attempts < playersArr.length) {
-      next = (next + 1) % playersArr.length;
-      attempts++;
+    const player = getPlayerById(ydoc, playerUuid);
+    if (!player || player.cash >= 0) return;
+
+    player.properties.forEach(propId => {
+      setPropertyOwner(ydoc, propId, creditorUuid || null);
+      removePropertyFromPlayer(ydoc, playerUuid, propId);
+      if (creditorUuid) {
+        addPropertyToPlayer(ydoc, creditorUuid, propId);
+      }
+    });
+
+    eliminatePlayer(ydoc, playerUuid);
+
+    const winner = checkWin(ydoc);
+    if (winner) {
+      ydoc.getMap('meta').set('phase', 'gameOver');
+      setGameWinner(winner.name);
     }
-    
-    // Update current player
-    ydoc.getNumber('currentPlayer', next);
-    setCurrentPlayerIndex(next);
-    setDoublesCount(0);
-    
-    // Check win condition
-    const activePlayers = getActivePlayers(ydoc);
-    if (activePlayers.length === 1) {
-      setPhaseState('gameOver');
-      setGameWinner(activePlayers[0].name);
-      return;
-    }
-    
-    // Check if new player is in jail
-    const nextPlayer = playersArr[next];
-    if (nextPlayer?.inJail) {
-      // In jail - will need to roll or pay
-    }
-    
-    setPhaseState('rolling');
   }, [ydoc]);
 
-  // Handle start game
+  const resolveLanding = useCallback((playerUuid, position, isDoubles) => {
+    if (!ydoc) return;
+    const space = BOARD_SPACES[position];
+    const meta = ydoc.getMap('meta');
+
+    switch (space.type) {
+      case 'property':
+      case 'railroad':
+      case 'utility': {
+        const propState = getPropertyState(ydoc, position);
+        if (!propState.owner) {
+          setPropertyModal({ isOpen: true, propertyId: position });
+          meta.set('phase', 'buying');
+        } else if (propState.owner !== playerUuid) {
+          const rent = calculateRent(position, playerUuid, ydoc);
+          if (rent > 0) {
+            updatePlayerCash(ydoc, playerUuid, -rent);
+            updatePlayerCash(ydoc, propState.owner, rent);
+          }
+          setHasRolled(!isDoubles);
+          meta.set('phase', 'rolling');
+          checkBankruptcy(playerUuid, propState.owner);
+        } else {
+          setHasRolled(!isDoubles);
+          meta.set('phase', 'rolling');
+        }
+        break;
+      }
+
+      case 'tax': {
+        const taxAmount = space.amount || 0;
+        updatePlayerCash(ydoc, playerUuid, -taxAmount);
+        setHasRolled(!isDoubles);
+        meta.set('phase', 'rolling');
+        checkBankruptcy(playerUuid, null);
+        break;
+      }
+
+      case 'chance': {
+        const card = drawCard(ydoc, 'chance');
+        setLastCard(card);
+        const result = applyCardEffect(ydoc, card, playerUuid,
+          ydoc.getArray('players').toArray().map(p => p.uuid));
+        if (result.needsLandingResolution && result.newPosition !== null) {
+          setTimeout(() => resolveLanding(playerUuid, result.newPosition, false), 800);
+        } else {
+          setHasRolled(!isDoubles);
+          meta.set('phase', 'rolling');
+        }
+        break;
+      }
+
+      case 'communityChest': {
+        const card = drawCard(ydoc, 'communityChest');
+        setLastCard(card);
+        const result = applyCardEffect(ydoc, card, playerUuid,
+          ydoc.getArray('players').toArray().map(p => p.uuid));
+        if (result.needsLandingResolution && result.newPosition !== null) {
+          setTimeout(() => resolveLanding(playerUuid, result.newPosition, false), 800);
+        } else {
+          setHasRolled(!isDoubles);
+          meta.set('phase', 'rolling');
+        }
+        break;
+      }
+
+      case 'goToJail': {
+        sendToJail(ydoc, playerUuid);
+        setHasRolled(false);
+        meta.set('phase', 'rolling');
+        break;
+      }
+
+      case 'go':
+      case 'jail':
+      case 'freeParking':
+      default: {
+        setHasRolled(!isDoubles);
+        meta.set('phase', 'rolling');
+        break;
+      }
+    }
+
+    const winner = checkWin(ydoc);
+    if (winner) {
+      meta.set('phase', 'gameOver');
+      setGameWinner(winner.name);
+    }
+  }, [ydoc, checkBankruptcy]);
+
+  const handleRoll = useCallback(() => {
+    if (!ydoc || isRolling) return;
+
+    const meta = ydoc.getMap('meta');
+    const currentIdx = meta.get('currentPlayer') ?? 0;
+    const currentPlayer = ydoc.getArray('players').toArray()[currentIdx];
+
+    if (!currentPlayer || currentPlayer.uuid !== myPlayerId) return;
+
+    setIsRolling(true);
+
+    setTimeout(() => {
+      const { die1, die2, isDoubles, total, doublesCount: newDoublesCount } = rollDice(ydoc);
+      setDice([die1, die2]);
+
+      if (isDoubles && newDoublesCount >= 3) {
+        sendToJail(ydoc, currentPlayer.uuid);
+        meta.set('doublesCount', 0);
+        meta.set('phase', 'rolling');
+        setHasRolled(false);
+        setIsRolling(false);
+        return;
+      }
+
+      if (currentPlayer.inJail) {
+        if (isDoubles) {
+          escapeJail(ydoc, currentPlayer.uuid, 'doubles');
+        } else {
+          const yPlayers = ydoc.getArray('players');
+          const arr = yPlayers.toArray();
+          const idx = arr.findIndex(p => p.uuid === currentPlayer.uuid);
+          if (idx !== -1) {
+            const updatedPlayer = { ...arr[idx], jailTurns: arr[idx].jailTurns + 1 };
+            yPlayers.delete(idx, 1);
+            yPlayers.insert(idx, [updatedPlayer]);
+
+            if (updatedPlayer.jailTurns >= 3) {
+              escapeJail(ydoc, currentPlayer.uuid, 'pay');
+            } else {
+              meta.set('phase', 'rolling');
+              setHasRolled(true);
+              setIsRolling(false);
+              return;
+            }
+          }
+        }
+      }
+
+      const refreshedPlayer = ydoc.getArray('players').toArray().find(p => p.uuid === currentPlayer.uuid);
+      const newPosition = (refreshedPlayer.position + total) % 40;
+      movePlayer(ydoc, currentPlayer.uuid, newPosition);
+
+      meta.set('phase', 'moving');
+      setIsRolling(false);
+
+      setTimeout(() => {
+        resolveLanding(currentPlayer.uuid, newPosition, isDoubles);
+      }, 600);
+    }, 400);
+  }, [ydoc, isRolling, myPlayerId, resolveLanding]);
+
+  const handleBuy = useCallback(() => {
+    if (!ydoc || propertyModal.propertyId == null) return;
+    const result = buyProperty(ydoc, myPlayerId, propertyModal.propertyId);
+    if (result.success) {
+      const meta = ydoc.getMap('meta');
+      meta.set('auctionPropertyId', undefined);
+      setPropertyModal({ isOpen: false, propertyId: null });
+      setHasRolled(true);
+      meta.set('phase', 'rolling');
+    }
+  }, [ydoc, myPlayerId, propertyModal]);
+
+  const handleAuction = useCallback(() => {
+    if (!ydoc || propertyModal.propertyId == null) return;
+    const meta = ydoc.getMap('meta');
+    const propId = propertyModal.propertyId;
+    meta.set('auctionPropertyId', propId);
+    meta.set('auctionBid', 0);
+    meta.set('auctionHighBidder', null);
+    meta.set('auctionPassed', []);
+    setPropertyModal({ isOpen: false, propertyId: null });
+    setHasRolled(true);
+    meta.set('phase', 'auction');
+  }, [ydoc, propertyModal]);
+
+  const handleAuctionBid = useCallback((bidAmount) => {
+    if (!ydoc || !auctionState) return;
+    const meta = ydoc.getMap('meta');
+    const currentBid = meta.get('auctionBid') ?? 0;
+    if (bidAmount <= currentBid) return;
+    meta.set('auctionBid', bidAmount);
+    meta.set('auctionHighBidder', myPlayerId);
+  }, [ydoc, auctionState, myPlayerId]);
+
+  const handleAuctionPass = useCallback(() => {
+    if (!ydoc || !auctionState) return;
+    const meta = ydoc.getMap('meta');
+    const passed = [...(meta.get('auctionPassed') ?? [])];
+    if (!passed.includes(myPlayerId)) {
+      passed.push(myPlayerId);
+      meta.set('auctionPassed', passed);
+    }
+
+    const activePlayers = getActivePlayers(ydoc);
+    const allPassed = activePlayers.every(p =>
+      passed.includes(p.uuid) || p.uuid === meta.get('auctionHighBidder')
+    );
+
+    if (allPassed) {
+      const highBidder = meta.get('auctionHighBidder');
+      const bid = meta.get('auctionBid') ?? 0;
+      const propId = meta.get('auctionPropertyId');
+
+      if (highBidder && bid > 0 && propId != null) {
+        updatePlayerCash(ydoc, highBidder, -bid);
+        addPropertyToPlayer(ydoc, highBidder, propId);
+        setPropertyOwner(ydoc, propId, highBidder);
+      }
+
+      meta.set('auctionPropertyId', undefined);
+      meta.set('auctionBid', 0);
+      meta.set('auctionHighBidder', null);
+      meta.set('auctionPassed', []);
+      meta.set('phase', 'rolling');
+    }
+  }, [ydoc, auctionState, myPlayerId]);
+
+  const handleJailAction = useCallback((action) => {
+    if (!ydoc) return;
+    const meta = ydoc.getMap('meta');
+    const currentIdx = meta.get('currentPlayer') ?? 0;
+    const player = ydoc.getArray('players').toArray()[currentIdx];
+    if (!player || player.uuid !== myPlayerId) return;
+
+    if (action === 'pay') {
+      escapeJail(ydoc, player.uuid, 'pay');
+      meta.set('phase', 'rolling');
+      setHasRolled(false);
+    } else if (action === 'card') {
+      if (player.getOutOfJailFree > 0) {
+        const yPlayers = ydoc.getArray('players');
+        const arr = yPlayers.toArray();
+        const idx = arr.findIndex(p => p.uuid === player.uuid);
+        if (idx !== -1) {
+          const updated = { ...arr[idx], getOutOfJailFree: arr[idx].getOutOfJailFree - 1, inJail: false, jailTurns: 0 };
+          yPlayers.delete(idx, 1);
+          yPlayers.insert(idx, [updated]);
+        }
+        meta.set('phase', 'rolling');
+        setHasRolled(false);
+      }
+    }
+  }, [ydoc, myPlayerId]);
+
   const handleStartGame = useCallback(() => {
     if (!ydoc || !isHost) return;
-    
-    const yPhase = ydoc.getText('phase');
-    yPhase.delete(0, yPhase.length);
-    yPhase.insert(0, 'rolling');
-    
-    ydoc.getNumber('currentPlayer', 0);
-    ydoc.getNumber('doublesCount', 0);
-    
-    setPhaseState('rolling');
-    setCurrentPlayerIndex(0);
+    const meta = ydoc.getMap('meta');
+    initCardDecks(ydoc);
+    meta.set('phase', 'rolling');
+    meta.set('currentPlayer', 0);
+    meta.set('doublesCount', 0);
+    meta.set('turnNumber', 1);
+    setHasRolled(false);
   }, [ydoc, isHost]);
 
-  // Check if it's current player's turn
-  const isMyTurn = players[currentPlayerIndex]?.id === myPlayerId;
-  const currentSpace = players[currentPlayerIndex]?.position;
-  
-  // Get landing space info
-  const landingSpaceInfo = landingSpace ? BOARD_SPACES[landingSpace] : null;
+  const handleEndTurn = useCallback(() => {
+    if (!ydoc) return;
+    endTurn(ydoc);
+    const meta = ydoc.getMap('meta');
+    meta.set('phase', 'rolling');
+    setHasRolled(false);
 
-  if (!code || !name) {
+    const winner = checkWin(ydoc);
+    if (winner) {
+      meta.set('phase', 'gameOver');
+      setGameWinner(winner.name);
+    }
+  }, [ydoc]);
+
+  const isMyTurn = players[currentPlayerIndex]?.uuid === myPlayerId;
+  const currentPlayerObj = players[currentPlayerIndex];
+  const currentPlayerInJail = currentPlayerObj?.inJail && currentPlayerObj?.uuid === myPlayerId;
+  const canRoll = isMyTurn && !hasRolled && phase === 'rolling' && !propertyModal.isOpen;
+  const canEndTurn = isMyTurn && hasRolled && phase === 'rolling' && !propertyModal.isOpen;
+
+  if (!code || !myIdentity) {
     return (
       <div style={{ padding: '40px', textAlign: 'center', fontFamily: 'Inter, sans-serif' }}>
-        <p>Loading room...</p>
+        {!myIdentity ? (
+          <div>
+            <p style={{ color: '#2B2D42', marginBottom: '16px' }}>No identity found. Please set your name first.</p>
+            <button
+              onClick={() => router.push('/')}
+              style={{
+                padding: '12px 24px',
+                backgroundColor: '#E63946',
+                color: 'white',
+                border: 'none',
+                borderRadius: '12px',
+                fontSize: '14px',
+                fontWeight: '600',
+                fontFamily: 'Inter, sans-serif',
+                cursor: 'pointer',
+              }}
+            >
+              Go to Lobby
+            </button>
+          </div>
+        ) : (
+          <p>Loading room...</p>
+        )}
       </div>
     );
   }
@@ -366,14 +520,7 @@ export default function GameRoom() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <div
-        style={{
-          minHeight: '100vh',
-          backgroundColor: '#F8F4E8',
-          padding: '20px',
-        }}
-      >
-        {/* Header */}
+      <div style={{ minHeight: '100vh', backgroundColor: '#F8F4E8', padding: '20px' }}>
         <div
           style={{
             display: 'flex',
@@ -396,7 +543,7 @@ export default function GameRoom() {
             >
               Poor<span style={{ color: '#E63946' }}>Down</span>
             </h1>
-            
+
             <div
               style={{
                 display: 'flex',
@@ -433,12 +580,11 @@ export default function GameRoom() {
               </button>
             </div>
           </div>
-          
-          {/* Players */}
+
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {players.map((player, idx) => (
               <div
-                key={player.id}
+                key={player.uuid}
                 style={{
                   padding: '4px 12px',
                   backgroundColor: player.color,
@@ -456,7 +602,6 @@ export default function GameRoom() {
           </div>
         </div>
 
-        {/* Main game area */}
         <div
           style={{
             display: 'grid',
@@ -466,21 +611,15 @@ export default function GameRoom() {
             margin: '0 auto',
           }}
         >
-          {/* Left: Board + Controls */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {/* Board */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
             >
-              <Board
-                players={players}
-                currentPlayerIndex={currentPlayerIndex}
-              />
+              <Board players={players} currentPlayerIndex={currentPlayerIndex} />
             </motion.div>
-            
-            {/* Dice */}
+
             <div
               style={{
                 display: 'flex',
@@ -495,20 +634,119 @@ export default function GameRoom() {
                 dice={dice}
                 rolling={isRolling}
                 onRoll={handleRoll}
-                disabled={!isMyTurn || phase !== 'rolling'}
+                disabled={!canRoll}
                 isDoubles={dice[0] === dice[1] && dice[0] > 0}
               />
             </div>
-            
-            {/* Action Bar */}
+
+            {currentPlayerInJail && phase === 'rolling' && !hasRolled && (
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '12px',
+                  padding: '16px',
+                  backgroundColor: '#FFF3E0',
+                  borderRadius: '16px',
+                  border: '2px solid #F4A261',
+                  justifyContent: 'center',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#2B2D42', alignSelf: 'center' }}>
+                  You are in Jail:
+                </span>
+                <motion.button
+                  onClick={() => handleJailAction('pay')}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.98 }}
+                  style={{
+                    padding: '10px 20px',
+                    backgroundColor: '#E63946',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '12px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    fontFamily: 'Inter, sans-serif',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Pay $50
+                </motion.button>
+                {currentPlayerObj?.getOutOfJailFree > 0 && (
+                  <motion.button
+                    onClick={() => handleJailAction('card')}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.98 }}
+                    style={{
+                      padding: '10px 20px',
+                      backgroundColor: '#2D6A4F',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '12px',
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      fontFamily: 'Inter, sans-serif',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Use GOOJF Card
+                  </motion.button>
+                )}
+                <motion.button
+                  onClick={handleRoll}
+                  disabled={isRolling}
+                  whileHover={{ scale: isRolling ? 1 : 1.03 }}
+                  whileTap={{ scale: isRolling ? 1 : 0.98 }}
+                  style={{
+                    padding: '10px 20px',
+                    backgroundColor: isRolling ? '#8D99AE' : '#1D3557',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '12px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    fontFamily: 'Inter, sans-serif',
+                    cursor: isRolling ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  Roll for Doubles
+                </motion.button>
+              </div>
+            )}
+
+            <AnimatePresence>
+              {lastCard && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  style={{
+                    padding: '16px 24px',
+                    backgroundColor: lastCard.deck === 'chance' ? '#F4A261' : '#87CEEB',
+                    borderRadius: '12px',
+                    textAlign: 'center',
+                    fontFamily: 'Inter, sans-serif',
+                    fontSize: '14px',
+                    color: '#2B2D42',
+                    fontStyle: 'italic',
+                  }}
+                >
+                  <strong>{lastCard.deck === 'chance' ? 'Chance' : 'Community Chest'}</strong>
+                  <br />
+                  {lastCard.text}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <ActionBar
               phase={phase}
-              canRoll={isMyTurn && phase === 'rolling'}
-              canBuy={propertyModal.isOpen}
-              canEndTurn={isMyTurn && (phase === 'rolling' || phase === 'moving')}
+              canRoll={canRoll && !currentPlayerInJail}
+              canBuy={propertyModal.isOpen && isMyTurn}
+              canEndTurn={canEndTurn}
               onRoll={handleRoll}
               onBuy={handleBuy}
-              onAuction={() => setPropertyModal({ isOpen: false, propertyId: null })}
+              onAuction={handleAuction}
               onEndTurn={handleEndTurn}
               onStartGame={handleStartGame}
               isHost={isHost}
@@ -516,8 +754,7 @@ export default function GameRoom() {
               players={players}
             />
           </div>
-          
-          {/* Right: Player HUDs */}
+
           <div
             style={{
               display: 'flex',
@@ -539,18 +776,17 @@ export default function GameRoom() {
             >
               Players
             </h3>
-            
+
             {players.map((player, idx) => (
               <PlayerHUD
-                key={player.id}
+                key={player.uuid}
                 player={player}
                 index={idx}
                 isCurrentPlayer={idx === currentPlayerIndex}
-                isMyPlayer={player.id === myPlayerId}
+                isMyPlayer={player.uuid === myPlayerId}
               />
             ))}
-            
-            {/* Game info */}
+
             <div
               style={{
                 marginTop: 'auto',
@@ -565,28 +801,153 @@ export default function GameRoom() {
               <p style={{ margin: '0 0 8px 0', opacity: 0.7 }}>
                 Phase: <strong>{phase}</strong>
               </p>
-              <p style={{ margin: 0, opacity: 0.7 }}>
-                Room code: <strong style={{ letterSpacing: '2px' }}>{code}</strong>
+              <p style={{ margin: '0 0 4px 0', opacity: 0.7 }}>
+                Room: <strong style={{ letterSpacing: '2px' }}>{code}</strong>
               </p>
+              <p style={{ margin: 0, opacity: 0.7 }}>
+                Playing as: <strong>{myIdentity.name}</strong>
+              </p>
+              {isHost && (
+                <p style={{ margin: '4px 0 0 0', opacity: 0.7, color: '#F4A261' }}>
+                  You are the host
+                </p>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Property Purchase Modal */}
         <PropertyModal
           isOpen={propertyModal.isOpen}
           onClose={() => {
             setPropertyModal({ isOpen: false, propertyId: null });
-            setPhaseState('rolling');
+            setHasRolled(true);
+            if (ydoc) ydoc.getMap('meta').set('phase', 'rolling');
           }}
           propertyId={propertyModal.propertyId}
-          space={propertyModal.propertyId !== null ? BOARD_SPACES[propertyModal.propertyId] : null}
+          space={propertyModal.propertyId != null ? BOARD_SPACES[propertyModal.propertyId] : null}
           playerCash={players[currentPlayerIndex]?.cash || 0}
           onBuy={handleBuy}
-          onAuction={() => setPropertyModal({ isOpen: false, propertyId: null })}
+          onAuction={handleAuction}
         />
 
-        {/* Game Over Modal */}
+        <AnimatePresence>
+          {auctionState && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                backgroundColor: 'rgba(43, 45, 66, 0.85)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 150,
+              }}
+            >
+              <motion.div
+                initial={{ scale: 0.85, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                style={{
+                  backgroundColor: 'white',
+                  borderRadius: '20px',
+                  padding: '32px',
+                  maxWidth: '420px',
+                  width: '90%',
+                  textAlign: 'center',
+                }}
+              >
+                <h2
+                  style={{
+                    fontFamily: 'Playfair Display, serif',
+                    fontSize: '24px',
+                    fontWeight: '700',
+                    color: '#2B2D42',
+                    margin: '0 0 8px 0',
+                  }}
+                >
+                  Auction
+                </h2>
+                <p
+                  style={{
+                    fontFamily: 'Inter, sans-serif',
+                    fontSize: '15px',
+                    color: '#8D99AE',
+                    margin: '0 0 16px 0',
+                  }}
+                >
+                  {auctionState.propertyId != null ? BOARD_SPACES[auctionState.propertyId]?.name : ''}
+                </p>
+                <div
+                  style={{
+                    fontFamily: 'JetBrains Mono, monospace',
+                    fontSize: '36px',
+                    fontWeight: '700',
+                    color: '#228B22',
+                    marginBottom: '8px',
+                  }}
+                >
+                  ${auctionState.currentBid}
+                </div>
+                {auctionState.highBidder && (
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#2B2D42', margin: '0 0 20px 0' }}>
+                    High bid: {getPlayerById(ydoc, auctionState.highBidder)?.name ?? 'Unknown'}
+                  </p>
+                )}
+                {isMyTurn && !auctionState.passed?.includes(myPlayerId) && (
+                  <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    {[10, 25, 50, 100].map(increment => (
+                      <motion.button
+                        key={increment}
+                        onClick={() => handleAuctionBid(auctionState.currentBid + increment)}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.97 }}
+                        style={{
+                          padding: '10px 18px',
+                          backgroundColor: '#2D6A4F',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '10px',
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          fontFamily: 'Inter, sans-serif',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        +${increment}
+                      </motion.button>
+                    ))}
+                    <motion.button
+                      onClick={handleAuctionPass}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.97 }}
+                      style={{
+                        padding: '10px 18px',
+                        backgroundColor: '#E63946',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '10px',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        fontFamily: 'Inter, sans-serif',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Pass
+                    </motion.button>
+                  </div>
+                )}
+                {!isMyTurn && (
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8D99AE', margin: '16px 0 0 0' }}>
+                    Waiting for other players to bid...
+                  </p>
+                )}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <AnimatePresence>
           {phase === 'gameOver' && gameWinner && (
             <motion.div
