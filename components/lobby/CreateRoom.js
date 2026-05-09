@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { nanoid } from 'nanoid';
 
-export default function CreateRoom() {
+export default function CreateRoom({ game }) {
   const router = useRouter();
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,7 +22,7 @@ export default function CreateRoom() {
     localStorage.setItem('poordown_isHost', 'true');
     
     // Navigate to room
-    router.push(`/room/${roomCode}?name=${encodeURIComponent(name.trim())}&host=true`);
+    router.push(`/${game}/room/${roomCode}?name=${encodeURIComponent(name.trim())}&host=true`);
   };
 
   return (

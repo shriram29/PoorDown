@@ -1,20 +1,19 @@
-// Game Room page - /room/[code]
+// Game Room page - /monopoly/room/[code]
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as Y from 'yjs';
 import { nanoid } from 'nanoid';
-import Board from '../../components/board/Board';
-import Dice from '../../components/dice/Dice';
-import PlayerHUD from '../../components/hud/PlayerHUD';
-import ActionBar from '../../components/hud/ActionBar';
-import PropertyModal from '../../components/modals/PropertyModal';
-import { BOARD_SPACES, PLAYER_COLORS, DEFAULT_CONFIG } from '../../lib/game/board';
+import Board from '../../../components/games/monopoly/board/Board';
+import Dice from '../../../components/games/monopoly/dice/Dice';
+import PlayerHUD from '../../../components/games/monopoly/hud/PlayerHUD';
+import ActionBar from '../../../components/games/monopoly/hud/ActionBar';
+import PropertyModal from '../../../components/games/monopoly/modals/PropertyModal';
+import { BOARD_SPACES, PLAYER_COLORS, DEFAULT_CONFIG } from '../../../lib/games/monopoly/board';
 import {
   initGame,
   addPlayer,
-  getPlayers,
   getPlayerById,
   rollDice as rollDiceState,
   movePlayer,
@@ -35,12 +34,12 @@ import {
   ownsColorSet,
   canBuildHouse,
   setPropertyHouses,
-} from '../../lib/game/state';
+} from '../../../lib/games/monopoly/state';
 
 export default function GameRoom() {
   const router = useRouter();
   const { code, name, host } = router.query;
-  
+
   const [ydoc, setYdoc] = useState(null);
   const [provider, setProvider] = useState(null);
   const [players, setPlayers] = useState([]);
@@ -61,26 +60,26 @@ export default function GameRoom() {
 
     const isHostPlayer = host === 'true';
     const playerId = nanoid();
-    
+
     // Initialize Y.js
     const doc = new Y.Doc();
     const roomId = `poordown-${code}`;
-    
+
     // For MVP, we'll use a simple in-memory approach
-    // In production, this would connect to PartyKit
-    
+    // In production, this would connect to y-webrtc
+
     // Set up shared types
     const yPlayers = doc.getArray('players');
     const yPhase = doc.getText('phase');
     const yDice = doc.getArray('dice');
     const yCurrentPlayer = doc.getNumber('currentPlayer');
     const yDoublesCount = doc.getNumber('doublesCount');
-    
+
     // Initialize phase if new room
     if (yPhase.length === 0) {
       yPhase.insert(0, 'setup');
     }
-    
+
     // Add player
     const colorIndex = yPlayers.length % PLAYER_COLORS.length;
     const player = {
@@ -96,48 +95,48 @@ export default function GameRoom() {
       isBot: false,
       isEliminated: false,
     };
-    
+
     yPlayers.push([player]);
-    
+
     setYdoc(doc);
     setMyPlayerId(playerId);
     setIsHostState(isHostPlayer);
-    
+
     // Listen for changes
     const updatePlayers = () => {
       setPlayers([...yPlayers.toArray()]);
     };
-    
+
     const updatePhase = () => {
       setPhaseState(yPhase.toString() || 'setup');
     };
-    
+
     const updateDice = () => {
       setDice([...yDice.toArray()]);
     };
-    
+
     const updateCurrentPlayer = () => {
       setCurrentPlayerIndex(doc.getNumber('currentPlayer') || 0);
     };
-    
+
     const updateDoubles = () => {
       setDoublesCount(doc.getNumber('doublesCount') || 0);
     };
-    
+
     yPlayers.observe(updatePlayers);
     yPhase.observe(updatePhase);
     yDice.observe(updateDice);
-    
+
     // Update current player observable
     const n = doc.getNumber('currentPlayer');
     if (n._observers) n._observers.push(updateCurrentPlayer);
-    
+
     updatePlayers();
     updatePhase();
-    
+
     // For MVP, simulate a WebSocket connection with local state
-    // In production, this would use PartyKit
-    
+    // In production, this would use y-webrtc
+
     return () => {
       yPlayers.unobserve(updatePlayers);
       yPhase.unobserve(updatePhase);
@@ -147,31 +146,31 @@ export default function GameRoom() {
   // Handle roll dice
   const handleRoll = useCallback(() => {
     if (!ydoc || isRolling) return;
-    
+
     setIsRolling(true);
-    
+
     setTimeout(() => {
       const die1 = Math.floor(Math.random() * 6) + 1;
       const die2 = Math.floor(Math.random() * 6) + 1;
       const isDoubles = die1 === die2;
-      
+
       const yDice = ydoc.getArray('dice');
       const yDoublesCount = ydoc.getNumber('doublesCount') || 0;
       const yCurrentPlayer = ydoc.getNumber('currentPlayer') || 0;
-      
+
       // Clear and set new dice
       while (yDice.length > 0) yDice.delete(0);
       yDice.push([die1, die2]);
-      
+
       // Get current player
       const currentPlayers = ydoc.getArray('players').toArray();
       const currentPlayer = currentPlayers[yCurrentPlayer];
-      
+
       if (!currentPlayer) {
         setIsRolling(false);
         return;
       }
-      
+
       // Check for doubles and jail
       if (isDoubles && doublesCount >= 2) {
         // Third doubles - go to jail
@@ -181,44 +180,44 @@ export default function GameRoom() {
         setPhaseState('rolling');
         return;
       }
-      
+
       let newDoublesCount = isDoubles ? doublesCount + 1 : 0;
-      
+
       if (isDoubles) {
         setDoublesCount(newDoublesCount);
       } else {
         setDoublesCount(0);
       }
-      
+
       // Move player
       const newPosition = (currentPlayer.position + die1 + die2) % 40;
-      
+
       // Handle passing Go
       let cashBonus = 0;
       if (newPosition < currentPlayer.position && !currentPlayer.inJail) {
         cashBonus = 200;
       }
-      
+
       // Update position
       const yPlayers = ydoc.getArray('players');
       const playersArr = yPlayers.toArray();
       const idx = playersArr.findIndex(p => p.id === currentPlayer.id);
-      
+
       if (idx !== -1) {
-        const updatedPlayer = { 
-          ...playersArr[idx], 
+        const updatedPlayer = {
+          ...playersArr[idx],
           position: newPosition,
-          cash: playersArr[idx].cash + cashBonus 
+          cash: playersArr[idx].cash + cashBonus
         };
         yPlayers.delete(idx, 1);
         yPlayers.insert(idx, [updatedPlayer]);
       }
-      
+
       // Update state
       setDice([die1, die2]);
       setPhaseState('moving');
       setIsRolling(false);
-      
+
       // Show property modal after movement
       setTimeout(() => {
         const space = BOARD_SPACES[newPosition];
@@ -235,11 +234,11 @@ export default function GameRoom() {
                 // Deduct rent
                 const playerIdx = playersArr.findIndex(p => p.id === currentPlayer.id);
                 const ownerIdx = playersArr.findIndex(p => p.id === owner.id);
-                
+
                 if (playerIdx !== -1 && ownerIdx !== -1) {
                   const updatedPlayer2 = { ...playersArr[playerIdx], cash: playersArr[playerIdx].cash - rent };
                   const updatedOwner = { ...playersArr[ownerIdx], cash: playersArr[ownerIdx].cash + rent };
-                  
+
                   yPlayers.delete(playerIdx, 1);
                   yPlayers.insert(playerIdx, [updatedPlayer2]);
                   yPlayers.delete(ownerIdx, 1);
@@ -259,34 +258,34 @@ export default function GameRoom() {
   // Handle buy property
   const handleBuy = useCallback(() => {
     if (!ydoc || !propertyModal.propertyId) return;
-    
+
     const yPlayers = ydoc.getArray('players');
     const playersArr = yPlayers.toArray();
     const currentPlayer = playersArr[currentPlayerIndex];
-    
+
     if (!currentPlayer) return;
-    
+
     const space = BOARD_SPACES[propertyModal.propertyId];
     if (!space || !space.price) return;
-    
+
     if (currentPlayer.cash < space.price) return;
-    
+
     // Update player cash
     const idx = playersArr.findIndex(p => p.id === currentPlayer.id);
     if (idx !== -1) {
-      const updatedPlayer = { 
-        ...playersArr[idx], 
+      const updatedPlayer = {
+        ...playersArr[idx],
         cash: playersArr[idx].cash - space.price,
         properties: [...playersArr[idx].properties, propertyModal.propertyId]
       };
       yPlayers.delete(idx, 1);
       yPlayers.insert(idx, [updatedPlayer]);
     }
-    
+
     // Update property ownership
     const yBoard = ydoc.getMap('board');
     yBoard.set(propertyModal.propertyId.toString(), { owner: currentPlayer.id, houses: 0, mortgaged: false });
-    
+
     setPropertyModal({ isOpen: false, propertyId: null });
     setPhaseState('rolling');
   }, [ydoc, propertyModal, currentPlayerIndex]);
@@ -294,11 +293,11 @@ export default function GameRoom() {
   // Handle end turn
   const handleEndTurn = useCallback(() => {
     if (!ydoc) return;
-    
+
     const yCurrentPlayer = ydoc.getNumber('currentPlayer') || 0;
     const yPlayers = ydoc.getArray('players');
     const playersArr = yPlayers.toArray();
-    
+
     // Find next active player
     let next = (yCurrentPlayer + 1) % playersArr.length;
     let attempts = 0;
@@ -306,12 +305,12 @@ export default function GameRoom() {
       next = (next + 1) % playersArr.length;
       attempts++;
     }
-    
+
     // Update current player
     ydoc.getNumber('currentPlayer', next);
     setCurrentPlayerIndex(next);
     setDoublesCount(0);
-    
+
     // Check win condition
     const activePlayers = getActivePlayers(ydoc);
     if (activePlayers.length === 1) {
@@ -319,27 +318,27 @@ export default function GameRoom() {
       setGameWinner(activePlayers[0].name);
       return;
     }
-    
+
     // Check if new player is in jail
     const nextPlayer = playersArr[next];
     if (nextPlayer?.inJail) {
       // In jail - will need to roll or pay
     }
-    
+
     setPhaseState('rolling');
   }, [ydoc]);
 
   // Handle start game
   const handleStartGame = useCallback(() => {
     if (!ydoc || !isHost) return;
-    
+
     const yPhase = ydoc.getText('phase');
     yPhase.delete(0, yPhase.length);
     yPhase.insert(0, 'rolling');
-    
+
     ydoc.getNumber('currentPlayer', 0);
     ydoc.getNumber('doublesCount', 0);
-    
+
     setPhaseState('rolling');
     setCurrentPlayerIndex(0);
   }, [ydoc, isHost]);
@@ -347,7 +346,7 @@ export default function GameRoom() {
   // Check if it's current player's turn
   const isMyTurn = players[currentPlayerIndex]?.id === myPlayerId;
   const currentSpace = players[currentPlayerIndex]?.position;
-  
+
   // Get landing space info
   const landingSpaceInfo = landingSpace ? BOARD_SPACES[landingSpace] : null;
 
@@ -362,7 +361,7 @@ export default function GameRoom() {
   return (
     <>
       <Head>
-        <title>Room {code} - PoorDown</title>
+        <title>Room {code} - PoorDown Monopoly</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
@@ -396,7 +395,7 @@ export default function GameRoom() {
             >
               Poor<span style={{ color: '#E63946' }}>Down</span>
             </h1>
-            
+
             <div
               style={{
                 display: 'flex',
@@ -433,7 +432,7 @@ export default function GameRoom() {
               </button>
             </div>
           </div>
-          
+
           {/* Players */}
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {players.map((player, idx) => (
@@ -479,7 +478,7 @@ export default function GameRoom() {
                 currentPlayerIndex={currentPlayerIndex}
               />
             </motion.div>
-            
+
             {/* Dice */}
             <div
               style={{
@@ -499,7 +498,7 @@ export default function GameRoom() {
                 isDoubles={dice[0] === dice[1] && dice[0] > 0}
               />
             </div>
-            
+
             {/* Action Bar */}
             <ActionBar
               phase={phase}
@@ -516,7 +515,7 @@ export default function GameRoom() {
               players={players}
             />
           </div>
-          
+
           {/* Right: Player HUDs */}
           <div
             style={{
@@ -539,7 +538,7 @@ export default function GameRoom() {
             >
               Players
             </h3>
-            
+
             {players.map((player, idx) => (
               <PlayerHUD
                 key={player.id}
@@ -549,7 +548,7 @@ export default function GameRoom() {
                 isMyPlayer={player.id === myPlayerId}
               />
             ))}
-            
+
             {/* Game info */}
             <div
               style={{
@@ -638,7 +637,7 @@ export default function GameRoom() {
                   Congratulations on your victory!
                 </p>
                 <button
-                  onClick={() => router.push('/')}
+                  onClick={() => router.push('/monopoly')}
                   style={{
                     padding: '14px 32px',
                     backgroundColor: '#2D6A4F',

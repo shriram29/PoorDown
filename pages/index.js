@@ -1,15 +1,42 @@
-// Home / Lobby page
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import { motion } from 'framer-motion';
-import CreateRoom from '../components/lobby/CreateRoom';
-import JoinRoom from '../components/lobby/JoinRoom';
+
+const GAMES = [
+  {
+    id: 'monopoly',
+    name: 'Monopoly',
+    icon: '🏠',
+    description: 'Buy properties, collect rent, and bankrupt your friends.',
+    color: '#2D6A4F',
+    available: true,
+  },
+  {
+    id: 'ludo',
+    name: 'Ludo',
+    icon: '🎲',
+    description: 'Race your tokens home before your opponents.',
+    color: '#E63946',
+    available: false,
+  },
+  {
+    id: 'fifty-second-test',
+    name: 'The 50 Second Test',
+    icon: '🃏',
+    description: 'Roll a die. Draw from a 52-card deck. That\'s it.',
+    color: '#1D3557',
+    available: true,
+  },
+];
 
 export default function Home() {
+  const router = useRouter();
+
   return (
     <>
       <Head>
-        <title>PoorDown - Online Monopoly Clone</title>
-        <meta name="description" content="The board game you know, anywhere you are. Play multiplayer Monopoly online with friends." />
+        <title>PoorDown - Online Board Games</title>
+        <meta name="description" content="Play Monopoly, Ludo and more with friends online. Free, serverless, no account needed." />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
@@ -17,195 +44,165 @@ export default function Home() {
         style={{
           minHeight: '100vh',
           backgroundColor: '#F8F4E8',
-          padding: '40px 20px',
+          padding: '60px 20px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
         }}
       >
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-          <motion.h1
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          style={{ textAlign: 'center', marginBottom: '16px' }}
+        >
+          <h1
             style={{
               fontFamily: 'Playfair Display, serif',
               fontSize: '64px',
               fontWeight: '800',
               color: '#2B2D42',
-              margin: '0 0 16px 0',
+              margin: '0 0 12px 0',
               letterSpacing: '-2px',
             }}
           >
             Poor<span style={{ color: '#E63946' }}>Down</span>
-          </motion.h1>
-          
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
+          </h1>
+          <p
             style={{
               fontFamily: 'Inter, sans-serif',
-              fontSize: '20px',
+              fontSize: '18px',
               color: '#8D99AE',
               margin: 0,
             }}
           >
-            The board game you know, anywhere you are.
-          </motion.p>
-        </div>
-
-        {/* Main content */}
-        <div
-          style={{
-            maxWidth: '900px',
-            margin: '0 auto',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '40px',
-          }}
-        >
-          {/* Create Room */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-            style={{
-              backgroundColor: 'white',
-              borderRadius: '24px',
-              padding: '32px',
-              boxShadow: '0 8px 40px rgba(0,0,0,0.08)',
-            }}
-          >
-            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <span style={{ fontSize: '48px' }}>🎮</span>
-              <h2
-                style={{
-                  fontFamily: 'Playfair Display, serif',
-                  fontSize: '28px',
-                  fontWeight: '700',
-                  color: '#2B2D42',
-                  margin: '16px 0 8px 0',
-                }}
-              >
-                Create a Room
-              </h2>
-              <p
-                style={{
-                  fontFamily: 'Inter, sans-serif',
-                  fontSize: '14px',
-                  color: '#8D99AE',
-                  margin: 0,
-                }}
-              >
-                Start a new game and invite your friends
-              </p>
-            </div>
-            <CreateRoom />
-          </motion.div>
-
-          {/* Join Room */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-            style={{
-              backgroundColor: 'white',
-              borderRadius: '24px',
-              padding: '32px',
-              boxShadow: '0 8px 40px rgba(0,0,0,0.08)',
-            }}
-          >
-            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <span style={{ fontSize: '48px' }}>🚀</span>
-              <h2
-                style={{
-                  fontFamily: 'Playfair Display, serif',
-                  fontSize: '28px',
-                  fontWeight: '700',
-                  color: '#2B2D42',
-                  margin: '16px 0 8px 0',
-                }}
-              >
-                Join a Room
-              </h2>
-              <p
-                style={{
-                  fontFamily: 'Inter, sans-serif',
-                  fontSize: '14px',
-                  color: '#8D99AE',
-                  margin: 0,
-                }}
-              >
-                Enter a room code to join an existing game
-              </p>
-            </div>
-            <JoinRoom />
-          </motion.div>
-        </div>
-
-        {/* How to Play */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.6 }}
-          style={{
-            maxWidth: '600px',
-            margin: '60px auto 0',
-            backgroundColor: 'white',
-            borderRadius: '20px',
-            padding: '24px 32px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
-          }}
-        >
-          <h3
-            style={{
-              fontFamily: 'Playfair Display, serif',
-              fontSize: '22px',
-              fontWeight: '700',
-              color: '#2B2D42',
-              margin: '0 0 16px 0',
-              textAlign: 'center',
-            }}
-          >
-            📖 How to Play
-          </h3>
-          <ol
-            style={{
-              fontFamily: 'Inter, sans-serif',
-              fontSize: '14px',
-              color: '#2B2D42',
-              lineHeight: '1.8',
-              paddingLeft: '20px',
-              margin: 0,
-            }}
-          >
-            <li>Create a room or join one with a 6-character code</li>
-            <li>Share the code with friends so they can join</li>
-            <li>Start the game when everyone is ready (2-6 players)</li>
-            <li>Roll dice and move around the board</li>
-            <li>Buy properties, collect rent, build houses!</li>
-            <li>Last player not bankrupt wins!</li>
-          </ol>
+            Pick a game and play with friends — no account needed.
+          </p>
         </motion.div>
 
-        {/* Footer */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '24px',
+            maxWidth: '700px',
+            width: '100%',
+            marginTop: '48px',
+          }}
+        >
+          {GAMES.map((game, i) => (
+            <motion.div
+              key={game.id}
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 + i * 0.1, duration: 0.45 }}
+              onClick={() => game.available && router.push(`/${game.id}`)}
+              style={{
+                backgroundColor: 'white',
+                borderRadius: '20px',
+                padding: '36px 28px',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+                cursor: game.available ? 'pointer' : 'default',
+                opacity: game.available ? 1 : 0.65,
+                transition: 'transform 0.18s ease, box-shadow 0.18s ease',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+              whileHover={game.available ? { y: -4, boxShadow: '0 16px 48px rgba(0,0,0,0.13)' } : {}}
+              whileTap={game.available ? { scale: 0.98 } : {}}
+            >
+              {!game.available && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '16px',
+                    right: '16px',
+                    backgroundColor: '#8D99AE',
+                    color: 'white',
+                    fontSize: '10px',
+                    fontWeight: '700',
+                    fontFamily: 'Inter, sans-serif',
+                    padding: '3px 10px',
+                    borderRadius: '20px',
+                    letterSpacing: '0.5px',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Coming Soon
+                </div>
+              )}
+
+              <div
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  backgroundColor: game.color + '18',
+                  borderRadius: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '28px',
+                  marginBottom: '20px',
+                }}
+              >
+                {game.icon}
+              </div>
+
+              <h2
+                style={{
+                  fontFamily: 'Playfair Display, serif',
+                  fontSize: '26px',
+                  fontWeight: '700',
+                  color: '#2B2D42',
+                  margin: '0 0 10px 0',
+                }}
+              >
+                {game.name}
+              </h2>
+              <p
+                style={{
+                  fontFamily: 'Inter, sans-serif',
+                  fontSize: '14px',
+                  color: '#8D99AE',
+                  margin: '0 0 24px 0',
+                  lineHeight: '1.6',
+                }}
+              >
+                {game.description}
+              </p>
+
+              {game.available && (
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '10px 20px',
+                    backgroundColor: game.color,
+                    color: 'white',
+                    borderRadius: '12px',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    fontFamily: 'Inter, sans-serif',
+                  }}
+                >
+                  Play Now →
+                </div>
+              )}
+            </motion.div>
+          ))}
+        </div>
+
         <footer
           style={{
-            textAlign: 'center',
-            marginTop: '60px',
+            marginTop: '80px',
             fontFamily: 'Inter, sans-serif',
             fontSize: '12px',
             color: '#8D99AE',
+            textAlign: 'center',
           }}
         >
-          <p style={{ margin: '0 0 8px 0' }}>
-            Open Source Monopoly Clone • Built with Next.js
-          </p>
-          <p style={{ margin: 0 }}>
-            MIT License •{' '}
-            <a href="https://github.com" style={{ color: '#1D3557' }}>
-              View on GitHub
-            </a>
-          </p>
+          Open Source • Built with Next.js • No servers, no accounts
         </footer>
       </div>
     </>

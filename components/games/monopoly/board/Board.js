@@ -1,6 +1,6 @@
 // Monopoly Board SVG Component
 // Renders a full Monopoly board with all 40 spaces
-import { BOARD_SPACES, GROUP_COLORS } from '../../lib/game/board';
+import { BOARD_SPACES, GROUP_COLORS } from '../../../../lib/games/monopoly/board';
 
 export default function Board({ players = [], currentPlayerIndex = -1, onPropertyClick }) {
   // Board dimensions
@@ -13,12 +13,12 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
 
   // Calculate positions for all 40 spaces
   // Going clockwise: bottom (0-9), right (10-19), top (20-29), left (30-39)
-  
+
   const getSpacePosition = (id) => {
     const cornerSize = CORNER_SIZE;
     const trackWidth = TRACK_WIDTH;
     const spaceWidth = SPACE_WIDTH;
-    
+
     // Bottom row (0): left to right, y = HEIGHT - cornerSize to HEIGHT
     if (id >= 0 && id <= 9) {
       const x = cornerSize + (id - 1) * spaceWidth;
@@ -61,10 +61,10 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
   const renderPropertySpace = (space) => {
     const pos = getSpacePosition(space.id);
     const groupColor = GROUP_COLORS[space.group] || '#8D99AE';
-    
+
     return (
-      <g 
-        key={space.id} 
+      <g
+        key={space.id}
         transform={`translate(${pos.x}, ${pos.y})`}
         onClick={() => onPropertyClick && onPropertyClick(space.id)}
         style={{ cursor: onPropertyClick ? 'pointer' : 'default' }}
@@ -78,7 +78,7 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
           strokeWidth="2"
           className="property-space"
         />
-        
+
         {/* Property name - rotated based on position */}
         {space.id < 10 && (
           <text
@@ -135,7 +135,7 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
             {space.name.length > 12 ? space.name.substring(0, 11) : space.name}
           </text>
         )}
-        
+
         {/* Price tag */}
         {space.price && (
           <text
@@ -150,7 +150,7 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
             ${space.price}
           </text>
         )}
-        
+
         {/* Railroad icon */}
         {isRailroad(space.id) && (
           <text
@@ -163,7 +163,7 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
             🚂
           </text>
         )}
-        
+
         {/* Utility icon */}
         {isUtility(space.id) && (
           <text
@@ -183,16 +183,16 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
   const renderCorner = (id) => {
     const pos = getCornerPosition(id);
     const space = BOARD_SPACES[id];
-    
+
     const cornerStyles = {
       0: { bg: '#2D6A4F', text: 'GO', subtext: 'Collect $200' }, // GO - green
       10: { bg: '#E76F51', text: 'JAIL', subtext: 'Just Visiting' }, // Jail - orange
       20: { bg: '#2D6A4F', text: 'FREE', subtext: 'PARKING' }, // Free Parking - green
       30: { bg: '#E76F51', text: 'GO TO', subtext: 'JAIL' }, // Go To Jail - orange
     };
-    
+
     const style = cornerStyles[id] || { bg: '#8D99AE', text: space.name };
-    
+
     return (
       <g key={`corner-${id}`} transform={`translate(${pos.x}, ${pos.y})`}>
         <rect
@@ -237,11 +237,11 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
     const isChance = space.type === 'chance';
     const isCommunity = space.type === 'communityChest';
     const isTax = space.type === 'tax';
-    
+
     let bgColor = '#F8F4E8';
     let icon = '';
     let textColor = '#2B2D42';
-    
+
     if (isChance) {
       bgColor = '#E63946';
       icon = '?';
@@ -252,7 +252,7 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
       bgColor = '#F4A261';
       icon = '$';
     }
-    
+
     return (
       <g key={space.id} transform={`translate(${pos.x}, ${pos.y})`}>
         <rect
@@ -312,20 +312,20 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
     });
 
     const tokens = [];
-    
+
     Object.entries(positionGroups).forEach(([pos, playersAtPos]) => {
       const position = parseInt(pos);
       const space = BOARD_SPACES[position];
       const isProp = space.type === 'property' || space.type === 'railroad' || space.type === 'utility';
-      
+
       // Calculate token position
       let tokenX, tokenY;
       const spacePos = isProp ? getSpacePosition(position) : getCornerPosition(position);
-      
+
       // Offset tokens based on how many are on this space
       const offsetAngle = (playersAtPos.length > 1) ? Math.PI / 4 : 0;
       const radius = 12;
-      
+
       playersAtPos.forEach((player, i) => {
         if (playersAtPos.length === 1) {
           tokenX = spacePos.x + spacePos.width / 2;
@@ -335,9 +335,9 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
           tokenX = spacePos.x + spacePos.width / 2 + Math.cos(angle) * radius;
           tokenY = spacePos.y + spacePos.height / 2 + Math.sin(angle) * radius;
         }
-        
+
         const isActive = idx === currentPlayerIndex;
-        
+
         tokens.push(
           <g key={`token-${player.id}`} transform={`translate(${tokenX}, ${tokenY})`}>
             {isActive && (
@@ -370,7 +370,7 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
         );
       });
     });
-    
+
     return tokens;
   };
 
@@ -394,7 +394,7 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
         fill="#2B2D42"
         rx="4"
       />
-      
+
       {/* Track background */}
       <rect
         x={CORNER_SIZE}
@@ -424,16 +424,16 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
         height={HEIGHT - 2 * CORNER_SIZE}
         fill="#F8F4E8"
       />
-      
+
       {/* Render special spaces first (under properties) */}
       {BOARD_SPACES.filter(s => s.type === 'chance' || s.type === 'communityChest' || s.type === 'tax').map(renderSpecialSpace)}
-      
+
       {/* Render property spaces */}
       {BOARD_SPACES.filter(s => s.type === 'property' || s.type === 'railroad' || s.type === 'utility').map(renderPropertySpace)}
-      
+
       {/* Render corners */}
       {[0, 10, 20, 30].map(renderCorner)}
-      
+
       {/* Center area */}
       <rect
         x={CORNER_SIZE}
@@ -443,7 +443,7 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
         fill="#2D6A4F"
         rx="4"
       />
-      
+
       {/* Center dice area */}
       <g transform={`translate(${WIDTH / 2}, ${HEIGHT / 2})`}>
         <rect
@@ -486,7 +486,7 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
           Monopoly Clone
         </text>
       </g>
-      
+
       {/* Render player tokens */}
       {renderPlayers()}
     </svg>

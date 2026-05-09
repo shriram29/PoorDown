@@ -70,13 +70,13 @@ function Button({ children, onClick, disabled, variant = 'primary', loading = fa
   );
 }
 
-export default function ActionBar({ 
-  phase, 
-  canRoll, 
-  canBuy, 
-  canEndTurn, 
-  onRoll, 
-  onBuy, 
+export default function ActionBar({
+  phase,
+  canRoll,
+  canBuy,
+  canEndTurn,
+  onRoll,
+  onBuy,
   onAuction,
   onTrade,
   onEndTurn,
@@ -104,8 +104,8 @@ export default function ActionBar({
             <p style={{ margin: '0 0 12px 0', fontFamily: 'Inter, sans-serif', color: '#2B2D42' }}>
               Waiting for players... ({players?.length || 0} joined)
             </p>
-            <Button 
-              onClick={onStartGame} 
+            <Button
+              onClick={onStartGame}
               disabled={players?.length < 2}
               variant="success"
             >
@@ -139,7 +139,7 @@ export default function ActionBar({
           boxShadow: '0 -4px 20px rgba(0,0,0,0.1)',
         }}
       >
-        <Button variant="gold" onClick={() => window.location.href = '/'}>
+        <Button variant="gold" onClick={() => window.location.href = '/monopoly'}>
           🏠 Back to Lobby
         </Button>
       </div>

@@ -1,12 +1,12 @@
 // Property Purchase Modal
 import { motion } from 'framer-motion';
-import Modal from '../ui/Modal';
-import { BOARD_SPACES, GROUP_COLORS } from '../../lib/game/board';
+import Modal from '../../../ui/Modal';
+import { BOARD_SPACES, GROUP_COLORS } from '../../../../lib/games/monopoly/board';
 
-export default function PropertyModal({ 
-  isOpen, 
-  onClose, 
-  propertyId, 
+export default function PropertyModal({
+  isOpen,
+  onClose,
+  propertyId,
   space,
   playerCash,
   onBuy,
@@ -14,7 +14,7 @@ export default function PropertyModal({
   loading = false,
 }) {
   if (!space) return null;
-  
+
   const groupColor = GROUP_COLORS[space.group] || '#8D99AE';
   const canAfford = playerCash >= space.price;
 
@@ -29,7 +29,7 @@ export default function PropertyModal({
           marginBottom: '16px',
         }}
       />
-      
+
       {/* Price */}
       <div style={{ textAlign: 'center', marginBottom: '20px' }}>
         <div
@@ -46,7 +46,7 @@ export default function PropertyModal({
           Your cash: ${playerCash?.toLocaleString()}
         </div>
       </div>
-      
+
       {/* Rent table */}
       {space.rent && (
         <div style={{ marginBottom: '20px' }}>
@@ -105,7 +105,7 @@ export default function PropertyModal({
           </div>
         </div>
       )}
-      
+
       {/* Railroad info */}
       {space.type === 'railroad' && (
         <div style={{ marginBottom: '20px', textAlign: 'center' }}>
@@ -117,7 +117,7 @@ export default function PropertyModal({
           </p>
         </div>
       )}
-      
+
       {/* Utility info */}
       {space.type === 'utility' && (
         <div style={{ marginBottom: '20px', textAlign: 'center' }}>
@@ -129,7 +129,7 @@ export default function PropertyModal({
           </p>
         </div>
       )}
-      
+
       {/* Cannot afford warning */}
       {!canAfford && (
         <div
@@ -146,7 +146,7 @@ export default function PropertyModal({
           </p>
         </div>
       )}
-      
+
       {/* Action buttons */}
       <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
         {canAfford && (
@@ -171,7 +171,7 @@ export default function PropertyModal({
             🏠 Buy Property
           </motion.button>
         )}
-        
+
         {onAuction && (
           <motion.button
             onClick={onAuction}
@@ -194,7 +194,7 @@ export default function PropertyModal({
             🔨 Auction
           </motion.button>
         )}
-        
+
         <motion.button
           onClick={onClose}
           whileHover={{ scale: 1.03 }}

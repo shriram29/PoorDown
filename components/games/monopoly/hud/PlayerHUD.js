@@ -1,15 +1,15 @@
 // Player HUD component
-import { PLAYER_COLORS } from '../../lib/game/board';
+import { PLAYER_COLORS } from '../../../../lib/games/monopoly/board';
 
-export default function PlayerHUD({ 
-  player, 
-  index, 
-  isCurrentPlayer, 
+export default function PlayerHUD({
+  player,
+  index,
+  isCurrentPlayer,
   isMyPlayer,
-  onClick 
+  onClick
 }) {
   const colorHex = PLAYER_COLORS[index % PLAYER_COLORS.length];
-  
+
   return (
     <div
       onClick={onClick}
@@ -52,7 +52,7 @@ export default function PlayerHUD({
           {player.name?.charAt(0)?.toUpperCase() || '?'}
         </span>
       </div>
-      
+
       {/* Info */}
       <div style={{ flex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -96,7 +96,7 @@ export default function PlayerHUD({
             </span>
           )}
         </div>
-        
+
         <div
           style={{
             fontFamily: 'JetBrains Mono, monospace',
@@ -108,7 +108,7 @@ export default function PlayerHUD({
           ${player.cash?.toLocaleString() || '0'}
         </div>
       </div>
-      
+
       {/* Turn indicator */}
       {isCurrentPlayer && (
         <div
@@ -127,7 +127,7 @@ export default function PlayerHUD({
           {isMyPlayer ? 'Your Turn' : 'Playing'}
         </div>
       )}
-      
+
       {/* Properties count */}
       {player.properties?.length > 0 && (
         <div
@@ -144,7 +144,7 @@ export default function PlayerHUD({
           {player.properties.length} props
         </div>
       )}
-      
+
       {/* Jail indicator */}
       {player.inJail && (
         <div
@@ -161,7 +161,7 @@ export default function PlayerHUD({
           🏠 JAIL ({player.jailTurns}/3)
         </div>
       )}
-      
+
       {/* Eliminated */}
       {player.isEliminated && (
         <div

@@ -12,7 +12,7 @@ const PIP_PATTERNS = {
 
 function Die({ value, rolling, onClick, disabled }) {
   const [displayValue, setDisplayValue] = useState(value || 1);
-  
+
   useEffect(() => {
     if (!rolling && value) {
       setDisplayValue(value);
@@ -43,8 +43,8 @@ function Die({ value, rolling, onClick, disabled }) {
           gridTemplateColumns: 'repeat(3, 1fr)',
           gridTemplateRows: 'repeat(3, 1fr)',
           padding: '8px',
-          boxShadow: rolling 
-            ? '0 8px 20px rgba(0,0,0,0.3)' 
+          boxShadow: rolling
+            ? '0 8px 20px rgba(0,0,0,0.3)'
             : '0 4px 10px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.8)',
           transform: rolling ? 'rotateX(720deg) rotateY(720deg)' : 'rotateX(0deg) rotateY(0deg)',
           transition: rolling ? 'transform 0.4s ease-out' : 'transform 0.1s ease-out',
@@ -82,25 +82,25 @@ function Die({ value, rolling, onClick, disabled }) {
   );
 }
 
-export default function Dice({ 
-  dice = [0, 0], 
-  rolling = false, 
-  onRoll, 
+export default function Dice({
+  dice = [0, 0],
+  rolling = false,
+  onRoll,
   disabled = false,
-  isDoubles = false 
+  isDoubles = false
 }) {
   const [localRolling, setLocalRolling] = useState(false);
 
   const handleRoll = () => {
     if (disabled || rolling || localRolling) return;
-    
+
     setLocalRolling(true);
-    
+
     // Rapid value changes during roll animation
     const rollInterval = setInterval(() => {
       // Just trigger re-render with random values for visual effect
     }, 50);
-    
+
     // End rolling after animation
     setTimeout(() => {
       clearInterval(rollInterval);
@@ -112,20 +112,20 @@ export default function Dice({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
       <div style={{ display: 'flex', gap: '16px' }}>
-        <Die 
-          value={dice[0] || null} 
-          rolling={rolling || localRolling} 
+        <Die
+          value={dice[0] || null}
+          rolling={rolling || localRolling}
           onClick={handleRoll}
           disabled={disabled}
         />
-        <Die 
-          value={dice[1] || null} 
-          rolling={rolling || localRolling} 
+        <Die
+          value={dice[1] || null}
+          rolling={rolling || localRolling}
           onClick={handleRoll}
           disabled={disabled}
         />
       </div>
-      
+
       {isDoubles && dice[0] > 0 && (
         <div
           style={{
@@ -142,7 +142,7 @@ export default function Dice({
           🎉 Doubles!
         </div>
       )}
-      
+
       {dice[0] === 0 && !rolling && (
         <div
           style={{

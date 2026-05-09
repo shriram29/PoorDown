@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 
-export default function JoinRoom() {
+export default function JoinRoom({ game }) {
   const router = useRouter();
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
@@ -21,7 +21,7 @@ export default function JoinRoom() {
     localStorage.setItem('poordown_isHost', 'false');
     
     // Navigate to room
-    router.push(`/room/${code.toUpperCase().trim()}?name=${encodeURIComponent(name.trim())}&host=false`);
+    router.push(`/${game}/room/${code.toUpperCase().trim()}?name=${encodeURIComponent(name.trim())}&host=false`);
   };
 
   return (
