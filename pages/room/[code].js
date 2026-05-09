@@ -677,31 +677,50 @@ export default function GameRoom() {
           className="game-grid"
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 300px',
-            gap: '20px',
-            maxWidth: '1400px',
+            gridTemplateColumns: '1fr 380px',
+            gap: '16px',
+            maxWidth: '1600px',
             margin: '0 auto',
+            height: 'calc(100vh - 100px)',
+            alignItems: 'start',
           }}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div
+            className="board-container"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              minHeight: '500px',
+            }}
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5 }}
+              style={{ width: '100%', aspectRatio: '1 / 1', maxHeight: 'calc(100vh - 120px)' }}
             >
-              <Board players={players} currentPlayerIndex={currentPlayerIndex} />
+              <Board
+                players={players}
+                currentPlayerIndex={currentPlayerIndex}
+                onPropertyClick={(spaceId) => setSpaceDetailModal({ isOpen: true, spaceId })}
+              />
             </motion.div>
+          </div>
 
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'center',
-                padding: '20px',
-                backgroundColor: 'white',
-                borderRadius: '16px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-              }}
-            >
+          <div
+            className="player-sidebar"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              overflowY: 'auto',
+              height: 'calc(100vh - 100px)',
+              paddingBottom: '20px',
+            }}
+          >
+            <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '16px', display: 'flex', justifyContent: 'center', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
               <Dice
                 dice={dice}
                 rolling={isRolling}
@@ -825,44 +844,22 @@ export default function GameRoom() {
               isMyTurn={isMyTurn}
               players={players}
             />
-          </div>
 
-          <div
-            className="player-sidebar"
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px',
-              maxHeight: 'calc(100vh - 40px)',
-              overflowY: 'auto',
-            }}
-          >
-            <h3
-              style={{
-                fontFamily: 'Nunito, sans-serif',
-                fontSize: '18px',
-                fontWeight: '700',
-                color: '#2B2D42',
-                margin: 0,
-                padding: '8px 0',
-              }}
-            >
-              Players
-            </h3>
-
-            {players.map((player, idx) => (
-              <PlayerHUD
-                key={player.uuid}
-                player={player}
-                index={idx}
-                isCurrentPlayer={idx === currentPlayerIndex}
-                isMyPlayer={player.uuid === myPlayerId}
-              />
-            ))}
+            <div>
+              <h3 style={{ fontFamily: 'Nunito, sans-serif', fontSize: '16px', fontWeight: '700', color: '#2B2D42', margin: '0 0 8px 0' }}>Players</h3>
+              {players.map((player, idx) => (
+                <PlayerHUD
+                  key={player.uuid}
+                  player={player}
+                  index={idx}
+                  isCurrentPlayer={idx === currentPlayerIndex}
+                  isMyPlayer={player.uuid === myPlayerId}
+                />
+              ))}
+            </div>
 
             <div
               style={{
-                marginTop: 'auto',
                 padding: '16px',
                 backgroundColor: '#2B2D42',
                 borderRadius: '12px',
@@ -887,7 +884,7 @@ export default function GameRoom() {
               )}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {phase !== 'setup' && phase !== 'connecting' && isMyTurn && myPlayer && !myPlayer.isEliminated && (
                 <button
                   onClick={() => setTradeModal({ isOpen: true, mode: 'propose', tradeOffer: null })}
@@ -1082,6 +1079,14 @@ export default function GameRoom() {
           onSave={handleSaveConfig}
           isHost={isHost}
           currentConfig={ydoc ? Object.fromEntries(ydoc.getMap('config').entries()) : {}}
+        />
+
+        <SpaceDetailModal
+          isOpen={spaceDetailModal.isOpen}
+          onClose={() => setSpaceDetailModal({ isOpen: false, spaceId: null })}
+          spaceId={spaceDetailModal.spaceId}
+          ydoc={ydoc}
+          myPlayerId={myPlayerId}
         />
 
         <Toast toasts={toasts} />
