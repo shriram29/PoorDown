@@ -41,6 +41,10 @@ import {
   canBuildHouse,
 } from '../../lib/game/state';
 import { initCardDecks, drawCard, applyCardEffect } from '../../lib/game/cards';
+import { useToast } from '../../lib/useToast';
+import Toast from '../../components/ui/Toast';
+import ReconnectBanner from '../../components/ui/ReconnectBanner';
+import Confetti from '../../components/ui/Confetti';
 
 export default function GameRoom() {
   const router = useRouter();
@@ -64,6 +68,9 @@ export default function GameRoom() {
   const [tradeModal, setTradeModal] = useState({ isOpen: false, mode: 'propose', tradeOffer: null });
   const [propertyMgmtModal, setPropertyMgmtModal] = useState(false);
   const [configModal, setConfigModal] = useState(false);
+  const [confettiActive, setConfettiActive] = useState(false);
+  const [disconnectedPlayers, setDisconnectedPlayers] = useState([]);
+  const { toasts, toast } = useToast();
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -110,11 +117,19 @@ export default function GameRoom() {
           .filter(p => !p.isEliminated)
           .sort((a, b) => a.joinedAt - b.joinedAt);
 
+        const disconnectedNames = doc.getArray('players').toArray()
+          .filter(p => !connected.includes(p.uuid) && !p.isEliminated)
+          .map(p => p.name);
+        setDisconnectedPlayers(disconnectedNames);
+
         const newHost = playersList.find(p => connected.includes(p.uuid));
         if (newHost && newHost.uuid === myIdentity.uuid) {
           meta.set('hostId', myIdentity.uuid);
           setIsHostState(true);
+          toast('You are now the host', 'info');
         }
+      } else {
+        setDisconnectedPlayers([]);
       }
     });
 
@@ -238,6 +253,8 @@ export default function GameRoom() {
           if (rent > 0) {
             updatePlayerCash(ydoc, playerUuid, -rent);
             updatePlayerCash(ydoc, propState.owner, rent);
+            const ownerName = getPlayerById(ydoc, propState.owner)?.name ?? 'owner';
+            if (playerUuid === myPlayerId) toast(`Paid $${rent} rent to ${ownerName}`, 'warning');
           }
           setHasRolled(!isDoubles);
           meta.set('phase', 'rolling');
@@ -254,6 +271,7 @@ export default function GameRoom() {
         updatePlayerCash(ydoc, playerUuid, -taxAmount);
         setHasRolled(!isDoubles);
         meta.set('phase', 'rolling');
+        if (playerUuid === myPlayerId) toast(`Paid $${taxAmount} tax`, 'error');
         checkBankruptcy(playerUuid, null);
         break;
       }
@@ -290,6 +308,7 @@ export default function GameRoom() {
         sendToJail(ydoc, playerUuid);
         setHasRolled(false);
         meta.set('phase', 'rolling');
+        if (playerUuid === myPlayerId) toast('Go directly to Jail!', 'error');
         break;
       }
 
@@ -380,8 +399,11 @@ export default function GameRoom() {
       setPropertyModal({ isOpen: false, propertyId: null });
       setHasRolled(true);
       meta.set('phase', 'rolling');
+      const spaceName = BOARD_SPACES[propertyModal.propertyId]?.name;
+      toast(`You bought ${spaceName}!`, 'success');
+      setConfettiActive(true);
     }
-  }, [ydoc, myPlayerId, propertyModal]);
+  }, [ydoc, myPlayerId, propertyModal, toast]);
 
   const handleAuction = useCallback(() => {
     if (!ydoc || propertyModal.propertyId == null) return;
@@ -558,6 +580,14 @@ export default function GameRoom() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
+      <style>{`
+        @media (max-width: 768px) {
+          .game-grid { grid-template-columns: 1fr !important; }
+          .player-sidebar { max-height: none !important; flex-direction: row !important; flex-wrap: wrap !important; overflow-x: auto !important; overflow-y: visible !important; }
+          .room-header { flex-direction: column !important; gap: 8px !important; }
+          .room-header-players { display: none !important; }
+        }
+      `}</style>
       <div style={{ minHeight: '100vh', backgroundColor: '#F8F4E8', padding: '20px' }}>
         <div
           style={{
@@ -641,6 +671,7 @@ export default function GameRoom() {
         </div>
 
         <div
+          className="game-grid"
           style={{
             display: 'grid',
             gridTemplateColumns: '1fr 300px',
@@ -794,6 +825,7 @@ export default function GameRoom() {
           </div>
 
           <div
+            className="player-sidebar"
             style={{
               display: 'flex',
               flexDirection: 'column',
@@ -1048,6 +1080,10 @@ export default function GameRoom() {
           isHost={isHost}
           currentConfig={ydoc ? Object.fromEntries(ydoc.getMap('config').entries()) : {}}
         />
+
+        <Toast toasts={toasts} />
+        <ReconnectBanner disconnectedPlayers={disconnectedPlayers} />
+        <Confetti active={confettiActive} onComplete={() => setConfettiActive(false)} />
 
         <AnimatePresence>
           {phase === 'gameOver' && gameWinner && (
