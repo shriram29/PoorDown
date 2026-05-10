@@ -1,28 +1,39 @@
-// Create Room component
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { nanoid } from 'nanoid';
 
-export default function CreateRoom({ game }) {
+export default function CreateRoom({ defaultName = '' }) {
   const router = useRouter();
-  const [name, setName] = useState('');
+  const [name, setName] = useState(defaultName);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setName(defaultName);
+  }, [defaultName]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!name.trim()) return;
-    
+    const trimmed = name.trim();
+    if (!trimmed) return;
+
     setLoading(true);
-    
-    // Generate room code
+
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('poordown_identity');
+      if (stored) {
+        try {
+          const identity = JSON.parse(stored);
+          if (identity.name !== trimmed) {
+            localStorage.setItem('poordown_identity', JSON.stringify({ ...identity, name: trimmed }));
+          }
+        } catch {
+          // identity was malformed; leave it alone
+        }
+      }
+    }
+
     const roomCode = nanoid(6).toUpperCase();
-    
-    // Store player name in localStorage
-    localStorage.setItem('poordown_playerName', name.trim());
-    localStorage.setItem('poordown_isHost', 'true');
-    
-    // Navigate to room
-    router.push(`/${game}/room/${roomCode}?name=${encodeURIComponent(name.trim())}&host=true`);
+    router.push(`/monopoly/room/${roomCode}?host=true`);
   };
 
   return (
@@ -54,13 +65,14 @@ export default function CreateRoom({ game }) {
             fontFamily: 'Inter, sans-serif',
             backgroundColor: 'white',
             outline: 'none',
+            boxSizing: 'border-box',
             transition: 'border-color 0.2s',
           }}
-          onFocus={(e) => e.target.style.borderColor = '#2D6A4F'}
-          onBlur={(e) => e.target.style.borderColor = '#E8E4D8'}
+          onFocus={(e) => (e.target.style.borderColor = '#2D6A4F')}
+          onBlur={(e) => (e.target.style.borderColor = '#E8E4D8')}
         />
       </div>
-      
+
       <button
         type="submit"
         disabled={!name.trim() || loading}

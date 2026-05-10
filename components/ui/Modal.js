@@ -57,7 +57,7 @@ export default function Modal({ isOpen, onClose, title, children }) {
               <h2
                 style={{
                   margin: 0,
-                  fontFamily: 'Playfair Display, serif',
+                  fontFamily: 'Nunito, sans-serif',
                   fontSize: '22px',
                   fontWeight: '700',
                   color: '#2B2D42',
