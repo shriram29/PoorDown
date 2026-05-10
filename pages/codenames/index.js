@@ -9,11 +9,25 @@ export default function CodenamesLobby() {
   const [tab, setTab] = useState('create');
   const [joinCode, setJoinCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const [activeRoom, setActiveRoom] = useState(null);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('poordown_active_room');
+      if (stored) {
+        const room = JSON.parse(stored);
+        if (room.gameId === 'codenames') setActiveRoom(room);
+      }
+    } catch {}
+  }, []);
 
   const handleCreate = (e) => {
     e.preventDefault();
     setLoading(true);
     const roomCode = nanoid(6).toUpperCase();
+    localStorage.setItem('poordown_active_room', JSON.stringify({
+      gameId: 'codenames', gameName: 'Codenames', roomCode, isHost: true,
+    }));
     router.push(`/codenames/room/${roomCode}?host=true`);
   };
 
@@ -21,7 +35,11 @@ export default function CodenamesLobby() {
     e.preventDefault();
     if (joinCode.length !== 6) return;
     setLoading(true);
-    router.push(`/codenames/room/${joinCode.toUpperCase()}`);
+    const roomCode = joinCode.toUpperCase();
+    localStorage.setItem('poordown_active_room', JSON.stringify({
+      gameId: 'codenames', gameName: 'Codenames', roomCode, isHost: false,
+    }));
+    router.push(`/codenames/room/${roomCode}`);
   };
 
   const tabStyle = (active) => ({
@@ -96,6 +114,58 @@ export default function CodenamesLobby() {
             Two teams. 25 words. One wrong guess and it's over.
           </motion.p>
         </div>
+
+        {activeRoom && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+              maxWidth: '440px',
+              margin: '0 auto 20px',
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              border: '2px solid #7C3AED',
+              padding: '16px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              boxShadow: '0 4px 20px rgba(124,58,237,0.1)',
+            }}
+          >
+            <div>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', fontWeight: '700', color: '#7C3AED', letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 3px 0' }}>
+                Active Game
+              </p>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#2B2D42', margin: 0 }}>
+                Room{' '}
+                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: '700', letterSpacing: '2px' }}>
+                  {activeRoom.roomCode}
+                </span>
+                {activeRoom.isHost && (
+                  <span style={{ color: '#8D99AE', fontSize: '12px', marginLeft: '6px' }}>· Host</span>
+                )}
+              </p>
+            </div>
+            <button
+              onClick={() => router.push(`/codenames/room/${activeRoom.roomCode}${activeRoom.isHost ? '?host=true' : ''}`)}
+              style={{
+                padding: '8px 18px',
+                backgroundColor: '#7C3AED',
+                color: 'white',
+                border: 'none',
+                borderRadius: '10px',
+                fontFamily: 'Inter, sans-serif',
+                fontSize: '13px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Resume →
+            </button>
+          </motion.div>
+        )}
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}

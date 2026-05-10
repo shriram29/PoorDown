@@ -8,11 +8,17 @@ import JoinRoom from '../../components/lobby/JoinRoom';
 export default function MonopolyLobby() {
   const router = useRouter();
   const [identityName, setIdentityName] = useState('');
+  const [activeRoom, setActiveRoom] = useState(null);
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('poordown_identity');
-      if (stored) setIdentityName(JSON.parse(stored).name || '');
+      const identity = localStorage.getItem('poordown_identity');
+      if (identity) setIdentityName(JSON.parse(identity).name || '');
+      const room = localStorage.getItem('poordown_active_room');
+      if (room) {
+        const parsed = JSON.parse(room);
+        if (parsed.gameId === 'monopoly') setActiveRoom(parsed);
+      }
     } catch {
       // ignore
     }
@@ -82,6 +88,56 @@ export default function MonopolyLobby() {
             Monopoly — buy, trade, and bankrupt your friends.
           </motion.p>
         </div>
+
+        {activeRoom && (
+          <div
+            style={{
+              maxWidth: '900px',
+              margin: '0 auto 28px',
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              border: '2px solid #2D6A4F',
+              padding: '16px 24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              boxShadow: '0 4px 20px rgba(45,106,79,0.1)',
+            }}
+          >
+            <div>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', fontWeight: '700', color: '#2D6A4F', letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 3px 0' }}>
+                Active Game
+              </p>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#2B2D42', margin: 0 }}>
+                Room{' '}
+                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: '700', letterSpacing: '2px' }}>
+                  {activeRoom.roomCode}
+                </span>
+                {activeRoom.isHost && (
+                  <span style={{ color: '#8D99AE', fontSize: '12px', marginLeft: '6px' }}>· Host</span>
+                )}
+              </p>
+            </div>
+            <button
+              onClick={() => router.push(`/monopoly/room/${activeRoom.roomCode}${activeRoom.isHost ? '?host=true' : ''}`)}
+              style={{
+                padding: '8px 18px',
+                backgroundColor: '#2D6A4F',
+                color: 'white',
+                border: 'none',
+                borderRadius: '10px',
+                fontFamily: 'Inter, sans-serif',
+                fontSize: '13px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Resume →
+            </button>
+          </div>
+        )}
 
         <div
           style={{

@@ -567,7 +567,7 @@ export default function CodenamesRoom() {
                   </button>
                 )}
                 <button
-                  onClick={() => router.push('/codenames')}
+                  onClick={() => { localStorage.removeItem('poordown_active_room'); router.push('/codenames'); }}
                   style={{
                     padding: '12px 28px',
                     backgroundColor: 'white',

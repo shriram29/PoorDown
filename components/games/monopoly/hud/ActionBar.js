@@ -139,7 +139,7 @@ export default function ActionBar({
           boxShadow: '0 -4px 20px rgba(0,0,0,0.1)',
         }}
       >
-        <Button variant="gold" onClick={() => window.location.href = '/monopoly'}>
+        <Button variant="gold" onClick={() => { localStorage.removeItem('poordown_active_room'); window.location.href = '/monopoly'; }}>
           🏠 Back to Lobby
         </Button>
       </div>

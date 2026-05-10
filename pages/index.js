@@ -48,6 +48,7 @@ export default function Home() {
   const router = useRouter();
   const [identity, setIdentity] = useState(null);
   const [showIdentityModal, setShowIdentityModal] = useState(false);
+  const [activeRoom, setActiveRoom] = useState(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -61,6 +62,10 @@ export default function Home() {
     } else {
       setShowIdentityModal(true);
     }
+    try {
+      const room = localStorage.getItem('poordown_active_room');
+      if (room) setActiveRoom(JSON.parse(room));
+    } catch {}
   }, []);
 
   const handleIdentityComplete = (newIdentity) => {
@@ -165,6 +170,67 @@ export default function Home() {
               onMouseLeave={(e) => (e.currentTarget.style.color = '#8D99AE')}
             >
               ✏️
+            </button>
+          </motion.div>
+        )}
+
+        {/* Active room chip */}
+        {activeRoom && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.35, duration: 0.4 }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '10px',
+              marginTop: '10px',
+              backgroundColor: 'white',
+              borderRadius: '100px',
+              padding: '6px 8px 6px 14px',
+              boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+              border: '1px solid #E8E4D8',
+            }}
+          >
+            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8D99AE' }}>
+              {activeRoom.gameName}
+            </span>
+            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '12px', fontWeight: '700', color: '#2B2D42', letterSpacing: '1.5px' }}>
+              {activeRoom.roomCode}
+            </span>
+            <button
+              onClick={() => router.push(`/${activeRoom.gameId}/room/${activeRoom.roomCode}${activeRoom.isHost ? '?host=true' : ''}`)}
+              style={{
+                background: '#2B2D42',
+                border: 'none',
+                borderRadius: '100px',
+                cursor: 'pointer',
+                padding: '4px 12px',
+                fontFamily: 'Inter, sans-serif',
+                fontSize: '12px',
+                fontWeight: '700',
+                color: 'white',
+                lineHeight: 1.4,
+              }}
+            >
+              Resume →
+            </button>
+            <button
+              onClick={() => { localStorage.removeItem('poordown_active_room'); setActiveRoom(null); }}
+              title="Dismiss"
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '2px 6px 2px 0',
+                fontSize: '14px',
+                color: '#C8C4B8',
+                lineHeight: 1,
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#E63946')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#C8C4B8')}
+            >
+              ×
             </button>
           </motion.div>
         )}

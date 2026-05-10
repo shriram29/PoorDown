@@ -34,7 +34,11 @@ export default function JoinRoom({ defaultName = '' }) {
       }
     }
 
-    router.push(`/monopoly/room/${code.toUpperCase().trim()}`);
+    const roomCode = code.toUpperCase().trim();
+    localStorage.setItem('poordown_active_room', JSON.stringify({
+      gameId: 'monopoly', gameName: 'Monopoly', roomCode, isHost: false,
+    }));
+    router.push(`/monopoly/room/${roomCode}`);
   };
 
   return (

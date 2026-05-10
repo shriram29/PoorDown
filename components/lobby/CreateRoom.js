@@ -33,6 +33,9 @@ export default function CreateRoom({ defaultName = '' }) {
     }
 
     const roomCode = nanoid(6).toUpperCase();
+    localStorage.setItem('poordown_active_room', JSON.stringify({
+      gameId: 'monopoly', gameName: 'Monopoly', roomCode, isHost: true,
+    }));
     router.push(`/monopoly/room/${roomCode}?host=true`);
   };
 
