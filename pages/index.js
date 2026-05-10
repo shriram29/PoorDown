@@ -29,6 +29,14 @@ const GAMES = [
     color: '#1D3557',
     available: true,
   },
+  {
+    id: 'codenames',
+    name: 'Codenames',
+    icon: '🕵️',
+    description: 'Two teams. 25 words. Give one-word clues to find your agents before they do.',
+    color: '#7C3AED',
+    available: true,
+  },
 ];
 
 const TOKEN_ICONS = {
