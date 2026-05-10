@@ -123,10 +123,10 @@ export default function CodenamesRoom() {
 
   // ── Room-not-found timeout ────────────────────────────────────────────────
   useEffect(() => {
-    if (phase !== 'connecting') return;
+    if (gameState.phase !== 'connecting') return;
     const t = setTimeout(() => setNotFound(true), 8000);
     return () => clearTimeout(t);
-  }, [phase]);
+  }, [gameState.phase]);
 
   // ── Countdown timer for spymaster-needed ──────────────────────────────────
   useEffect(() => {

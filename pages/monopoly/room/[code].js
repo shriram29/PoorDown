@@ -221,7 +221,7 @@ export default function GameRoom() {
     if (phase !== 'connecting') return;
     const t = setTimeout(() => setNotFound(true), 8000);
     return () => clearTimeout(t);
-  }, [phase]);
+  }, [phase]); // phase is a useState var in Monopoly, not a destructured const — no TDZ
 
   const checkBankruptcy = useCallback((playerUuid, creditorUuid) => {
     if (!ydoc) return;
