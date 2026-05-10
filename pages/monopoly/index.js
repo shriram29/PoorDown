@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { motion } from 'framer-motion';
@@ -6,6 +7,16 @@ import JoinRoom from '../../components/lobby/JoinRoom';
 
 export default function MonopolyLobby() {
   const router = useRouter();
+  const [identityName, setIdentityName] = useState('');
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('poordown_identity');
+      if (stored) setIdentityName(JSON.parse(stored).name || '');
+    } catch {
+      // ignore
+    }
+  }, []);
 
   return (
     <>
@@ -109,7 +120,7 @@ export default function MonopolyLobby() {
                 Start a new game and invite friends
               </p>
             </div>
-            <CreateRoom game="monopoly" />
+            <CreateRoom defaultName={identityName} />
           </motion.div>
 
           <motion.div
@@ -140,7 +151,7 @@ export default function MonopolyLobby() {
                 Enter a room code to join
               </p>
             </div>
-            <JoinRoom game="monopoly" />
+            <JoinRoom defaultName={identityName} />
           </motion.div>
         </div>
       </div>

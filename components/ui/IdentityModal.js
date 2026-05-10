@@ -46,7 +46,6 @@ export default function IdentityModal({ isOpen, onComplete }) {
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -57,25 +56,25 @@ export default function IdentityModal({ isOpen, onComplete }) {
               backgroundColor: 'rgba(43, 45, 66, 0.85)',
               backdropFilter: 'blur(6px)',
               zIndex: 200,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px',
             }}
-          />
-
+          >
           <motion.div
             initial={{ opacity: 0, scale: 0.88, y: 24 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.88, y: 24 }}
             transition={{ type: 'spring', damping: 22, stiffness: 280 }}
             style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
               backgroundColor: 'white',
               borderRadius: '16px',
               padding: '40px',
               width: '100%',
               maxWidth: '460px',
-              zIndex: 201,
+              maxHeight: '90vh',
+              overflowY: 'auto',
               boxShadow: '0 24px 80px rgba(0,0,0,0.35)',
             }}
             onKeyDown={handleKeyDown}
@@ -234,7 +233,7 @@ export default function IdentityModal({ isOpen, onComplete }) {
               </button>
             </form>
           </motion.div>
-        </>
+          </motion.div>
       )}
     </AnimatePresence>
   );
