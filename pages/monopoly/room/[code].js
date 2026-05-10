@@ -72,6 +72,7 @@ export default function GameRoom() {
   const [confettiActive, setConfettiActive] = useState(false);
   const [disconnectedPlayers, setDisconnectedPlayers] = useState([]);
   const [spaceDetailModal, setSpaceDetailModal] = useState({ isOpen: false, spaceId: null });
+  const [notFound, setNotFound] = useState(false);
   const { toasts, toast } = useToast();
 
   useEffect(() => {
@@ -85,6 +86,7 @@ export default function GameRoom() {
   useEffect(() => {
     if (!code || !myIdentity) return;
 
+    const hostFlag = new URLSearchParams(window.location.search).get('host') === 'true';
     const doc = new Y.Doc();
     const roomId = `poordown-${code}`;
 
@@ -139,7 +141,7 @@ export default function GameRoom() {
       const meta = doc.getMap('meta');
       const yPlayers = doc.getArray('players');
 
-      if (!meta.get('hostId')) {
+      if (hostFlag && !meta.get('hostId')) {
         meta.set('hostId', myIdentity.uuid);
         meta.set('phase', 'setup');
         meta.set('currentPlayer', 0);
@@ -168,7 +170,7 @@ export default function GameRoom() {
 
       const updateState = () => {
         setPlayers(yPlayers.toArray());
-        const currentPhase = meta.get('phase') ?? 'setup';
+        const currentPhase = meta.get('phase') || (hostFlag ? 'setup' : 'connecting');
         setPhaseState(currentPhase);
         setDice(meta.get('dice') ?? [0, 0]);
         setCurrentPlayerIndex(meta.get('currentPlayer') ?? 0);
@@ -214,6 +216,12 @@ export default function GameRoom() {
     const t = setTimeout(() => setLastCard(null), 4000);
     return () => clearTimeout(t);
   }, [lastCard]);
+
+  useEffect(() => {
+    if (phase !== 'connecting') return;
+    const t = setTimeout(() => setNotFound(true), 8000);
+    return () => clearTimeout(t);
+  }, [phase]);
 
   const checkBankruptcy = useCallback((playerUuid, creditorUuid) => {
     if (!ydoc) return;
@@ -571,6 +579,34 @@ export default function GameRoom() {
         ) : (
           <p>Loading room...</p>
         )}
+      </div>
+    );
+  }
+
+  if (notFound) {
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: '#F8F4E8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', padding: '40px 24px' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
+          <h2 style={{ fontFamily: 'Nunito, sans-serif', fontSize: '24px', fontWeight: '800', color: '#2B2D42', margin: '0 0 8px' }}>
+            Room not found
+          </h2>
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#8D99AE', margin: '0 0 28px', lineHeight: 1.5 }}>
+            No one is hosting room <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: '700', color: '#2B2D42' }}>{code}</span>.<br />
+            Check the room code and try again.
+          </p>
+          <button
+            onClick={() => router.push('/monopoly')}
+            style={{
+              padding: '12px 28px', borderRadius: '12px', border: 'none',
+              backgroundColor: '#2D6A4F', color: 'white',
+              fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: '700',
+              cursor: 'pointer',
+            }}
+          >
+            ← Back to Monopoly
+          </button>
+        </div>
       </div>
     );
   }
