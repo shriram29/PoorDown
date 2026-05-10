@@ -10,7 +10,7 @@ export default function PlayerHUD({ player, index, isCurrentPlayer, isMyPlayer, 
         gap: '10px',
         padding: '7px 14px',
         borderLeft: `3px solid ${isCurrentPlayer ? color : 'transparent'}`,
-        backgroundColor: isCurrentPlayer ? 'rgba(255,255,255,0.04)' : 'transparent',
+        backgroundColor: isCurrentPlayer ? 'rgba(0,0,0,0.04)' : 'transparent',
         opacity: player.isEliminated ? 0.4 : 1,
         cursor: onClick ? 'pointer' : 'default',
         transition: 'background-color 0.15s',
@@ -39,7 +39,7 @@ export default function PlayerHUD({ player, index, isCurrentPlayer, isMyPlayer, 
         style={{
           flex: 1,
           fontSize: '13px',
-          color: isCurrentPlayer ? '#e2e2f0' : '#a0a3bc',
+          color: isCurrentPlayer ? '#2B2D42' : '#8D99AE',
           fontWeight: isCurrentPlayer ? '600' : '400',
           fontFamily: 'Inter, sans-serif',
           textDecoration: player.isEliminated ? 'line-through' : 'none',
@@ -50,19 +50,19 @@ export default function PlayerHUD({ player, index, isCurrentPlayer, isMyPlayer, 
       >
         {player.name || `Player ${index + 1}`}
         {isMyPlayer && (
-          <span style={{ marginLeft: '5px', fontSize: '10px', color: '#4a4d6a' }}>(you)</span>
+          <span style={{ marginLeft: '5px', fontSize: '10px', color: '#8D99AE' }}>(you)</span>
         )}
         {player.inJail && !player.isEliminated && (
-          <span style={{ marginLeft: '5px', fontSize: '10px', color: '#f59e0b' }}>jail</span>
+          <span style={{ marginLeft: '5px', fontSize: '10px', color: '#F4A261' }}>jail</span>
         )}
       </span>
 
       <span
         style={{
           fontSize: '13px',
-          fontFamily: 'monospace',
+          fontFamily: 'JetBrains Mono, monospace',
           fontWeight: '600',
-          color: player.isEliminated ? '#ef4444' : '#4ade80',
+          color: player.isEliminated ? '#E63946' : '#2D6A4F',
           flexShrink: 0,
         }}
       >

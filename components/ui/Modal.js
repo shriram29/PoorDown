@@ -6,7 +6,7 @@ export default function Modal({ isOpen, onClose, title, children }) {
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop + centering container */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -18,26 +18,27 @@ export default function Modal({ isOpen, onClose, title, children }) {
               backgroundColor: 'rgba(43, 45, 66, 0.7)',
               backdropFilter: 'blur(4px)',
               zIndex: 100,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '16px',
             }}
-          />
-          
+          >
           {/* Modal */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            onClick={(e) => e.stopPropagation()}
             style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
               backgroundColor: '#F8F4E8',
               borderRadius: '16px',
               padding: '24px',
               minWidth: '320px',
               maxWidth: '500px',
-              maxHeight: '80vh',
+              width: '100%',
+              maxHeight: '90vh',
               overflow: 'auto',
               zIndex: 101,
               boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
@@ -90,6 +91,7 @@ export default function Modal({ isOpen, onClose, title, children }) {
             
             {/* Content */}
             {children}
+          </motion.div>
           </motion.div>
         </>
       )}

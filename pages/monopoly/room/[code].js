@@ -561,19 +561,19 @@ export default function GameRoom() {
 
   if (!code || !myIdentity) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#16172a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: '#F8F4E8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif' }}>
         {!myIdentity ? (
           <div style={{ textAlign: 'center' }}>
-            <p style={{ color: '#7a7d9a', marginBottom: '16px', fontSize: '14px' }}>No identity found. Please set your name first.</p>
+            <p style={{ color: '#8D99AE', marginBottom: '16px', fontSize: '14px' }}>No identity found. Please set your name first.</p>
             <button
               onClick={() => router.push('/')}
-              style={{ padding: '10px 22px', backgroundColor: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
+              style={{ padding: '10px 22px', backgroundColor: '#2D6A4F', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
             >
               Go to Lobby
             </button>
           </div>
         ) : (
-          <p style={{ color: '#7a7d9a', fontSize: '14px' }}>Loading room…</p>
+          <p style={{ color: '#8D99AE', fontSize: '14px' }}>Loading room…</p>
         )}
       </div>
     );
@@ -581,19 +581,19 @@ export default function GameRoom() {
 
   if (notFound) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#16172a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: '#F8F4E8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center', padding: '40px 24px' }}>
           <div style={{ fontSize: '40px', marginBottom: '16px' }}>🔍</div>
-          <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '20px', fontWeight: '700', color: '#e2e2f0', margin: '0 0 8px' }}>
+          <h2 style={{ fontFamily: 'Nunito, sans-serif', fontSize: '20px', fontWeight: '700', color: '#2B2D42', margin: '0 0 8px' }}>
             Room not found
           </h2>
-          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#7a7d9a', margin: '0 0 24px', lineHeight: 1.6 }}>
-            No one is hosting <span style={{ fontFamily: 'monospace', color: '#d0d0e8' }}>{code}</span>.<br />
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8D99AE', margin: '0 0 24px', lineHeight: 1.6 }}>
+            No one is hosting <span style={{ fontFamily: 'JetBrains Mono, monospace', color: '#2B2D42' }}>{code}</span>.<br />
             Check the code and try again.
           </p>
           <button
             onClick={() => router.push('/monopoly')}
-            style={{ padding: '10px 22px', borderRadius: '8px', border: 'none', backgroundColor: '#6366f1', color: 'white', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
+            style={{ padding: '10px 22px', borderRadius: '8px', border: 'none', backgroundColor: '#2D6A4F', color: 'white', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
           >
             ← Back to Monopoly
           </button>
@@ -602,9 +602,9 @@ export default function GameRoom() {
     );
   }
 
-  const divider = <div style={{ height: '1px', backgroundColor: '#2e305a', margin: '0' }} />;
+  const divider = <div style={{ height: '1px', backgroundColor: '#E8E4D8', margin: '0' }} />;
   const sectionLabel = (text) => (
-    <div style={{ padding: '8px 14px 4px', fontSize: '10px', color: '#4a4d6a', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ padding: '8px 14px 4px', fontSize: '10px', color: '#8D99AE', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', fontFamily: 'Inter, sans-serif' }}>
       {text}
     </div>
   );
@@ -618,31 +618,31 @@ export default function GameRoom() {
 
       <style>{`
         * { box-sizing: border-box; }
-        body { margin: 0; background: #16172a; }
+        body { margin: 0; background: #F8F4E8; }
         @media (max-width: 768px) {
           .main-layout { flex-direction: column !important; }
-          .right-panel { width: 100% !important; height: auto !important; border-left: none !important; border-top: 1px solid #2e305a !important; }
+          .right-panel { width: 100% !important; height: auto !important; border-left: none !important; border-top: 1px solid #E8E4D8 !important; }
           .board-area { flex: none !important; height: 100vw !important; }
         }
       `}</style>
 
       {/* Root */}
-      <div style={{ minHeight: '100vh', backgroundColor: '#16172a', display: 'flex', flexDirection: 'column', fontFamily: 'Inter, sans-serif' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: '#F8F4E8', display: 'flex', flexDirection: 'column', fontFamily: 'Inter, sans-serif' }}>
 
         {/* Top bar */}
-        <div style={{ height: '44px', backgroundColor: '#1e2038', borderBottom: '1px solid #2e305a', display: 'flex', alignItems: 'center', padding: '0 14px', gap: '12px', flexShrink: 0 }}>
-          <span style={{ fontSize: '15px', fontWeight: '800', color: '#e2e2f0', letterSpacing: '-0.3px' }}>
-            Poor<span style={{ color: '#ef4444' }}>Down</span>
+        <div style={{ height: '44px', backgroundColor: '#FFFFFF', borderBottom: '1px solid #E8E4D8', display: 'flex', alignItems: 'center', padding: '0 14px', gap: '12px', flexShrink: 0 }}>
+          <span style={{ fontSize: '15px', fontWeight: '800', color: '#2B2D42', fontFamily: 'Nunito, sans-serif', letterSpacing: '-0.3px' }}>
+            Poor<span style={{ color: '#E63946' }}>Down</span>
           </span>
-          <span style={{ fontSize: '11px', color: '#3a3d5c', fontWeight: '500' }}>Monopoly</span>
+          <span style={{ fontSize: '11px', color: '#8D99AE', fontWeight: '500' }}>Monopoly</span>
           <div style={{ flex: 1 }} />
           {isHost && (
-            <span style={{ fontSize: '10px', color: '#f59e0b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Host</span>
+            <span style={{ fontSize: '10px', color: '#F4A261', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Host</span>
           )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#252645', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer' }}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#F0ECE0', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer' }}
                onClick={() => navigator.clipboard.writeText(window.location.origin + window.location.pathname)}>
-            <span style={{ fontFamily: 'monospace', fontSize: '12px', color: '#d0d0e8', letterSpacing: '2px' }}>{code}</span>
-            <span style={{ fontSize: '11px', color: '#4a4d6a' }}>copy</span>
+            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '12px', color: '#2B2D42', letterSpacing: '2px' }}>{code}</span>
+            <span style={{ fontSize: '11px', color: '#8D99AE' }}>copy</span>
           </div>
         </div>
 
@@ -666,7 +666,7 @@ export default function GameRoom() {
           </div>
 
           {/* Right panel */}
-          <div className="right-panel" style={{ width: '272px', borderLeft: '1px solid #2e305a', display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 }}>
+          <div className="right-panel" style={{ width: '272px', borderLeft: '1px solid #E8E4D8', backgroundColor: '#FFFFFF', display: 'flex', flexDirection: 'column', overflow: 'hidden', flexShrink: 0 }}>
 
             {/* Players */}
             {sectionLabel(`Players (${players.length})`)}
@@ -715,13 +715,13 @@ export default function GameRoom() {
               {/* Jail options */}
               {currentPlayerInJail && phase === 'rolling' && !hasRolled && (
                 <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <p style={{ margin: '0 0 4px', fontSize: '11px', color: '#f59e0b', fontWeight: '600' }}>You are in Jail</p>
+                  <p style={{ margin: '0 0 4px', fontSize: '11px', color: '#F4A261', fontWeight: '600' }}>You are in Jail</p>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    <button onClick={() => handleJailAction('pay')} style={jailBtnStyle('#ef4444')}>Pay $50</button>
+                    <button onClick={() => handleJailAction('pay')} style={jailBtnStyle('#E63946')}>Pay $50</button>
                     {currentPlayerObj?.getOutOfJailFree > 0 && (
-                      <button onClick={() => handleJailAction('card')} style={jailBtnStyle('#22c55e')}>Use Card</button>
+                      <button onClick={() => handleJailAction('card')} style={jailBtnStyle('#2D6A4F')}>Use Card</button>
                     )}
-                    <button onClick={handleRoll} disabled={isRolling} style={jailBtnStyle('#6366f1')}>Roll Doubles</button>
+                    <button onClick={handleRoll} disabled={isRolling} style={jailBtnStyle('#1D3557')}>Roll Doubles</button>
                   </div>
                 </div>
               )}
@@ -736,16 +736,16 @@ export default function GameRoom() {
                     style={{
                       marginTop: '8px',
                       padding: '10px 12px',
-                      backgroundColor: lastCard.deck === 'chance' ? '#2d1f00' : '#0d1a2d',
-                      borderLeft: `3px solid ${lastCard.deck === 'chance' ? '#f59e0b' : '#6366f1'}`,
+                      backgroundColor: lastCard.deck === 'chance' ? '#FFF8EC' : '#EEF4FF',
+                      borderLeft: `3px solid ${lastCard.deck === 'chance' ? '#F4A261' : '#1D3557'}`,
                       borderRadius: '6px',
                       fontSize: '12px',
-                      color: '#d0d0e8',
+                      color: '#2B2D42',
                       fontStyle: 'italic',
                       lineHeight: 1.4,
                     }}
                   >
-                    <div style={{ fontSize: '10px', fontWeight: '700', color: lastCard.deck === 'chance' ? '#f59e0b' : '#818cf8', marginBottom: '3px', fontStyle: 'normal' }}>
+                    <div style={{ fontSize: '10px', fontWeight: '700', color: lastCard.deck === 'chance' ? '#F4A261' : '#1D3557', marginBottom: '3px', fontStyle: 'normal' }}>
                       {lastCard.deck === 'chance' ? 'CHANCE' : 'COMMUNITY CHEST'}
                     </div>
                     {lastCard.text}
@@ -768,7 +768,7 @@ export default function GameRoom() {
                       <div key={propId} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 14px', cursor: 'pointer' }}
                            onClick={() => setSpaceDetailModal({ isOpen: true, spaceId: propId })}>
                         <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: color, flexShrink: 0, display: 'inline-block' }} />
-                        <span style={{ fontSize: '12px', color: '#a0a3bc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{space?.name}</span>
+                        <span style={{ fontSize: '12px', color: '#8D99AE', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{space?.name}</span>
                       </div>
                     );
                   })}
@@ -780,17 +780,17 @@ export default function GameRoom() {
             {/* Bottom controls */}
             <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '6px', marginTop: 'auto' }}>
               {phase !== 'setup' && phase !== 'connecting' && isMyTurn && myPlayer && !myPlayer.isEliminated && (
-                <button onClick={() => setTradeModal({ isOpen: true, mode: 'propose', tradeOffer: null })} style={ctrlBtnStyle('#3730a3')}>
+                <button onClick={() => setTradeModal({ isOpen: true, mode: 'propose', tradeOffer: null })} style={ctrlBtnStyle('#1D3557')}>
                   Trade
                 </button>
               )}
               {myPlayer?.properties?.length > 0 && (
-                <button onClick={() => setPropertyMgmtModal(true)} style={ctrlBtnStyle('#166534')}>
+                <button onClick={() => setPropertyMgmtModal(true)} style={ctrlBtnStyle('#2D6A4F')}>
                   Manage Properties
                 </button>
               )}
               {(isHost || phase === 'setup') && (
-                <button onClick={() => setConfigModal(true)} style={ctrlBtnStyle('#1e2038', '#4a4d6a')}>
+                <button onClick={() => setConfigModal(true)} style={ctrlBtnStyle('#F0ECE0', '#8D99AE')}>
                   Settings
                 </button>
               )}
@@ -814,21 +814,21 @@ export default function GameRoom() {
         {auctionState && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(10,10,20,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 150 }}
+            style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(43,45,66,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 150 }}
           >
             <motion.div
               initial={{ scale: 0.88, y: 16 }} animate={{ scale: 1, y: 0 }}
-              style={{ backgroundColor: '#1e2038', border: '1px solid #2e305a', borderRadius: '16px', padding: '28px', maxWidth: '380px', width: '90%', textAlign: 'center' }}
+              style={{ backgroundColor: '#FFFFFF', border: '1px solid #E8E4D8', borderRadius: '16px', padding: '28px', maxWidth: '380px', width: '90%', textAlign: 'center', boxShadow: '0 12px 40px rgba(0,0,0,0.12)' }}
             >
-              <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '18px', fontWeight: '700', color: '#e2e2f0', margin: '0 0 4px' }}>Auction</h2>
-              <p style={{ fontSize: '13px', color: '#7a7d9a', margin: '0 0 16px' }}>
+              <h2 style={{ fontFamily: 'Nunito, sans-serif', fontSize: '18px', fontWeight: '700', color: '#2B2D42', margin: '0 0 4px' }}>Auction</h2>
+              <p style={{ fontSize: '13px', color: '#8D99AE', margin: '0 0 16px' }}>
                 {auctionState.propertyId != null ? BOARD_SPACES[auctionState.propertyId]?.name : ''}
               </p>
-              <div style={{ fontFamily: 'monospace', fontSize: '32px', fontWeight: '700', color: '#4ade80', marginBottom: '6px' }}>
+              <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '32px', fontWeight: '700', color: '#2D6A4F', marginBottom: '6px' }}>
                 ${auctionState.currentBid}
               </div>
               {auctionState.highBidder && (
-                <p style={{ fontSize: '12px', color: '#7a7d9a', margin: '0 0 16px' }}>
+                <p style={{ fontSize: '12px', color: '#8D99AE', margin: '0 0 16px' }}>
                   Leading: {getPlayerById(ydoc, auctionState.highBidder)?.name ?? 'Unknown'}
                 </p>
               )}
@@ -837,19 +837,19 @@ export default function GameRoom() {
                   {[10, 25, 50, 100].map(inc => (
                     <motion.button key={inc} onClick={() => handleAuctionBid(auctionState.currentBid + inc)}
                       whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                      style={{ padding: '8px 14px', backgroundColor: '#166534', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '600', fontFamily: 'Inter, sans-serif', cursor: 'pointer' }}>
+                      style={{ padding: '8px 14px', backgroundColor: '#2D6A4F', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '600', fontFamily: 'Inter, sans-serif', cursor: 'pointer' }}>
                       +${inc}
                     </motion.button>
                   ))}
                   <motion.button onClick={handleAuctionPass}
                     whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                    style={{ padding: '8px 14px', backgroundColor: '#7f1d1d', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '600', fontFamily: 'Inter, sans-serif', cursor: 'pointer' }}>
+                    style={{ padding: '8px 14px', backgroundColor: '#E63946', color: 'white', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '600', fontFamily: 'Inter, sans-serif', cursor: 'pointer' }}>
                     Pass
                   </motion.button>
                 </div>
               )}
               {auctionState.passed?.includes(myPlayerId) && (
-                <p style={{ fontSize: '12px', color: '#4a4d6a', margin: '8px 0 0' }}>You passed. Waiting for others…</p>
+                <p style={{ fontSize: '12px', color: '#8D99AE', margin: '8px 0 0' }}>You passed. Waiting for others…</p>
               )}
             </motion.div>
           </motion.div>
@@ -908,23 +908,23 @@ export default function GameRoom() {
         {phase === 'gameOver' && gameWinner && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(10,10,20,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}
+            style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(43,45,66,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}
           >
             <motion.div
               initial={{ scale: 0.85, y: 16 }} animate={{ scale: 1, y: 0 }}
               transition={{ type: 'spring', damping: 22 }}
-              style={{ backgroundColor: '#1e2038', border: '1px solid #2e305a', borderRadius: '20px', padding: '40px', textAlign: 'center', maxWidth: '360px' }}
+              style={{ backgroundColor: '#FFFFFF', border: '1px solid #E8E4D8', borderRadius: '20px', padding: '40px', textAlign: 'center', maxWidth: '360px', boxShadow: '0 16px 48px rgba(0,0,0,0.12)' }}
             >
               <div style={{ fontSize: '56px', marginBottom: '14px' }}>🏆</div>
-              <h2 style={{ fontFamily: 'Inter, sans-serif', fontSize: '28px', fontWeight: '800', color: '#e2e2f0', margin: '0 0 6px' }}>
+              <h2 style={{ fontFamily: 'Nunito, sans-serif', fontSize: '28px', fontWeight: '800', color: '#2B2D42', margin: '0 0 6px' }}>
                 {gameWinner} Wins!
               </h2>
-              <p style={{ fontSize: '13px', color: '#7a7d9a', margin: '0 0 28px' }}>
+              <p style={{ fontSize: '13px', color: '#8D99AE', margin: '0 0 28px' }}>
                 Congratulations on your victory!
               </p>
               <button
                 onClick={() => router.push('/monopoly')}
-                style={{ padding: '10px 28px', backgroundColor: '#6366f1', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', fontFamily: 'Inter, sans-serif', cursor: 'pointer' }}
+                style={{ padding: '10px 28px', backgroundColor: '#2D6A4F', color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', fontFamily: 'Inter, sans-serif', cursor: 'pointer' }}
               >
                 Play Again
               </button>
@@ -941,5 +941,5 @@ function jailBtnStyle(bg) {
 }
 
 function ctrlBtnStyle(bg, color = 'white') {
-  return { padding: '7px 12px', backgroundColor: bg, color, border: '1px solid #2e305a', borderRadius: '7px', fontSize: '12px', fontWeight: '600', fontFamily: 'Inter, sans-serif', cursor: 'pointer', textAlign: 'left' };
+  return { padding: '7px 12px', backgroundColor: bg, color, border: '1px solid #E8E4D8', borderRadius: '7px', fontSize: '12px', fontWeight: '600', fontFamily: 'Inter, sans-serif', cursor: 'pointer', textAlign: 'left' };
 }

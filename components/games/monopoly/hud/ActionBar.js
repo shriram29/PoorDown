@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 
-function DarkButton({ children, onClick, disabled, color = '#6366f1' }) {
+function DarkButton({ children, onClick, disabled, color = '#2D6A4F' }) {
   return (
     <motion.button
       onClick={onClick}
@@ -9,8 +9,8 @@ function DarkButton({ children, onClick, disabled, color = '#6366f1' }) {
       whileTap={{ scale: disabled ? 1 : 0.97 }}
       style={{
         padding: '8px 14px',
-        backgroundColor: disabled ? '#2a2d50' : color,
-        color: disabled ? '#4a4d6a' : 'white',
+        backgroundColor: disabled ? '#E8E4D8' : color,
+        color: disabled ? '#8D99AE' : 'white',
         border: 'none',
         borderRadius: '8px',
         fontSize: '12px',
@@ -43,18 +43,18 @@ export default function ActionBar({
   if (phase === 'setup') {
     return (
       <div style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
-        <p style={{ margin: 0, fontSize: '12px', color: '#7a7d9a', fontFamily: 'Inter, sans-serif', textAlign: 'center' }}>
+        <p style={{ margin: 0, fontSize: '12px', color: '#8D99AE', fontFamily: 'Inter, sans-serif', textAlign: 'center' }}>
           {isHost
             ? `${players?.length || 0} player${players?.length !== 1 ? 's' : ''} in lobby`
             : `Waiting for host… (${players?.length || 0} players)`}
         </p>
         {isHost && (
-          <DarkButton onClick={onStartGame} disabled={players?.length < 2} color="#22c55e">
+          <DarkButton onClick={onStartGame} disabled={players?.length < 2} color="#2D6A4F">
             Start Game
           </DarkButton>
         )}
         {isHost && players?.length < 2 && (
-          <p style={{ margin: 0, fontSize: '11px', color: '#4a4d6a', fontFamily: 'Inter, sans-serif' }}>
+          <p style={{ margin: 0, fontSize: '11px', color: '#8D99AE', fontFamily: 'Inter, sans-serif' }}>
             Need at least 2 players
           </p>
         )}
@@ -65,7 +65,7 @@ export default function ActionBar({
   if (phase === 'gameOver') {
     return (
       <div style={{ padding: '12px', display: 'flex', justifyContent: 'center' }}>
-        <DarkButton color="#f97316" onClick={() => { localStorage.removeItem('poordown_active_room'); window.location.href = '/monopoly'; }}>
+        <DarkButton color="#8D99AE" onClick={() => { localStorage.removeItem('poordown_active_room'); window.location.href = '/monopoly'; }}>
           Back to Lobby
         </DarkButton>
       </div>
@@ -76,16 +76,16 @@ export default function ActionBar({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-      {canRoll && <DarkButton onClick={onRoll} color='#6366f1'>Roll Dice</DarkButton>}
+      {canRoll && <DarkButton onClick={onRoll} color='#2D6A4F'>Roll Dice</DarkButton>}
       {canBuy && (
         <div style={{ display: 'flex', gap: '6px' }}>
-          <DarkButton onClick={onBuy} color='#22c55e'>Buy</DarkButton>
-          {onAuction && <DarkButton onClick={onAuction} color='#7c3aed'>Auction</DarkButton>}
+          <DarkButton onClick={onBuy} color='#2D6A4F'>Buy</DarkButton>
+          {onAuction && <DarkButton onClick={onAuction} color='#1D3557'>Auction</DarkButton>}
         </div>
       )}
-      {canEndTurn && <DarkButton onClick={onEndTurn} color='#f97316'>End Turn</DarkButton>}
+      {canEndTurn && <DarkButton onClick={onEndTurn} color='#E63946'>End Turn</DarkButton>}
       {!hasActions && !isMyTurn && phase !== 'connecting' && (
-        <p style={{ margin: 0, fontSize: '11px', color: '#4a4d6a', fontFamily: 'Inter, sans-serif', textAlign: 'center' }}>
+        <p style={{ margin: 0, fontSize: '11px', color: '#8D99AE', fontFamily: 'Inter, sans-serif', textAlign: 'center' }}>
           Waiting…
         </p>
       )}

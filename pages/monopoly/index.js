@@ -63,7 +63,7 @@ export default function MonopolyLobby() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             style={{
-              fontFamily: 'Playfair Display, serif',
+              fontFamily: 'Nunito, sans-serif',
               fontSize: '56px',
               fontWeight: '800',
               color: '#2B2D42',
@@ -163,7 +163,7 @@ export default function MonopolyLobby() {
               <span style={{ fontSize: '40px' }}>🎮</span>
               <h2
                 style={{
-                  fontFamily: 'Playfair Display, serif',
+                  fontFamily: 'Nunito, sans-serif',
                   fontSize: '24px',
                   fontWeight: '700',
                   color: '#2B2D42',
@@ -194,7 +194,7 @@ export default function MonopolyLobby() {
               <span style={{ fontSize: '40px' }}>🚀</span>
               <h2
                 style={{
-                  fontFamily: 'Playfair Display, serif',
+                  fontFamily: 'Nunito, sans-serif',
                   fontSize: '24px',
                   fontWeight: '700',
                   color: '#2B2D42',
