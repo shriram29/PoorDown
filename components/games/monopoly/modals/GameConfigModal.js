@@ -130,31 +130,30 @@ export default function GameConfigModal({ isOpen, onClose, onSave, isHost, curre
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              backgroundColor: 'rgba(43, 45, 66, 0.85)',
-              backdropFilter: 'blur(4px)',
-              zIndex: 100,
-            }}
-          />
-
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(43, 45, 66, 0.85)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+        >
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            onClick={(e) => e.stopPropagation()}
             style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
               backgroundColor: '#fff',
               borderRadius: '16px',
               padding: '32px',
@@ -162,7 +161,6 @@ export default function GameConfigModal({ isOpen, onClose, onSave, isHost, curre
               maxWidth: '480px',
               maxHeight: '90vh',
               overflowY: 'auto',
-              zIndex: 101,
               boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
             }}
           >
@@ -226,13 +224,7 @@ export default function GameConfigModal({ isOpen, onClose, onSave, isHost, curre
 
             <SettingRow label="Auction on decline">
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span
-                  style={{
-                    fontFamily: 'Inter, sans-serif',
-                    fontSize: '16px',
-                    color: '#2B2D42',
-                  }}
-                >
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '16px', color: '#2B2D42' }}>
                   {config.auctionEnabled ? 'On' : 'Off'}
                 </span>
                 <ToggleSwitch
@@ -257,27 +249,7 @@ export default function GameConfigModal({ isOpen, onClose, onSave, isHost, curre
               />
             </SettingRow>
 
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '16px',
-                marginBottom: '28px',
-              }}
-            >
-              <span
-                style={{
-                  fontFamily: 'Inter, sans-serif',
-                  fontSize: '14px',
-                  color: '#8D99AE',
-                  textTransform: 'uppercase',
-                  letterSpacing: '1px',
-                  flexShrink: 0,
-                }}
-              >
-                Jail fine
-              </span>
+            <SettingRow label="Jail fine">
               <SegmentedGroup
                 options={[
                   { label: '$50', value: 50 },
@@ -288,7 +260,7 @@ export default function GameConfigModal({ isOpen, onClose, onSave, isHost, curre
                 mono
                 disabled={!isHost}
               />
-            </div>
+            </SettingRow>
 
             {isHost ? (
               <motion.button
@@ -324,7 +296,7 @@ export default function GameConfigModal({ isOpen, onClose, onSave, isHost, curre
               </p>
             )}
           </motion.div>
-        </>
+        </motion.div>
       )}
     </AnimatePresence>
   );

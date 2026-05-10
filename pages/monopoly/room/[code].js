@@ -70,11 +70,17 @@ export default function GameRoom() {
   const [propertyMgmtModal, setPropertyMgmtModal] = useState(false);
   const [configModal, setConfigModal] = useState(false);
   const [confettiActive, setConfettiActive] = useState(false);
+  const [boardState, setBoardState] = useState({});
   const [disconnectedPlayers, setDisconnectedPlayers] = useState([]);
   const [spaceDetailModal, setSpaceDetailModal] = useState({ isOpen: false, spaceId: null });
   const [notFound, setNotFound] = useState(false);
   const [roomConfirmed, setRoomConfirmed] = useState(false);
+  const [gameLogs, setGameLogs] = useState([]);
   const { toasts, toast } = useToast();
+
+  const addLog = useCallback((msg, type = 'info') => {
+    setGameLogs(prev => [{ id: Date.now() + Math.random(), msg, type }, ...prev].slice(0, 15));
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -201,12 +207,22 @@ export default function GameRoom() {
       yPlayers.observe(updateState);
       updateState();
 
+      const yBoard = doc.getMap('board');
+      const updateBoardState = () => {
+        const state = {};
+        yBoard.forEach((val, key) => { state[key] = val; });
+        setBoardState(state);
+      };
+      yBoard.observe(updateBoardState);
+      updateBoardState();
+
       setYdoc(doc);
       setMyPlayerId(myIdentity.uuid);
 
       doc._cleanupObservers = () => {
         meta.unobserve(updateState);
         yPlayers.unobserve(updateState);
+        yBoard.unobserve(updateBoardState);
       };
     }, 500);
 
@@ -255,6 +271,7 @@ export default function GameRoom() {
     if (!ydoc) return;
     const space = BOARD_SPACES[position];
     const meta = ydoc.getMap('meta');
+    const playerName = getPlayerById(ydoc, playerUuid)?.name ?? 'Someone';
 
     switch (space.type) {
       case 'property':
@@ -262,6 +279,7 @@ export default function GameRoom() {
       case 'utility': {
         const propState = getPropertyState(ydoc, position);
         if (!propState.owner) {
+          addLog(`${playerName} landed on ${space.name} — for sale $${space.price}`, 'info');
           setPropertyModal({ isOpen: true, propertyId: position });
           meta.set('phase', 'buying');
         } else if (propState.owner !== playerUuid) {
@@ -270,12 +288,14 @@ export default function GameRoom() {
             updatePlayerCash(ydoc, playerUuid, -rent);
             updatePlayerCash(ydoc, propState.owner, rent);
             const ownerName = getPlayerById(ydoc, propState.owner)?.name ?? 'owner';
+            addLog(`${playerName} paid $${rent} rent to ${ownerName}`, 'warning');
             if (playerUuid === myPlayerId) toast(`Paid $${rent} rent to ${ownerName}`, 'warning');
           }
           setHasRolled(!isDoubles);
           meta.set('phase', 'rolling');
           checkBankruptcy(playerUuid, propState.owner);
         } else {
+          addLog(`${playerName} landed on their own ${space.name}`, 'info');
           setHasRolled(!isDoubles);
           meta.set('phase', 'rolling');
         }
@@ -287,6 +307,7 @@ export default function GameRoom() {
         updatePlayerCash(ydoc, playerUuid, -taxAmount);
         setHasRolled(!isDoubles);
         meta.set('phase', 'rolling');
+        addLog(`${playerName} paid $${taxAmount} tax`, 'warning');
         if (playerUuid === myPlayerId) toast(`Paid $${taxAmount} tax`, 'error');
         checkBankruptcy(playerUuid, null);
         break;
@@ -295,6 +316,7 @@ export default function GameRoom() {
       case 'chance': {
         const card = drawCard(ydoc, 'chance');
         setLastCard(card);
+        addLog(`${playerName} drew Chance: ${card?.text ?? '?'}`, 'info');
         const result = applyCardEffect(ydoc, card, playerUuid,
           ydoc.getArray('players').toArray().map(p => p.uuid));
         if (result.needsLandingResolution && result.newPosition !== null) {
@@ -309,6 +331,7 @@ export default function GameRoom() {
       case 'communityChest': {
         const card = drawCard(ydoc, 'communityChest');
         setLastCard(card);
+        addLog(`${playerName} drew Community Chest: ${card?.text ?? '?'}`, 'info');
         const result = applyCardEffect(ydoc, card, playerUuid,
           ydoc.getArray('players').toArray().map(p => p.uuid));
         if (result.needsLandingResolution && result.newPosition !== null) {
@@ -324,6 +347,7 @@ export default function GameRoom() {
         sendToJail(ydoc, playerUuid);
         setHasRolled(false);
         meta.set('phase', 'rolling');
+        addLog(`${playerName} went to Jail!`, 'error');
         if (playerUuid === myPlayerId) toast('Go directly to Jail!', 'error');
         break;
       }
@@ -343,7 +367,7 @@ export default function GameRoom() {
       meta.set('phase', 'gameOver');
       setGameWinner(winner.name);
     }
-  }, [ydoc, checkBankruptcy]);
+  }, [ydoc, checkBankruptcy, addLog]);
 
   const handleRoll = useCallback(() => {
     if (!ydoc || isRolling) return;
@@ -359,6 +383,7 @@ export default function GameRoom() {
     setTimeout(() => {
       const { die1, die2, isDoubles, total, doublesCount: newDoublesCount } = rollDice(ydoc);
       setDice([die1, die2]);
+      addLog(`${currentPlayer.name} rolled ${die1}+${die2} = ${total}${isDoubles ? ' (doubles!)' : ''}`, 'info');
 
       if (isDoubles && newDoublesCount >= 3) {
         sendToJail(ydoc, currentPlayer.uuid);
@@ -404,7 +429,7 @@ export default function GameRoom() {
         resolveLanding(currentPlayer.uuid, newPosition, isDoubles);
       }, 600);
     }, 400);
-  }, [ydoc, isRolling, myPlayerId, resolveLanding]);
+  }, [ydoc, isRolling, myPlayerId, resolveLanding, addLog]);
 
   const handleBuy = useCallback(() => {
     if (!ydoc || propertyModal.propertyId == null) return;
@@ -413,13 +438,15 @@ export default function GameRoom() {
       const meta = ydoc.getMap('meta');
       meta.set('auctionPropertyId', undefined);
       setPropertyModal({ isOpen: false, propertyId: null });
-      setHasRolled(true);
+      const isDoubles = dice[0] === dice[1] && dice[0] > 0;
+      setHasRolled(!isDoubles);
       meta.set('phase', 'rolling');
       const spaceName = BOARD_SPACES[propertyModal.propertyId]?.name;
+      addLog(`You bought ${spaceName}!`, 'success');
       toast(`You bought ${spaceName}!`, 'success');
       setConfettiActive(true);
     }
-  }, [ydoc, myPlayerId, propertyModal, toast]);
+  }, [ydoc, myPlayerId, propertyModal, dice, toast, addLog]);
 
   const handleAuction = useCallback(() => {
     if (!ydoc || propertyModal.propertyId == null) return;
@@ -430,9 +457,10 @@ export default function GameRoom() {
     meta.set('auctionHighBidder', null);
     meta.set('auctionPassed', []);
     setPropertyModal({ isOpen: false, propertyId: null });
-    setHasRolled(true);
+    const isDoubles = dice[0] === dice[1] && dice[0] > 0;
+    setHasRolled(!isDoubles);
     meta.set('phase', 'auction');
-  }, [ydoc, propertyModal]);
+  }, [ydoc, propertyModal, dice]);
 
   const handleAuctionBid = useCallback((bidAmount) => {
     if (!ydoc || !auctionState) return;
@@ -512,7 +540,8 @@ export default function GameRoom() {
     meta.set('doublesCount', 0);
     meta.set('turnNumber', 1);
     setHasRolled(false);
-  }, [ydoc, isHost]);
+    addLog('Game started! Good luck!', 'success');
+  }, [ydoc, isHost, addLog]);
 
   const handleEndTurn = useCallback(() => {
     if (!ydoc) return;
@@ -660,7 +689,10 @@ export default function GameRoom() {
               <Board
                 players={players}
                 currentPlayerIndex={currentPlayerIndex}
+                boardState={boardState}
                 onPropertyClick={(spaceId) => setSpaceDetailModal({ isOpen: true, spaceId })}
+                gameLogs={gameLogs}
+                highlightSpaceId={propertyModal.isOpen ? propertyModal.propertyId : null}
               />
             </motion.div>
           </div>
@@ -802,7 +834,7 @@ export default function GameRoom() {
       {/* Modals */}
       <PropertyModal
         isOpen={propertyModal.isOpen}
-        onClose={() => { setPropertyModal({ isOpen: false, propertyId: null }); setHasRolled(true); if (ydoc) ydoc.getMap('meta').set('phase', 'rolling'); }}
+        onClose={() => { setPropertyModal({ isOpen: false, propertyId: null }); const d = ydoc?.getMap('meta').get('dice') ?? [0,0]; setHasRolled(!(d[0] === d[1] && d[0] > 0)); if (ydoc) ydoc.getMap('meta').set('phase', 'rolling'); }}
         propertyId={propertyModal.propertyId}
         space={propertyModal.propertyId != null ? BOARD_SPACES[propertyModal.propertyId] : null}
         playerCash={players[currentPlayerIndex]?.cash || 0}

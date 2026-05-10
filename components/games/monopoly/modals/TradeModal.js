@@ -473,39 +473,37 @@ export default function TradeModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              backgroundColor: 'rgba(43, 45, 66, 0.85)',
-              backdropFilter: 'blur(4px)',
-              zIndex: 100,
-            }}
-          />
-
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(43, 45, 66, 0.85)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+        >
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            onClick={(e) => e.stopPropagation()}
             style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
               backgroundColor: '#F8F4E8',
               borderRadius: '16px',
               padding: '24px',
-              width: '90vw',
+              width: '100%',
               maxWidth: '560px',
               maxHeight: '85vh',
               overflow: 'auto',
-              zIndex: 101,
               boxShadow: '0 20px 60px rgba(0,0,0,0.35)',
             }}
           >
@@ -566,7 +564,7 @@ export default function TradeModal({
               />
             )}
           </motion.div>
-        </>
+        </motion.div>
       )}
     </AnimatePresence>
   );

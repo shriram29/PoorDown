@@ -229,39 +229,37 @@ export default function PropertyManagementModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              backgroundColor: 'rgba(43, 45, 66, 0.85)',
-              backdropFilter: 'blur(4px)',
-              zIndex: 100,
-            }}
-          />
-
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(43, 45, 66, 0.85)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+        >
           <motion.div
             initial={{ opacity: 0, scale: 0.92, y: 24 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: 24 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+            onClick={(e) => e.stopPropagation()}
             style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
               backgroundColor: 'white',
               borderRadius: '16px',
               padding: '24px',
-              width: '90vw',
+              width: '100%',
               maxWidth: '700px',
               maxHeight: '85vh',
               overflowY: 'auto',
-              zIndex: 101,
               boxShadow: '0 24px 64px rgba(0,0,0,0.35)',
             }}
           >
@@ -386,7 +384,7 @@ export default function PropertyManagementModal({
               </div>
             )}
           </motion.div>
-        </>
+        </motion.div>
       )}
     </AnimatePresence>
   );
