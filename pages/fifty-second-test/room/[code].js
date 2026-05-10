@@ -1,7 +1,9 @@
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
-import { buildDeck } from '../../lib/games/fifty-second-test/cards';
+import { useState, useEffect, useRef } from 'react';
+import * as Y from 'yjs';
+import { WebrtcProvider } from 'y-webrtc';
+import { buildDeck } from '../../../lib/games/fifty-second-test/cards';
 
 const DOT_POSITIONS = {
   1: [[1, 1]],
@@ -17,7 +19,6 @@ function DieFace({ value, size = 120 }) {
   const padding = size * 0.18;
   const inner = size - padding * 2;
   const step = inner / 2;
-
   const dots = value ? DOT_POSITIONS[value] : [];
 
   return (
@@ -65,51 +66,123 @@ function DieFace({ value, size = 120 }) {
   );
 }
 
-function generateCode() {
-  return Math.random().toString(36).slice(2, 7).toUpperCase();
-}
-
-export default function FiftySecondTest() {
+export default function FiftySecondTestRoom() {
   const router = useRouter();
+  const { code } = router.query;
 
   const [dieValue, setDieValue] = useState(null);
-  const [deck, setDeck] = useState(() => buildDeck());
   const [drawnCard, setDrawnCard] = useState(null);
+  const [deckSize, setDeckSize] = useState(52);
+  const [copied, setCopied] = useState(false);
+  const [peers, setPeers] = useState(0);
 
-  const rollDie = () => setDieValue(Math.floor(Math.random() * 6) + 1);
+  const metaRef = useRef(null);
+  const providerRef = useRef(null);
+
+  useEffect(() => {
+    if (!code || typeof window === 'undefined') return;
+
+    const doc = new Y.Doc();
+    const signalingUrl = process.env.NEXT_PUBLIC_SIGNALING_URL || 'ws://localhost:4444';
+    const provider = new WebrtcProvider(`poordown-fifty-second-test-${code}`, doc, {
+      signaling: [signalingUrl],
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun.cloudflare.com:3478' },
+      ],
+      maxConns: 8,
+    });
+    providerRef.current = provider;
+
+    provider.awareness.on('change', () => {
+      setPeers(provider.awareness.getStates().size - 1);
+    });
+
+    const meta = doc.getMap('meta');
+    metaRef.current = meta;
+
+    const isHost = new URLSearchParams(window.location.search).get('host') === 'true';
+
+    if (isHost) {
+      doc.transact(() => {
+        if (!meta.get('drawnIds')) {
+          meta.set('drawnIds', JSON.stringify([]));
+        }
+      });
+    }
+
+    const sync = () => {
+      const die = meta.get('dieValue');
+      const cardStr = meta.get('drawnCard');
+      const drawnIdsStr = meta.get('drawnIds');
+
+      setDieValue(die ?? null);
+      setDrawnCard(cardStr ? JSON.parse(cardStr) : null);
+
+      const drawnIds = drawnIdsStr ? JSON.parse(drawnIdsStr) : [];
+      setDeckSize(52 - drawnIds.length);
+    };
+
+    meta.observe(sync);
+    sync();
+
+    return () => {
+      meta.unobserve(sync);
+      provider.destroy();
+      doc.destroy();
+    };
+  }, [code]);
+
+  const rollDie = () => {
+    const meta = metaRef.current;
+    if (!meta) return;
+    meta.set('dieValue', Math.floor(Math.random() * 6) + 1);
+  };
 
   const drawCard = () => {
-    if (deck.length === 0) return;
-    const idx = Math.floor(Math.random() * deck.length);
-    const card = deck[idx];
-    setDeck(prev => prev.filter((_, i) => i !== idx));
-    setDrawnCard(card);
+    const meta = metaRef.current;
+    if (!meta) return;
+
+    const drawnIdsStr = meta.get('drawnIds') || '[]';
+    const drawnIds = JSON.parse(drawnIdsStr);
+    const fullDeck = buildDeck();
+    const remaining = fullDeck.filter(c => !drawnIds.includes(c.id));
+    if (remaining.length === 0) return;
+
+    const card = remaining[Math.floor(Math.random() * remaining.length)];
+    meta.set('drawnCard', JSON.stringify(card));
+    meta.set('drawnIds', JSON.stringify([...drawnIds, card.id]));
   };
 
   const shuffle = () => {
-    setDeck(buildDeck());
-    setDrawnCard(null);
+    const meta = metaRef.current;
+    if (!meta) return;
+    meta.set('drawnIds', JSON.stringify([]));
+    meta.set('drawnCard', null);
   };
 
-  const createRoom = () => {
-    const code = generateCode();
-    router.push(`/fifty-second-test/room/${code}?host=true`);
+  const copyLink = () => {
+    const url = `${window.location.origin}/fifty-second-test/room/${code}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
-  const deckEmpty = deck.length === 0;
+  const deckEmpty = deckSize === 0;
 
   return (
     <>
       <Head>
-        <title>The 50 Second Test - PoorDown</title>
+        <title>Room {code} — 50 Second Test</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
       <div style={{ minHeight: '100vh', backgroundColor: '#F8F4E8', padding: '40px 20px' }}>
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <button
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/fifty-second-test')}
             style={{
               background: 'none',
               border: 'none',
@@ -123,12 +196,12 @@ export default function FiftySecondTest() {
               gap: '6px',
             }}
           >
-            ← All Games
+            ← Solo Mode
           </button>
           <h1
             style={{
               fontFamily: 'Playfair Display, serif',
-              fontSize: '40px',
+              fontSize: '36px',
               fontWeight: '800',
               color: '#2B2D42',
               margin: '0 0 8px 0',
@@ -137,25 +210,46 @@ export default function FiftySecondTest() {
           >
             The 50 Second Test
           </h1>
-          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#8D99AE', margin: '0 0 24px 0' }}>
-            Roll the die. Draw a card. Simple.
-          </p>
-          <button
-            onClick={createRoom}
+
+          {/* Room info bar */}
+          <div
             style={{
-              padding: '12px 28px',
-              backgroundColor: '#457B9D',
-              color: 'white',
-              border: 'none',
-              borderRadius: '12px',
-              fontSize: '15px',
-              fontWeight: '600',
-              fontFamily: 'Inter, sans-serif',
-              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '16px',
+              backgroundColor: 'white',
+              borderRadius: '14px',
+              padding: '10px 20px',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.07)',
+              marginTop: '12px',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
             }}
           >
-            Create Room to Test Together →
-          </button>
+            <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '15px', color: '#2B2D42', fontWeight: '700' }}>
+              Room: {code}
+            </span>
+            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8D99AE' }}>
+              {peers === 0 ? 'No one else here yet' : `${peers} other${peers === 1 ? '' : 's'} connected`}
+            </span>
+            <button
+              onClick={copyLink}
+              style={{
+                padding: '6px 14px',
+                backgroundColor: copied ? '#457B9D' : '#2B2D42',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: '600',
+                fontFamily: 'Inter, sans-serif',
+                cursor: 'pointer',
+                transition: 'background-color 0.15s',
+              }}
+            >
+              {copied ? 'Copied!' : 'Copy Link'}
+            </button>
+          </div>
         </div>
 
         {/* Two columns */}
@@ -197,7 +291,7 @@ export default function FiftySecondTest() {
 
             {dieValue && (
               <p style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '18px', color: '#2B2D42', margin: 0, fontWeight: '700' }}>
-                You rolled a {dieValue}
+                Rolled a {dieValue}
               </p>
             )}
 
@@ -244,7 +338,6 @@ export default function FiftySecondTest() {
               Cards
             </h2>
 
-            {/* Card display */}
             <div
               style={{
                 width: '100px',
@@ -311,7 +404,6 @@ export default function FiftySecondTest() {
               )}
             </div>
 
-            {/* Deck count */}
             <p
               style={{
                 fontFamily: 'Inter, sans-serif',
@@ -321,7 +413,7 @@ export default function FiftySecondTest() {
                 fontWeight: deckEmpty ? '600' : '400',
               }}
             >
-              {deckEmpty ? 'Deck is empty' : `${deck.length} card${deck.length === 1 ? '' : 's'} remaining`}
+              {deckEmpty ? 'Deck is empty' : `${deckSize} card${deckSize === 1 ? '' : 's'} remaining`}
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
