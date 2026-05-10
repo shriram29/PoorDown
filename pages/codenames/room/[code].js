@@ -24,6 +24,7 @@ export default function CodenamesRoom() {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [countdown, setCountdown]     = useState(null);
   const [notFound, setNotFound]       = useState(false);
+  const [roomConfirmed, setRoomConfirmed] = useState(false);
   const [gameState, setGameState]     = useState({
     phase: 'connecting',
     currentTeam: null,
@@ -59,7 +60,23 @@ export default function CodenamesRoom() {
     const hostFlag = new URLSearchParams(window.location.search).get('host') === 'true';
 
     const doc       = new Y.Doc();
-    const provider  = new WebrtcProvider(`poordown-codenames-${code}`, doc);
+    const signalingUrl = process.env.NEXT_PUBLIC_SIGNALING_URL || 'ws://localhost:4444';
+    const provider  = new WebrtcProvider(`poordown-codenames-${code}`, doc, {
+      signaling: [signalingUrl],
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun.cloudflare.com:3478' },
+      ],
+      maxConns: 8,
+    });
+
+    provider.awareness.setLocalStateField('player', { uuid: identity.uuid });
+    provider.awareness.on('change', () => {
+      const peers = Array.from(provider.awareness.getStates().values())
+        .filter(s => s.player?.uuid && s.player.uuid !== identity.uuid);
+      if (peers.length > 0) setRoomConfirmed(true);
+    });
     const meta      = doc.getMap('meta');
     const yPlayers  = doc.getArray('players');
     const yRevealed = doc.getMap('revealed');
@@ -123,10 +140,10 @@ export default function CodenamesRoom() {
 
   // ── Room-not-found timeout ────────────────────────────────────────────────
   useEffect(() => {
-    if (gameState.phase !== 'connecting') return;
-    const t = setTimeout(() => setNotFound(true), 8000);
+    if (gameState.phase !== 'connecting' || roomConfirmed) return;
+    const t = setTimeout(() => setNotFound(true), 30000);
     return () => clearTimeout(t);
-  }, [gameState.phase]);
+  }, [gameState.phase, roomConfirmed]);
 
   // ── Countdown timer for spymaster-needed ──────────────────────────────────
   useEffect(() => {

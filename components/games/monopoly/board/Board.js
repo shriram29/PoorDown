@@ -103,8 +103,9 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
     const groupColor = GROUP_COLORS[space.group] || '#6a6d9a';
     const cx = pos.width / 2;
     const cy = pos.height / 2;
-    const nameStr = space.name.length > 11 ? space.name.substring(0, 10) + '…' : space.name;
+    const nameStr = space.name.length > 9 ? space.name.substring(0, 8) + '…' : space.name;
     const strip = getStrip(space.id, pos);
+    const hasIcon = isRailroad(space.id) || isUtility(space.id);
 
     return (
       <g
@@ -117,24 +118,24 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
         {strip && <rect x={strip.x} y={strip.y} width={strip.w} height={strip.h} fill={groupColor} />}
         <g transform={`rotate(${pos.rotation}, ${cx}, ${cy})`}>
           {isRailroad(space.id) && (
-            <text x={cx} y={cy - 14} textAnchor="middle" dominantBaseline="middle" fontSize="12" fill={TEXT_MAIN}>
+            <text x={cx} y={cy - 20} textAnchor="middle" dominantBaseline="middle" fontSize="18" fill={TEXT_MAIN}>
               🚂
             </text>
           )}
           {isUtility(space.id) && (
-            <text x={cx} y={cy - 14} textAnchor="middle" dominantBaseline="middle" fontSize="11" fill={TEXT_MAIN}>
+            <text x={cx} y={cy - 20} textAnchor="middle" dominantBaseline="middle" fontSize="17" fill={TEXT_MAIN}>
               ⚡
             </text>
           )}
-          <text x={cx} y={cy + (isRailroad(space.id) || isUtility(space.id) ? 2 : -4)}
+          <text x={cx} y={cy + (hasIcon ? 6 : -7)}
             textAnchor="middle" dominantBaseline="middle"
-            fontSize="7.5" fill={TEXT_MAIN} fontFamily="Inter, sans-serif" fontWeight="600">
+            fontSize="13" fill={TEXT_MAIN} fontFamily="Inter, sans-serif" fontWeight="600">
             {nameStr}
           </text>
           {space.price && (
-            <text x={cx} y={cy + (isRailroad(space.id) || isUtility(space.id) ? 14 : 8)}
+            <text x={cx} y={cy + (hasIcon ? 22 : 10)}
               textAnchor="middle" dominantBaseline="middle"
-              fontSize="7" fill={TEXT_DIM} fontFamily="Inter, sans-serif">
+              fontSize="11" fill={TEXT_DIM} fontFamily="Inter, sans-serif">
               ${space.price}
             </text>
           )}
@@ -158,19 +159,19 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
         <rect width={pos.width} height={pos.height} fill={style.bg} stroke={CELL_STROKE} strokeWidth="1" />
         <text
           x={pos.width / 2}
-          y={pos.height / 2 - 8}
+          y={pos.height / 2 - 12}
           textAnchor="middle"
-          fontSize="18"
+          fontSize="22"
           fill={style.accent}
           fontFamily="Inter, sans-serif"
           fontWeight="800"
         >
           {style.text.split(' ').map((line, i) => (
-            <tspan key={i} x={pos.width / 2} dy={i === 0 ? 0 : 18}>{line}</tspan>
+            <tspan key={i} x={pos.width / 2} dy={i === 0 ? 0 : 22}>{line}</tspan>
           ))}
         </text>
-        <text x={pos.width / 2} y={pos.height - 16} textAnchor="middle"
-          fontSize="8" fill={TEXT_DIM} fontFamily="Inter, sans-serif">
+        <text x={pos.width / 2} y={pos.height - 14} textAnchor="middle"
+          fontSize="12" fill={TEXT_DIM} fontFamily="Inter, sans-serif">
           {style.sub}
         </text>
       </g>
@@ -196,17 +197,17 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
       <g key={space.id} transform={`translate(${pos.x}, ${pos.y})`}>
         <rect width={pos.width} height={pos.height} fill="#252648" stroke={CELL_STROKE} strokeWidth="1" />
         <g transform={`rotate(${pos.rotation}, ${cx}, ${cy})`}>
-          <text x={cx} y={cy - 8} textAnchor="middle" dominantBaseline="middle"
-            fontSize="18" fill={accent} fontFamily="Inter, sans-serif" fontWeight="800">
+          <text x={cx} y={cy - 12} textAnchor="middle" dominantBaseline="middle"
+            fontSize="24" fill={accent} fontFamily="Inter, sans-serif" fontWeight="800">
             {icon}
           </text>
-          <text x={cx} y={cy + 12} textAnchor="middle" dominantBaseline="middle"
-            fontSize="6" fill={TEXT_DIM} fontFamily="Inter, sans-serif">
-            {space.name.length > 10 ? space.name.substring(0, 9) : space.name}
+          <text x={cx} y={cy + 16} textAnchor="middle" dominantBaseline="middle"
+            fontSize="10" fill={TEXT_DIM} fontFamily="Inter, sans-serif">
+            {space.name.length > 9 ? space.name.substring(0, 8) : space.name}
           </text>
           {space.amount && (
-            <text x={cx} y={cy + 22} textAnchor="middle" dominantBaseline="middle"
-              fontSize="7" fill={accent} fontFamily="Inter, sans-serif">
+            <text x={cx} y={cy + 29} textAnchor="middle" dominantBaseline="middle"
+              fontSize="11" fill={accent} fontFamily="Inter, sans-serif">
               -${space.amount}
             </text>
           )}
@@ -278,12 +279,12 @@ export default function Board({ players = [], currentPlayerIndex = -1, onPropert
       {[0, 10, 20, 30].map(renderCorner)}
 
       <rect x={CORNER_SIZE} y={CORNER_SIZE} width={WIDTH - 2 * CORNER_SIZE} height={HEIGHT - 2 * CORNER_SIZE} fill="#1a1c35" rx="4" />
-      <text x={WIDTH / 2} y={HEIGHT / 2 - 18} textAnchor="middle"
-        fontSize="32" fill="#e2e2f0" fontFamily="Inter, sans-serif" fontWeight="800">
+      <text x={WIDTH / 2} y={HEIGHT / 2 - 22} textAnchor="middle"
+        fontSize="44" fill="#e2e2f0" fontFamily="Inter, sans-serif" fontWeight="800">
         Poor<tspan fill="#ef4444">Down</tspan>
       </text>
-      <text x={WIDTH / 2} y={HEIGHT / 2 + 14} textAnchor="middle"
-        fontSize="13" fill="#3a3d5c" fontFamily="Inter, sans-serif">
+      <text x={WIDTH / 2} y={HEIGHT / 2 + 18} textAnchor="middle"
+        fontSize="18" fill="#3a3d5c" fontFamily="Inter, sans-serif">
         MONOPOLY CLONE
       </text>
 

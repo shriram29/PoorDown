@@ -4,7 +4,8 @@
   "private": true,
   "description": "Open-source multiplayer Monopoly clone - play online with friends",
   "scripts": {
-    "dev": "next dev",
+    "dev": "concurrently -n signal,next -c yellow,cyan \"node node_modules/y-webrtc/bin/server.js\" \"next dev\"",
+    "signal": "node node_modules/y-webrtc/bin/server.js",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -24,5 +25,8 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }
