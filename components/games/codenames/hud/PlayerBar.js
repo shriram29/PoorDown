@@ -1,5 +1,5 @@
-const TEAM_COLORS = { red: '#DC2626', blue: '#2563EB' };
-const TEAM_BG     = { red: '#FEE2E2', blue: '#DBEAFE' };
+const TEAM_VIVID = { red: '#F87171', blue: '#60A5FA' };
+const TEAM_DIM   = { red: '#4A1F1F', blue: '#0D2745' };
 
 function getActionLabel(player, phase, currentTeam) {
   const { team, role } = player;
@@ -28,8 +28,8 @@ export default function PlayerBar({ players, myUuid, phase, currentTeam }) {
 
   const renderPlayer = (p) => {
     const isMe     = p.uuid === myUuid;
-    const color    = TEAM_COLORS[p.team] || '#8D99AE';
-    const bg       = TEAM_BG[p.team]     || '#F5F0E8';
+    const vivid    = TEAM_VIVID[p.team] || '#8B949E';
+    const dim      = TEAM_DIM[p.team]   || '#21262D';
     const action   = getActionLabel(p, phase, currentTeam);
     const isActive = (phase === 'spymaster-clue'   && p.team === currentTeam && p.role === 'spymaster')
                   || (phase === 'operatives-guess'  && p.team === currentTeam && p.role === 'operative');
@@ -41,17 +41,16 @@ export default function PlayerBar({ players, myUuid, phase, currentTeam }) {
           display: 'flex',
           alignItems: 'center',
           gap: '6px',
-          padding: '5px 10px',
-          backgroundColor: p.team ? bg : '#F5F0E8',
-          border: `1.5px solid ${isMe ? color : (p.team ? color + '60' : '#E8E4D8')}`,
+          padding: '4px 10px',
+          backgroundColor: p.team ? dim : '#21262D',
+          border: `1.5px solid ${isMe ? vivid : (p.team ? vivid + '55' : '#30363D')}`,
           borderRadius: '20px',
-          position: 'relative',
         }}
       >
         {isActive && (
           <span style={{
             width: '6px', height: '6px', borderRadius: '50%',
-            backgroundColor: color,
+            backgroundColor: vivid,
             flexShrink: 0,
             animation: 'pulse 1.5s infinite',
           }} />
@@ -60,7 +59,7 @@ export default function PlayerBar({ players, myUuid, phase, currentTeam }) {
           fontFamily: 'Inter, sans-serif',
           fontSize: '12px',
           fontWeight: isMe ? '700' : '500',
-          color: p.team ? color : '#8D99AE',
+          color: p.team ? vivid : '#8B949E',
           whiteSpace: 'nowrap',
         }}>
           {p.name}{isMe ? ' (you)' : ''}
@@ -72,8 +71,8 @@ export default function PlayerBar({ players, myUuid, phase, currentTeam }) {
             fontWeight: '700',
             letterSpacing: '0.5px',
             textTransform: 'uppercase',
-            color: p.team ? color : '#8D99AE',
-            opacity: 0.8,
+            color: p.team ? vivid : '#8B949E',
+            opacity: 0.7,
           }}>
             {p.role === 'spymaster' ? 'SPY' : 'OP'}
           </span>
@@ -82,7 +81,7 @@ export default function PlayerBar({ players, myUuid, phase, currentTeam }) {
           <span style={{
             fontFamily: 'Inter, sans-serif',
             fontSize: '10px',
-            color: color,
+            color: vivid,
             fontStyle: 'italic',
             whiteSpace: 'nowrap',
           }}>
@@ -103,9 +102,9 @@ export default function PlayerBar({ players, myUuid, phase, currentTeam }) {
       `}</style>
       <div style={{
         width: '100%',
-        backgroundColor: 'white',
-        borderBottom: '1px solid #E8E4D8',
-        padding: '8px 16px',
+        backgroundColor: '#161B22',
+        borderBottom: '1px solid #21262D',
+        padding: '7px 16px',
         overflowX: 'auto',
       }}>
         <div style={{
@@ -118,21 +117,21 @@ export default function PlayerBar({ players, myUuid, phase, currentTeam }) {
         }}>
           {redPlayers.length > 0 && (
             <>
-              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', fontWeight: '700', color: '#DC2626', textTransform: 'uppercase', letterSpacing: '0.5px', flexShrink: 0 }}>Red</span>
+              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', fontWeight: '700', color: '#F87171', textTransform: 'uppercase', letterSpacing: '0.5px', flexShrink: 0, opacity: 0.7 }}>Red</span>
               {redPlayers.map(renderPlayer)}
-              <div style={{ width: '1px', height: '20px', backgroundColor: '#E8E4D8', flexShrink: 0, margin: '0 4px' }} />
+              <div style={{ width: '1px', height: '16px', backgroundColor: '#30363D', flexShrink: 0, margin: '0 4px' }} />
             </>
           )}
           {bluePlayers.length > 0 && (
             <>
-              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', fontWeight: '700', color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.5px', flexShrink: 0 }}>Blue</span>
+              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', fontWeight: '700', color: '#60A5FA', textTransform: 'uppercase', letterSpacing: '0.5px', flexShrink: 0, opacity: 0.7 }}>Blue</span>
               {bluePlayers.map(renderPlayer)}
             </>
           )}
           {others.length > 0 && (
             <>
               {(redPlayers.length > 0 || bluePlayers.length > 0) && (
-                <div style={{ width: '1px', height: '20px', backgroundColor: '#E8E4D8', flexShrink: 0, margin: '0 4px' }} />
+                <div style={{ width: '1px', height: '16px', backgroundColor: '#30363D', flexShrink: 0, margin: '0 4px' }} />
               )}
               {others.map(renderPlayer)}
             </>

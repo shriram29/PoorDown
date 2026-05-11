@@ -16,9 +16,22 @@ import PlayerBar from '../../../components/games/codenames/hud/PlayerBar';
 import RulesModal from '../../../components/games/codenames/ui/RulesModal';
 import ActivityLog from '../../../components/games/codenames/ui/ActivityLog';
 
-const TEAM_COLORS = { red: '#DC2626', blue: '#2563EB' };
-const TEAM_BG     = { red: '#FEE2E2', blue: '#DBEAFE' };
-const TEAM_LIGHT  = { red: '#FFF5F5', blue: '#EFF6FF' };
+const TEAM_COLORS = { red: '#EF4444', blue: '#3B82F6' };  // vivid on dark bg
+const TEAM_VIVID  = { red: '#F87171', blue: '#60A5FA' };  // text on dark
+const TEAM_SURFACE= { red: '#2D1212', blue: '#0D1929' };
+const TEAM_BORDER = { red: '#7F1D1D', blue: '#1E3A5F' };
+
+// Dark theme tokens
+const D = {
+  bg:       '#0D1117',
+  surface:  '#161B22',
+  surface2: '#1C2128',
+  border:   '#30363D',
+  border2:  '#21262D',
+  text:     '#E6EDF3',
+  sub:      '#8B949E',
+  muted:    '#484F58',
+};
 
 export default function CodenamesRoom() {
   const router = useRouter();
@@ -341,13 +354,13 @@ export default function CodenamesRoom() {
         border: 'none',
         fontFamily: 'Inter, sans-serif',
         fontSize: '12px',
-        color: '#C8C4B8',
+        color: D.muted,
         cursor: 'pointer',
         padding: '4px 8px',
         transition: 'color 0.15s',
       }}
-      onMouseEnter={e => (e.currentTarget.style.color = '#E63946')}
-      onMouseLeave={e => (e.currentTarget.style.color = '#C8C4B8')}
+      onMouseEnter={e => (e.currentTarget.style.color = '#F87171')}
+      onMouseLeave={e => (e.currentTarget.style.color = D.muted)}
     >
       Leave game
     </button>
@@ -492,56 +505,57 @@ export default function CodenamesRoom() {
   const TeamColumn = ({ team }) => {
     const spymasters = players.filter(p => p.team === team && p.role === 'spymaster');
     const operatives = players.filter(p => p.team === team && p.role === 'operative');
-    const color = TEAM_COLORS[team];
-    const bg    = TEAM_BG[team];
-    const label = team === 'red' ? 'Red Team' : 'Blue Team';
+    const vivid   = TEAM_VIVID[team];
+    const surface = TEAM_SURFACE[team];
+    const border  = TEAM_BORDER[team];
+    const label   = team === 'red' ? 'Red Team' : 'Blue Team';
     const iAmSpymaster = myTeam === team && myRole === 'spymaster';
     const iAmOperative = myTeam === team && myRole === 'operative';
 
-    const slotBtn = (role, label) => (
+    const slotBtn = (role, btnLabel) => (
       <button
         onClick={() => assignSelf(team, role)}
         style={{
           marginTop: '8px', padding: '6px 14px', borderRadius: '8px',
-          border: `1.5px solid ${color}`, backgroundColor: 'white', color,
+          border: `1.5px solid ${border}`, backgroundColor: D.surface2, color: vivid,
           fontSize: '12px', fontWeight: '600', fontFamily: 'Inter, sans-serif',
-          cursor: 'pointer', transition: 'background-color 0.15s',
+          cursor: 'pointer', transition: 'border-color 0.15s, background-color 0.15s',
         }}
-        onMouseEnter={e => { e.currentTarget.style.backgroundColor = bg; }}
-        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'white'; }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = vivid; e.currentTarget.style.backgroundColor = surface; }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = border; e.currentTarget.style.backgroundColor = D.surface2; }}
       >
-        {label}
+        {btnLabel}
       </button>
     );
 
     const playerRow = (p) => (
       <div key={p.uuid} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-        <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: color }} />
-        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: p.uuid === myUuid ? '700' : '400', color: '#2B2D42' }}>
+        <div style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: vivid, opacity: 0.7 }} />
+        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: p.uuid === myUuid ? '700' : '400', color: p.uuid === myUuid ? D.text : D.sub }}>
           {p.name}{p.uuid === myUuid ? ' (you)' : ''}
         </span>
       </div>
     );
 
     return (
-      <div style={{ flex: 1, backgroundColor: 'white', borderRadius: '16px', padding: '20px', boxShadow: '0 4px 20px rgba(0,0,0,0.07)', border: myTeam === team ? `2px solid ${color}` : '2px solid transparent' }}>
+      <div style={{ flex: 1, backgroundColor: D.surface, borderRadius: '16px', padding: '20px', border: myTeam === team ? `2px solid ${border}` : `2px solid ${D.border2}`, boxShadow: myTeam === team ? `0 0 20px ${vivid}22` : 'none', transition: 'box-shadow 0.3s' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-          <div style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: color }} />
-          <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: '18px', fontWeight: '800', color: '#2B2D42' }}>{label}</span>
+          <div style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: vivid }} />
+          <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: '18px', fontWeight: '800', color: D.text }}>{label}</span>
         </div>
 
         <div style={{ marginBottom: '12px' }}>
-          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', fontWeight: '700', color, letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 6px 0' }}>Spymaster</p>
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', fontWeight: '700', color: vivid, letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 6px 0', opacity: 0.7 }}>Spymaster</p>
           {spymasters.length > 0 ? spymasters.map(playerRow) : (
-            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#C8C4B8', fontStyle: 'italic' }}>No spymaster yet</span>
+            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: D.muted, fontStyle: 'italic' }}>No spymaster yet</span>
           )}
           {!iAmSpymaster && slotBtn('spymaster', 'Join as Spymaster')}
         </div>
 
         <div>
-          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', fontWeight: '700', color, letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 6px 0' }}>Operatives</p>
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', fontWeight: '700', color: vivid, letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 6px 0', opacity: 0.7 }}>Operatives</p>
           {operatives.length > 0 ? operatives.map(playerRow) : (
-            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#C8C4B8', fontStyle: 'italic' }}>No operatives yet</span>
+            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: D.muted, fontStyle: 'italic' }}>No operatives yet</span>
           )}
           {!iAmOperative && slotBtn('operative', 'Join as Operative')}
         </div>
@@ -553,14 +567,14 @@ export default function CodenamesRoom() {
   if (phase === 'connecting') {
     if (notFound) {
       return (
-        <div style={{ minHeight: '100vh', backgroundColor: '#F8F4E8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ minHeight: '100vh', backgroundColor: D.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ textAlign: 'center', padding: '40px 24px' }}>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
-            <h2 style={{ fontFamily: 'Nunito, sans-serif', fontSize: '24px', fontWeight: '800', color: '#2B2D42', margin: '0 0 8px' }}>
+            <h2 style={{ fontFamily: 'Nunito, sans-serif', fontSize: '24px', fontWeight: '800', color: D.text, margin: '0 0 8px' }}>
               Room not found
             </h2>
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#8D99AE', margin: '0 0 28px', lineHeight: 1.5 }}>
-              No one is hosting room <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: '700', color: '#2B2D42' }}>{code}</span>.<br />
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', color: D.sub, margin: '0 0 28px', lineHeight: 1.5 }}>
+              No one is hosting room <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: '700', color: D.text }}>{code}</span>.<br />
               Check the room code and try again.
             </p>
             <button
@@ -579,8 +593,8 @@ export default function CodenamesRoom() {
       );
     }
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#F8F4E8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ fontFamily: 'Inter, sans-serif', color: '#8D99AE', fontSize: '16px' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: D.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ fontFamily: 'Inter, sans-serif', color: D.muted, fontSize: '16px' }}>
           Connecting to room {code}...
         </p>
       </div>
@@ -593,12 +607,12 @@ export default function CodenamesRoom() {
     const myVetoUsed = myTeam === 'red' ? gridRedVetoUsed : gridBlueVetoUsed;
     const oppVoted   = myTeam === 'red' ? gridBlueReady   : gridRedReady;
 
-    const VoteStatus = ({ voted, action, label, color }) => (
+    const VoteStatus = ({ voted, action, label, vivid }) => (
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: color, flexShrink: 0 }} />
-        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#2B2D42', fontWeight: '600' }}>{label}:</span>
-        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: voted ? (action === 'veto' ? '#E63946' : '#2D6A4F') : '#8D99AE', fontStyle: voted ? 'normal' : 'italic' }}>
-          {voted ? (action === 'veto' ? 'Requesting new grid' : 'Looks good') : 'Deciding...'}
+        <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: vivid, flexShrink: 0 }} />
+        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: D.sub, fontWeight: '600' }}>{label}:</span>
+        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: voted ? (action === 'veto' ? '#F87171' : '#4ADE80') : D.muted, fontStyle: voted ? 'normal' : 'italic' }}>
+          {voted ? (action === 'veto' ? 'Requesting new grid' : 'Looks good ✓') : 'Deciding...'}
         </span>
       </div>
     );
@@ -606,21 +620,20 @@ export default function CodenamesRoom() {
     return (
       <>
         <Head><title>Codenames — Grid Veto — {code}</title></Head>
-        <div style={{ minHeight: '100vh', backgroundColor: '#F8F4E8', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ minHeight: '100vh', backgroundColor: D.bg, display: 'flex', flexDirection: 'column' }}>
           <PlayerBar players={players} myUuid={myUuid} phase={phase} currentTeam={currentTeam} />
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 16px', gap: '20px' }}>
             <div style={{ textAlign: 'center' }}>
-              <h2 style={{ fontFamily: 'Nunito, sans-serif', fontSize: '22px', fontWeight: '800', color: '#2B2D42', margin: '0 0 4px' }}>
+              <h2 style={{ fontFamily: 'Nunito, sans-serif', fontSize: '22px', fontWeight: '800', color: D.text, margin: '0 0 4px' }}>
                 Grid Veto
               </h2>
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8D99AE', margin: 0 }}>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: D.muted, margin: 0 }}>
                 Both teams must approve this board before the game begins.
                 {(gridRedVetoUsed || gridBlueVetoUsed) && ' (each team gets one veto)'}
               </p>
             </div>
 
-            {/* Board — words only, no colors during veto */}
             <Board
               words={words}
               keyCard={keyCard}
@@ -632,27 +645,26 @@ export default function CodenamesRoom() {
               showAll={false}
             />
 
-            {/* Vote controls */}
-            <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', maxWidth: '480px', width: '100%', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <VoteStatus voted={gridRedReady}  action={gridRedAction}  label="Red team"  color="#DC2626" />
-              <VoteStatus voted={gridBlueReady} action={gridBlueAction} label="Blue team" color="#2563EB" />
+            <div style={{ backgroundColor: D.surface, border: `1px solid ${D.border2}`, borderRadius: '16px', padding: '20px 24px', maxWidth: '480px', width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <VoteStatus voted={gridRedReady}  action={gridRedAction}  label="Red team"  vivid={TEAM_VIVID.red} />
+              <VoteStatus voted={gridBlueReady} action={gridBlueAction} label="Blue team" vivid={TEAM_VIVID.blue} />
 
               {myTeam && !myVoted && (
-                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', paddingTop: '8px', borderTop: '1px solid #F0EDE6' }}>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', paddingTop: '12px', borderTop: `1px solid ${D.border2}` }}>
                   <button
                     onClick={() => handleVoteGrid('approve')}
-                    style={{ padding: '10px 22px', backgroundColor: '#2D6A4F', color: 'white', border: 'none', borderRadius: '10px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}
-                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#245A42'; }}
-                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#2D6A4F'; }}
+                    style={{ padding: '10px 22px', backgroundColor: '#166534', color: '#4ADE80', border: '1.5px solid #166534', borderRadius: '10px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}
+                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#14532D'; }}
+                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#166534'; }}
                   >
                     Looks good ✓
                   </button>
                   {!myVetoUsed && (
                     <button
                       onClick={() => handleVoteGrid('veto')}
-                      style={{ padding: '10px 22px', backgroundColor: 'white', color: '#E63946', border: '2px solid #E63946', borderRadius: '10px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}
-                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#FFF5F5'; }}
-                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'white'; }}
+                      style={{ padding: '10px 22px', backgroundColor: D.surface2, color: '#F87171', border: '1.5px solid #7F1D1D', borderRadius: '10px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#EF4444'; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = '#7F1D1D'; }}
                     >
                       Request new grid ↻
                     </button>
@@ -661,20 +673,19 @@ export default function CodenamesRoom() {
               )}
 
               {myTeam && myVoted && (
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8D99AE', textAlign: 'center', margin: 0, paddingTop: '8px', borderTop: '1px solid #F0EDE6' }}>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: D.muted, textAlign: 'center', margin: 0, paddingTop: '12px', borderTop: `1px solid ${D.border2}` }}>
                   {oppVoted ? 'Resolving...' : 'Waiting for the other team...'}
                 </p>
               )}
 
               {!myTeam && (
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8D99AE', textAlign: 'center', margin: 0, paddingTop: '8px', borderTop: '1px solid #F0EDE6' }}>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: D.muted, textAlign: 'center', margin: 0, paddingTop: '12px', borderTop: `1px solid ${D.border2}` }}>
                   You're watching — teams are voting on this grid.
                 </p>
               )}
 
-              {/* Show unused veto hint */}
               {myTeam && !myVoted && myVetoUsed && (
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8D99AE', textAlign: 'center', margin: '-8px 0 0' }}>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: D.muted, textAlign: 'center', margin: '-8px 0 0' }}>
                   Your team used its veto on the previous grid.
                 </p>
               )}
@@ -693,23 +704,23 @@ export default function CodenamesRoom() {
     return (
       <>
         <Head><title>Codenames Lobby — {code}</title></Head>
-        <div style={{ minHeight: '100vh', backgroundColor: '#F8F4E8', padding: '32px 20px' }}>
+        <div style={{ minHeight: '100vh', backgroundColor: D.bg, padding: '32px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: '760px', margin: '0 auto 32px' }}>
             <button
               onClick={() => router.push('/codenames')}
-              style={{ background: 'none', border: 'none', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#8D99AE', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              style={{ background: 'none', border: 'none', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: D.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
             >
               ← Back
             </button>
             <div style={{ textAlign: 'center' }}>
-              <h1 style={{ fontFamily: 'Nunito, sans-serif', fontSize: '32px', fontWeight: '800', color: '#2B2D42', margin: 0, letterSpacing: '-0.5px' }}>
-                Code<span style={{ color: '#DC2626' }}>names</span>
+              <h1 style={{ fontFamily: 'Nunito, sans-serif', fontSize: '32px', fontWeight: '800', color: D.text, margin: 0, letterSpacing: '-0.5px' }}>
+                Code<span style={{ color: '#F87171' }}>names</span>
               </h1>
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8D99AE', margin: '4px 0 0' }}>
-                Room&nbsp;<span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: '700', color: '#2B2D42', letterSpacing: '2px' }}>{code}</span>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: D.muted, margin: '4px 0 0' }}>
+                Room&nbsp;<span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: '700', color: D.sub, letterSpacing: '2px' }}>{code}</span>
               </p>
               {devMode && (
-                <span style={{ display: 'inline-block', marginTop: '6px', padding: '2px 10px', backgroundColor: '#FEF9C3', border: '1px solid #FCD34D', borderRadius: '20px', fontFamily: 'Inter, sans-serif', fontSize: '11px', fontWeight: '700', color: '#92400E', letterSpacing: '0.5px' }}>
+                <span style={{ display: 'inline-block', marginTop: '6px', padding: '2px 10px', backgroundColor: '#3D2900', border: '1px solid #92400E', borderRadius: '20px', fontFamily: 'Inter, sans-serif', fontSize: '11px', fontWeight: '700', color: '#FCD34D', letterSpacing: '0.5px' }}>
                   DEV MODE — reduced player requirements
                 </span>
               )}
@@ -723,11 +734,11 @@ export default function CodenamesRoom() {
           </div>
 
           {unassigned.length > 0 && (
-            <div style={{ maxWidth: '760px', margin: '20px auto 0', padding: '16px', backgroundColor: 'white', borderRadius: '12px', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', fontWeight: '700', color: '#8D99AE', letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 8px 0' }}>Not yet assigned</p>
+            <div style={{ maxWidth: '760px', margin: '20px auto 0', padding: '16px', backgroundColor: D.surface, border: `1px solid ${D.border2}`, borderRadius: '12px' }}>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', fontWeight: '700', color: D.muted, letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 8px 0' }}>Not yet assigned</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {unassigned.map(p => (
-                  <span key={p.uuid} style={{ padding: '4px 12px', backgroundColor: '#F5F0E8', borderRadius: '20px', fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#2B2D42' }}>
+                  <span key={p.uuid} style={{ padding: '4px 12px', backgroundColor: D.surface2, border: `1px solid ${D.border}`, borderRadius: '20px', fontFamily: 'Inter, sans-serif', fontSize: '13px', color: D.sub }}>
                     {p.name}{p.uuid === myUuid ? ' (you)' : ''}
                   </span>
                 ))}
@@ -742,18 +753,19 @@ export default function CodenamesRoom() {
                   onClick={handleStartGame}
                   disabled={!ready}
                   style={{
-                    padding: '14px 40px', backgroundColor: ready ? '#2D6A4F' : '#8D99AE',
-                    color: 'white', border: 'none', borderRadius: '12px',
-                    fontSize: '16px', fontWeight: '700', fontFamily: 'Inter, sans-serif',
-                    cursor: ready ? 'pointer' : 'not-allowed', transition: 'background-color 0.2s',
+                    padding: '14px 44px', backgroundColor: ready ? '#166534' : D.surface2,
+                    color: ready ? '#4ADE80' : D.muted, border: `2px solid ${ready ? '#166534' : D.border}`,
+                    borderRadius: '12px', fontSize: '16px', fontWeight: '700', fontFamily: 'Inter, sans-serif',
+                    cursor: ready ? 'pointer' : 'not-allowed', transition: 'all 0.2s',
+                    boxShadow: ready ? '0 0 24px rgba(74,222,128,0.25)' : 'none',
                   }}
-                  onMouseEnter={e => { if (ready) e.currentTarget.style.backgroundColor = '#245A42'; }}
-                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = ready ? '#2D6A4F' : '#8D99AE'; }}
+                  onMouseEnter={e => { if (ready) e.currentTarget.style.backgroundColor = '#14532D'; }}
+                  onMouseLeave={e => { if (ready) e.currentTarget.style.backgroundColor = '#166534'; }}
                 >
                   Start Game
                 </button>
                 {!ready && (
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8D99AE', margin: 0 }}>
+                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: D.muted, margin: 0 }}>
                     {devMode
                       ? 'Each team needs at least 1 player with any role.'
                       : 'Each team needs at least 1 spymaster and 1 operative.'}
@@ -761,7 +773,7 @@ export default function CodenamesRoom() {
                 )}
               </>
             ) : (
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8D99AE' }}>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: D.muted }}>
                 Waiting for host to start the game...
               </p>
             )}
@@ -773,7 +785,7 @@ export default function CodenamesRoom() {
   }
 
   // ── Phase: game (spymaster-clue | operatives-guess | spymaster-needed | over) ─
-  const winnerColor = winner ? TEAM_COLORS[winner] : '#2B2D42';
+  const winnerColor = winner ? TEAM_COLORS[winner] : D.border;
   const winnerLabel = winner === 'red' ? 'Red Team' : 'Blue Team';
   const gameOverIcon =
     winReason === 'assassin' ? '💀' :
@@ -790,7 +802,7 @@ export default function CodenamesRoom() {
   return (
     <>
       <Head><title>Codenames — {code}</title></Head>
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#F8F4E8' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: D.bg }}>
 
         <GameHUD
           phase={phase}
@@ -804,10 +816,9 @@ export default function CodenamesRoom() {
 
         <PlayerBar players={players} myUuid={myUuid} phase={phase} currentTeam={currentTeam} />
 
-        {/* Game-over banner — non-blocking so the board stays visible */}
         {phase === 'over' && winner && (
-          <div style={{ backgroundColor: winnerColor, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: '18px', fontWeight: '800', color: 'white' }}>
+          <div style={{ backgroundColor: winnerColor, padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', boxShadow: `0 4px 20px ${winnerColor}66` }}>
+            <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: '20px', fontWeight: '800', color: 'white', letterSpacing: '-0.3px' }}>
               {gameOverIcon} {winnerLabel} wins! — {gameOverMsg}
             </span>
           </div>
@@ -816,19 +827,19 @@ export default function CodenamesRoom() {
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 16px', gap: '20px' }}>
 
           {isSpymasterView && phase !== 'over' && (
-            <div style={{ padding: '8px 18px', backgroundColor: TEAM_LIGHT[myTeam] || '#F5F0E8', border: `1.5px solid ${TEAM_COLORS[myTeam] || '#8D99AE'}`, borderRadius: '10px', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: '600', color: TEAM_COLORS[myTeam] || '#2B2D42' }}>
+            <div style={{ padding: '8px 18px', backgroundColor: TEAM_SURFACE[myTeam] || D.surface, border: `1.5px solid ${TEAM_BORDER[myTeam] || D.border}`, borderRadius: '10px', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: '600', color: TEAM_VIVID[myTeam] || D.sub }}>
               👁 Spymaster view — don't show your screen to your team!
             </div>
           )}
 
           {myTeam && !isCurrentTeam && phase === 'operatives-guess' && (
-            <div style={{ padding: '8px 18px', backgroundColor: 'white', borderRadius: '10px', fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8D99AE', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+            <div style={{ padding: '8px 18px', backgroundColor: D.surface, border: `1px solid ${D.border2}`, borderRadius: '10px', fontFamily: 'Inter, sans-serif', fontSize: '13px', color: D.sub }}>
               Waiting for {currentTeam === 'red' ? '🔴 Red' : '🔵 Blue'} team...
             </div>
           )}
 
           {myTeam && !isCurrentTeam && phase === 'spymaster-clue' && (
-            <div style={{ padding: '8px 18px', backgroundColor: 'white', borderRadius: '10px', fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8D99AE', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+            <div style={{ padding: '8px 18px', backgroundColor: D.surface, border: `1px solid ${D.border2}`, borderRadius: '10px', fontFamily: 'Inter, sans-serif', fontSize: '13px', color: D.sub }}>
               {currentTeam === 'red' ? '🔴 Red' : '🔵 Blue'} spymaster is thinking...
             </div>
           )}
@@ -854,62 +865,62 @@ export default function CodenamesRoom() {
             <button
               onClick={handlePass}
               style={{
-                padding: '10px 24px', backgroundColor: 'white',
-                border: `2px solid ${TEAM_COLORS[currentTeam]}`, borderRadius: '10px',
+                padding: '10px 24px',
+                backgroundColor: TEAM_SURFACE[currentTeam],
+                border: `1.5px solid ${TEAM_BORDER[currentTeam]}`,
+                borderRadius: '10px',
                 fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: '600',
-                color: TEAM_COLORS[currentTeam], cursor: 'pointer', transition: 'background-color 0.15s',
+                color: TEAM_VIVID[currentTeam], cursor: 'pointer', transition: 'border-color 0.15s',
               }}
-              onMouseEnter={e => { e.currentTarget.style.backgroundColor = TEAM_BG[currentTeam]; }}
-              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'white'; }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = TEAM_VIVID[currentTeam]; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = TEAM_BORDER[currentTeam]; }}
             >
               Pass Turn
             </button>
           )}
 
           {!myRole && phase !== 'over' && (
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8D99AE' }}>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: D.muted }}>
               You're watching — you weren't assigned a role before the game started.
             </p>
           )}
 
-          {/* Post-game actions */}
           {phase === 'over' && (
-            <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', maxWidth: '480px', width: '100%', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {/* Rematch voting */}
+            <div style={{ backgroundColor: D.surface, border: `1px solid ${D.border2}`, borderRadius: '16px', padding: '20px 24px', maxWidth: '480px', width: '100%', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', color: '#8D99AE', margin: '0 0 8px' }}>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', color: D.muted, margin: '0 0 10px' }}>
                   Rematch — need 2 from each team
                 </p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                   <button
                     onClick={handleVoteRematch}
                     disabled={myRematchVote}
-                    style={{ padding: '8px 18px', backgroundColor: myRematchVote ? '#F5F0E8' : '#2D6A4F', color: myRematchVote ? '#8D99AE' : 'white', border: 'none', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: '700', cursor: myRematchVote ? 'default' : 'pointer' }}
+                    style={{ padding: '8px 18px', backgroundColor: myRematchVote ? '#166534' : D.surface2, color: myRematchVote ? '#4ADE80' : D.sub, border: `1.5px solid ${myRematchVote ? '#166534' : D.border}`, borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: '700', cursor: myRematchVote ? 'default' : 'pointer' }}
                   >
                     {myRematchVote ? 'Voted ✓' : 'Vote Rematch'}
                   </button>
-                  <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8D99AE' }}>
+                  <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: D.sub }}>
                     🔴 {redVoteCount}/2 &nbsp; 🔵 {blueVoteCount}/2
                   </span>
                 </div>
               </div>
 
-              <div style={{ borderTop: '1px solid #F0EDE6', paddingTop: '14px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <div style={{ borderTop: `1px solid ${D.border2}`, paddingTop: '14px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 {isHost && (
                   <button
                     onClick={handleRequeue}
-                    style={{ padding: '9px 20px', backgroundColor: 'white', color: '#2B2D42', border: '2px solid #E8E4D8', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#2B2D42'; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#E8E4D8'; }}
+                    style={{ padding: '9px 20px', backgroundColor: D.surface2, color: D.sub, border: `1.5px solid ${D.border}`, borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = D.sub; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = D.border; }}
                   >
                     ← Back to Lobby
                   </button>
                 )}
                 <button
                   onClick={() => { localStorage.removeItem('poordown_active_room'); router.push('/codenames'); }}
-                  style={{ padding: '9px 20px', backgroundColor: 'white', color: '#E63946', border: '2px solid #FECDD3', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#E63946'; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#FECDD3'; }}
+                  style={{ padding: '9px 20px', backgroundColor: D.surface2, color: '#F87171', border: '1.5px solid #7F1D1D', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#EF4444'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#7F1D1D'; }}
                 >
                   Leave Room
                 </button>
@@ -920,11 +931,10 @@ export default function CodenamesRoom() {
           {phase !== 'over' && <LeaveButton />}
         </div>
 
-        {/* Card confirmation bar */}
         {selectedCard !== null && isOperativeTurn && (
-          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: 'white', borderTop: '2px solid #7C3AED', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', zIndex: 50, boxShadow: '0 -4px 20px rgba(0,0,0,0.1)' }}>
-            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#2B2D42' }}>
-              Guess <strong style={{ fontFamily: 'JetBrains Mono, monospace', letterSpacing: '1px', color: '#7C3AED' }}>{words[selectedCard]}</strong>?
+          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: '#1A1040', borderTop: '2px solid #7C3AED', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', zIndex: 50, boxShadow: '0 -6px 24px rgba(124,58,237,0.3)' }}>
+            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: D.sub }}>
+              Guess <strong style={{ fontFamily: 'JetBrains Mono, monospace', letterSpacing: '1px', color: '#C4B5FD' }}>{words[selectedCard]}</strong>?
             </span>
             <button
               onClick={handleConfirmCard}
@@ -936,7 +946,7 @@ export default function CodenamesRoom() {
             </button>
             <button
               onClick={() => setSelectedCard(null)}
-              style={{ padding: '9px 16px', backgroundColor: 'white', color: '#8D99AE', border: '1.5px solid #E8E4D8', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}
+              style={{ padding: '9px 16px', backgroundColor: 'transparent', color: D.muted, border: `1.5px solid ${D.border}`, borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}
             >
               Cancel
             </button>

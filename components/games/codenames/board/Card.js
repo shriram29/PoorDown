@@ -1,17 +1,24 @@
 import { useState } from 'react';
 
 const BACK_STYLES = {
-  red:      { backgroundColor: '#DC2626' },
-  blue:     { backgroundColor: '#2563EB' },
-  neutral:  { backgroundColor: '#A89270' },
-  assassin: { backgroundColor: '#18181B' },
+  red:      { backgroundColor: '#EF4444' },
+  blue:     { backgroundColor: '#3B82F6' },
+  neutral:  { backgroundColor: '#57534E' },
+  assassin: { backgroundColor: '#111827' },
 };
 
-const SPYMASTER_TINTS = {
-  red:      { backgroundColor: '#FEE2E2', border: '2.5px solid #DC2626', color: '#991B1B' },
-  blue:     { backgroundColor: '#DBEAFE', border: '2.5px solid #2563EB', color: '#1E40AF' },
-  neutral:  { backgroundColor: '#F5F0E8', border: '2px solid #D4C9B0',   color: '#78716C' },
-  assassin: { backgroundColor: '#27272A', border: '2px solid #71717A',   color: '#D4D4D8' },
+// Tints for spymaster view — dark themed
+const SPY_TINTS = {
+  red:      { backgroundColor: '#2D1212', border: '2px solid #7F1D1D', color: '#FCA5A5' },
+  blue:     { backgroundColor: '#0D1929', border: '2px solid #1E3A5F', color: '#93C5FD' },
+  neutral:  { backgroundColor: '#1C1A14', border: '1.5px solid #44403C', color: '#A8A29E' },
+  assassin: { backgroundColor: '#0D0D0E', border: '1.5px solid #374151', color: '#6B7280' },
+};
+
+const UNREVEALED = {
+  default: { backgroundColor: '#1C2128', border: '1.5px solid #30363D', color: '#C9D1D9' },
+  hover:   { backgroundColor: '#21262D', border: '1.5px solid #58A6FF', color: '#E6EDF3' },
+  selected:{ backgroundColor: '#1A1040', border: '2.5px solid #7C3AED', color: '#C4B5FD' },
 };
 
 export default function Card({ word, type, revealed, isSpymaster, isClickable, onClick, selected, showAll }) {
@@ -22,17 +29,22 @@ export default function Card({ word, type, revealed, isSpymaster, isClickable, o
   let frontStyle;
   if (selected) {
     frontStyle = {
-      backgroundColor: '#F3E8FF',
-      border: '2.5px solid #7C3AED',
-      color: '#5B21B6',
+      ...UNREVEALED.selected,
+      transform: 'translateY(-3px)',
+      boxShadow: '0 8px 24px rgba(124,58,237,0.4)',
     };
   } else if (isSpymaster) {
-    frontStyle = { ...SPYMASTER_TINTS[type] };
+    frontStyle = { ...SPY_TINTS[type] };
+  } else if (hovered && isClickable) {
+    frontStyle = {
+      ...UNREVEALED.hover,
+      transform: 'translateY(-2px)',
+      boxShadow: '0 6px 20px rgba(0,0,0,0.4)',
+    };
   } else {
     frontStyle = {
-      backgroundColor: hovered && isClickable ? '#EDE8DA' : '#F5F0E8',
-      border: hovered && isClickable ? '2px solid #2B2D42' : '2px solid #E8E4D8',
-      color: '#2B2D42',
+      ...UNREVEALED.default,
+      boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
     };
   }
 
@@ -54,11 +66,11 @@ export default function Card({ word, type, revealed, isSpymaster, isClickable, o
         height: '100%',
         transformStyle: 'preserve-3d',
         WebkitTransformStyle: 'preserve-3d',
-        transition: 'transform 0.55s cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: 'transform 0.55s cubic-bezier(0.4,0,0.2,1)',
         transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
       }}>
 
-        {/* Front — word card */}
+        {/* Front — word */}
         <div style={{
           position: 'absolute',
           inset: 0,
@@ -76,15 +88,7 @@ export default function Card({ word, type, revealed, isSpymaster, isClickable, o
           letterSpacing: '0.8px',
           textAlign: 'center',
           textTransform: 'uppercase',
-          transition: 'background-color 0.1s, box-shadow 0.1s',
-          transform: selected
-            ? 'translateY(-3px)'
-            : hovered && isClickable ? 'translateY(-2px)' : 'none',
-          boxShadow: selected
-            ? '0 8px 24px rgba(124,58,237,0.25)'
-            : hovered && isClickable
-              ? '0 6px 20px rgba(0,0,0,0.14)'
-              : '0 2px 6px rgba(0,0,0,0.07)',
+          transition: 'background-color 0.1s, box-shadow 0.1s, border-color 0.1s, transform 0.1s',
           ...frontStyle,
         }}>
           {isSpymaster && type === 'assassin' && (
@@ -93,7 +97,7 @@ export default function Card({ word, type, revealed, isSpymaster, isClickable, o
           <span>{word}</span>
         </div>
 
-        {/* Back — solid agent color, no word */}
+        {/* Back — solid color, no word */}
         <div style={{
           position: 'absolute',
           inset: 0,
@@ -104,7 +108,7 @@ export default function Card({ word, type, revealed, isSpymaster, isClickable, o
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
           ...BACK_STYLES[type],
         }}>
           {type === 'assassin' && (

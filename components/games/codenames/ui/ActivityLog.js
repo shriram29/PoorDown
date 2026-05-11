@@ -13,11 +13,11 @@ export default function ActivityLog({ entries }) {
     <div style={{
       maxWidth: '700px',
       width: '100%',
-      backgroundColor: 'white',
-      borderRadius: '12px',
+      backgroundColor: '#161B22',
+      border: '1px solid #21262D',
+      borderRadius: '10px',
       padding: '10px 14px',
-      boxShadow: '0 2px 10px rgba(0,0,0,0.06)',
-      maxHeight: '110px',
+      maxHeight: '108px',
       overflowY: 'auto',
     }}>
       <p style={{
@@ -26,7 +26,7 @@ export default function ActivityLog({ entries }) {
         fontWeight: '700',
         letterSpacing: '1px',
         textTransform: 'uppercase',
-        color: '#C8C4B8',
+        color: '#484F58',
         margin: '0 0 6px',
       }}>
         Game log
@@ -36,7 +36,7 @@ export default function ActivityLog({ entries }) {
           <p key={entry.id} style={{
             fontFamily: 'Inter, sans-serif',
             fontSize: '12px',
-            color: '#2B2D42',
+            color: '#8B949E',
             margin: 0,
             lineHeight: 1.5,
           }}>

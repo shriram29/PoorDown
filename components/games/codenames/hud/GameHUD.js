@@ -1,110 +1,168 @@
 export default function GameHUD({
   phase, currentTeam, clueWord, clueNumber, guessesLeft, redRemaining, blueRemaining,
 }) {
-  const teamColor = currentTeam === 'red' ? '#DC2626' : '#2563EB';
-  const teamLabel = currentTeam === 'red' ? 'RED' : 'BLUE';
+  const isOver   = phase === 'over';
+  const redActive  = !isOver && currentTeam === 'red';
+  const blueActive = !isOver && currentTeam === 'blue';
 
   const phaseLabel = {
-    'spymaster-clue':   `${teamLabel} — Spymaster is thinking...`,
-    'operatives-guess': `${teamLabel} — Guessing`,
-    'over':             'Game Over',
+    'spymaster-clue':   `${currentTeam === 'red' ? 'RED' : 'BLUE'} · Spymaster thinking`,
+    'operatives-guess': `${currentTeam === 'red' ? 'RED' : 'BLUE'} · Guessing`,
+    'over': 'Game Over',
   }[phase] || '';
 
-  const clueDisplay = clueWord
-    ? `"${clueWord}"  ×  ${clueNumber === 0 ? '∞' : clueNumber}`
-    : null;
-
+  const clueNum = clueNumber === 0 ? '∞' : clueNumber;
   const guessDisplay = phase === 'operatives-guess' && clueWord
     ? (guessesLeft >= 99 ? '∞ guesses left' : `${guessesLeft} guess${guessesLeft === 1 ? '' : 'es'} left`)
     : null;
+
+  const borderColor = isOver ? '#30363D' : currentTeam === 'red' ? '#F87171' : '#60A5FA';
+  const glowColor   = isOver ? 'transparent' : currentTeam === 'red'
+    ? 'rgba(248,113,113,0.2)'
+    : 'rgba(96,165,250,0.2)';
 
   return (
     <>
       <style>{`
         @keyframes clueAppear {
-          0%   { opacity: 0; transform: scale(0.82) translateY(-6px); }
-          65%  { transform: scale(1.04) translateY(1px); }
+          0%   { opacity: 0; transform: scale(0.82) translateY(-8px); }
+          65%  { transform: scale(1.05) translateY(1px); }
           100% { opacity: 1; transform: scale(1) translateY(0); }
         }
       `}</style>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '12px 20px',
-          backgroundColor: 'white',
-          borderBottom: '1px solid #E8E4D8',
-          gap: '12px',
-          flexWrap: 'wrap',
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
-        }}
-      >
+      <div style={{
+        backgroundColor: '#161B22',
+        borderBottom: `3px solid ${borderColor}`,
+        boxShadow: `0 3px 24px ${glowColor}`,
+        padding: '14px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 10,
+        transition: 'border-color 0.4s, box-shadow 0.4s',
+      }}>
+
         {/* Red score */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: '70px' }}>
-          <div style={{ width: '10px', height: '10px', borderRadius: '3px', backgroundColor: '#DC2626', flexShrink: 0 }} />
-          <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: '800', color: '#DC2626', fontSize: '22px' }}>
+        <div style={{
+          backgroundColor: '#2D1212',
+          border: `1.5px solid ${redActive ? '#EF4444' : '#4A1F1F'}`,
+          boxShadow: redActive ? '0 0 18px rgba(239,68,68,0.35)' : 'none',
+          borderRadius: '10px',
+          padding: '8px 18px',
+          textAlign: 'center',
+          minWidth: '80px',
+          flexShrink: 0,
+          transition: 'border-color 0.4s, box-shadow 0.4s',
+        }}>
+          <div style={{
+            fontFamily: 'Nunito, sans-serif',
+            fontSize: '48px',
+            fontWeight: '800',
+            color: '#F87171',
+            lineHeight: 1,
+          }}>
             {redRemaining}
-          </span>
-          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8D99AE' }}>left</span>
+          </div>
+          <div style={{
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '9px',
+            fontWeight: '700',
+            color: '#7F3F3F',
+            letterSpacing: '1.5px',
+            textTransform: 'uppercase',
+            marginTop: '2px',
+          }}>
+            Red
+          </div>
         </div>
 
         {/* Center */}
-        <div style={{ textAlign: 'center', flex: 1 }}>
-          <div
-            style={{
-              fontFamily: 'Inter, sans-serif',
-              fontSize: '10px',
-              fontWeight: '700',
-              color: phase === 'over' ? '#8D99AE' : teamColor,
-              letterSpacing: '1.2px',
-              textTransform: 'uppercase',
-              marginBottom: clueDisplay ? '3px' : 0,
-            }}
-          >
+        <div style={{ flex: 1, textAlign: 'center' }}>
+          <div style={{
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '10px',
+            fontWeight: '700',
+            color: isOver ? '#484F58' : currentTeam === 'red' ? '#F87171' : '#60A5FA',
+            letterSpacing: '1.5px',
+            textTransform: 'uppercase',
+            marginBottom: clueWord ? '6px' : 0,
+            transition: 'color 0.4s',
+          }}>
             {phaseLabel}
           </div>
-          {clueDisplay && (
+          {clueWord && (
             <div
               key={`${clueWord}-${currentTeam}`}
-              style={{
-                display: 'flex',
-                alignItems: 'baseline',
-                justifyContent: 'center',
-                gap: '10px',
-                animation: 'clueAppear 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both',
-              }}
+              style={{ animation: 'clueAppear 0.42s cubic-bezier(0.34,1.56,0.64,1) both' }}
             >
-              <span
-                style={{
-                  fontFamily: 'Nunito, sans-serif',
-                  fontSize: '24px',
-                  fontWeight: '800',
-                  color: '#2B2D42',
-                  lineHeight: 1,
-                }}
-              >
-                {clueDisplay}
+              <span style={{
+                fontFamily: 'Nunito, sans-serif',
+                fontSize: '28px',
+                fontWeight: '800',
+                color: '#E6EDF3',
+                letterSpacing: '-0.5px',
+              }}>
+                {clueWord.toUpperCase()}
+              </span>
+              <span style={{
+                fontFamily: 'Nunito, sans-serif',
+                fontSize: '22px',
+                fontWeight: '800',
+                color: currentTeam === 'red' ? '#F87171' : '#60A5FA',
+                marginLeft: '10px',
+              }}>
+                ×{clueNum}
               </span>
               {guessDisplay && (
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8D99AE' }}>
+                <div style={{
+                  fontFamily: 'Inter, sans-serif',
+                  fontSize: '11px',
+                  color: '#484F58',
+                  marginTop: '2px',
+                }}>
                   {guessDisplay}
-                </span>
+                </div>
               )}
             </div>
           )}
         </div>
 
         {/* Blue score */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: '70px', justifyContent: 'flex-end' }}>
-          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8D99AE' }}>left</span>
-          <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: '800', color: '#2563EB', fontSize: '22px' }}>
+        <div style={{
+          backgroundColor: '#0D1929',
+          border: `1.5px solid ${blueActive ? '#3B82F6' : '#0D2745'}`,
+          boxShadow: blueActive ? '0 0 18px rgba(59,130,246,0.35)' : 'none',
+          borderRadius: '10px',
+          padding: '8px 18px',
+          textAlign: 'center',
+          minWidth: '80px',
+          flexShrink: 0,
+          transition: 'border-color 0.4s, box-shadow 0.4s',
+        }}>
+          <div style={{
+            fontFamily: 'Nunito, sans-serif',
+            fontSize: '48px',
+            fontWeight: '800',
+            color: '#60A5FA',
+            lineHeight: 1,
+          }}>
             {blueRemaining}
-          </span>
-          <div style={{ width: '10px', height: '10px', borderRadius: '3px', backgroundColor: '#2563EB', flexShrink: 0 }} />
+          </div>
+          <div style={{
+            fontFamily: 'Inter, sans-serif',
+            fontSize: '9px',
+            fontWeight: '700',
+            color: '#1E4080',
+            letterSpacing: '1.5px',
+            textTransform: 'uppercase',
+            marginTop: '2px',
+          }}>
+            Blue
+          </div>
         </div>
+
       </div>
     </>
   );

@@ -1,11 +1,12 @@
 import { useState } from 'react';
 
 export default function ClueInput({ currentTeam, onSubmit }) {
-  const [word, setWord] = useState('');
+  const [word, setWord]     = useState('');
   const [number, setNumber] = useState(2);
 
-  const teamColor = currentTeam === 'red' ? '#DC2626' : '#2563EB';
-  const teamBg    = currentTeam === 'red' ? '#FFF5F5' : '#EFF6FF';
+  const teamVivid = currentTeam === 'red' ? '#F87171' : '#60A5FA';
+  const teamDim   = currentTeam === 'red' ? '#2D1212' : '#0D1929';
+  const teamBorder= currentTeam === 'red' ? '#7F1D1D' : '#1E3A5F';
 
   const isValid = word.trim().length > 0 && !word.includes(' ');
 
@@ -18,27 +19,24 @@ export default function ClueInput({ currentTeam, onSubmit }) {
   };
 
   return (
-    <div
-      style={{
-        backgroundColor: teamBg,
-        border: `2px solid ${teamColor}`,
-        borderRadius: '16px',
-        padding: '18px 22px',
-        maxWidth: '560px',
-        width: '100%',
-      }}
-    >
-      <p
-        style={{
-          fontFamily: 'Inter, sans-serif',
-          fontSize: '11px',
-          fontWeight: '700',
-          color: teamColor,
-          letterSpacing: '1px',
-          textTransform: 'uppercase',
-          margin: '0 0 12px 0',
-        }}
-      >
+    <div style={{
+      backgroundColor: teamDim,
+      border: `2px solid ${teamBorder}`,
+      borderRadius: '14px',
+      padding: '16px 20px',
+      maxWidth: '560px',
+      width: '100%',
+    }}>
+      <p style={{
+        fontFamily: 'Inter, sans-serif',
+        fontSize: '10px',
+        fontWeight: '700',
+        color: teamVivid,
+        letterSpacing: '1px',
+        textTransform: 'uppercase',
+        margin: '0 0 10px',
+        opacity: 0.8,
+      }}>
         Your clue — one word, no board words allowed
       </p>
       <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '8px' }}>
@@ -53,16 +51,17 @@ export default function ClueInput({ currentTeam, onSubmit }) {
           style={{
             flex: 1,
             padding: '10px 14px',
-            borderRadius: '10px',
-            border: `2px solid ${isValid ? teamColor : '#E8E4D8'}`,
+            borderRadius: '8px',
+            border: `2px solid ${isValid ? teamVivid : '#30363D'}`,
             fontSize: '16px',
             fontFamily: 'Inter, sans-serif',
-            fontWeight: '600',
+            fontWeight: '700',
             textTransform: 'uppercase',
             outline: 'none',
-            backgroundColor: 'white',
-            color: '#2B2D42',
+            backgroundColor: '#0D1117',
+            color: '#E6EDF3',
             transition: 'border-color 0.15s',
+            letterSpacing: '1px',
           }}
         />
         <select
@@ -70,13 +69,13 @@ export default function ClueInput({ currentTeam, onSubmit }) {
           onChange={e => setNumber(Number(e.target.value))}
           style={{
             padding: '10px 8px',
-            borderRadius: '10px',
-            border: `2px solid ${teamColor}`,
+            borderRadius: '8px',
+            border: `2px solid ${teamBorder}`,
             fontSize: '16px',
             fontFamily: 'Inter, sans-serif',
             fontWeight: '700',
-            backgroundColor: 'white',
-            color: '#2B2D42',
+            backgroundColor: '#0D1117',
+            color: '#E6EDF3',
             outline: 'none',
             cursor: 'pointer',
             minWidth: '56px',
@@ -92,10 +91,10 @@ export default function ClueInput({ currentTeam, onSubmit }) {
           disabled={!isValid}
           style={{
             padding: '10px 18px',
-            borderRadius: '10px',
+            borderRadius: '8px',
             border: 'none',
-            backgroundColor: isValid ? teamColor : '#C8C4B8',
-            color: 'white',
+            backgroundColor: isValid ? teamVivid : '#30363D',
+            color: isValid ? '#0D1117' : '#484F58',
             fontSize: '14px',
             fontWeight: '700',
             fontFamily: 'Inter, sans-serif',
