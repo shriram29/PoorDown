@@ -9,7 +9,11 @@ import ClueInput from '../../../components/games/codenames/hud/ClueInput';
 import {
   startGame, submitClue, revealCard, endTurn,
   leaveGame, volunteerAsSpymaster, forfeitByTimeout,
+  recordTeamVote, resolveGridVote,
+  voteRematch, triggerRematch, requeueToLobby,
 } from '../../../lib/games/codenames/state';
+import PlayerBar from '../../../components/games/codenames/hud/PlayerBar';
+import RulesModal from '../../../components/games/codenames/ui/RulesModal';
 
 const TEAM_COLORS = { red: '#DC2626', blue: '#2563EB' };
 const TEAM_BG     = { red: '#FEE2E2', blue: '#DBEAFE' };
@@ -25,6 +29,7 @@ export default function CodenamesRoom() {
   const [countdown, setCountdown]     = useState(null);
   const [notFound, setNotFound]       = useState(false);
   const [roomConfirmed, setRoomConfirmed] = useState(false);
+  const [selectedCard, setSelectedCard] = useState(null);
   const [gameState, setGameState]     = useState({
     phase: 'connecting',
     currentTeam: null,
@@ -42,6 +47,13 @@ export default function CodenamesRoom() {
     hostId: null,
     spymasterNeededTeam: null,
     spymasterNeededDeadline: null,
+    gridRedReady:    false,
+    gridBlueReady:   false,
+    gridRedVetoUsed: false,
+    gridBlueVetoUsed:false,
+    gridRedAction:   null,
+    gridBlueAction:  null,
+    rematchVotes:    [],
   });
 
   const metaRef      = useRef(null);
@@ -106,6 +118,13 @@ export default function CodenamesRoom() {
         hostId:                 meta.get('hostId')                 || null,
         spymasterNeededTeam:    meta.get('spymasterNeededTeam')    || null,
         spymasterNeededDeadline:meta.get('spymasterNeededDeadline')|| null,
+        gridRedReady:           meta.get('gridRedReady')           ?? false,
+        gridBlueReady:          meta.get('gridBlueReady')          ?? false,
+        gridRedVetoUsed:        meta.get('gridRedVetoUsed')        ?? false,
+        gridBlueVetoUsed:       meta.get('gridBlueVetoUsed')       ?? false,
+        gridRedAction:          meta.get('gridRedAction')          || null,
+        gridBlueAction:         meta.get('gridBlueAction')         || null,
+        rematchVotes:           JSON.parse(meta.get('rematchVotes') || '[]'),
       });
     };
 
@@ -162,6 +181,27 @@ export default function CodenamesRoom() {
     return () => clearInterval(interval);
   }, [gameState.phase, gameState.spymasterNeededDeadline, gameState.spymasterNeededTeam]);
 
+  // ── Host: resolve grid veto when both teams have voted ────────────────────
+  useEffect(() => {
+    const amHost = gameState.hostId === myUuid;
+    if (!amHost || gameState.phase !== 'grid-veto') return;
+    if (gameState.gridRedReady && gameState.gridBlueReady) {
+      resolveGridVote(metaRef.current, yRevealedRef.current);
+    }
+  }, [gameState.hostId, myUuid, gameState.phase, gameState.gridRedReady, gameState.gridBlueReady]);
+
+  // ── Host: trigger rematch when 2+2 votes are reached ─────────────────────
+  useEffect(() => {
+    const amHost = gameState.hostId === myUuid;
+    if (!amHost || gameState.phase !== 'over') return;
+    const votes     = gameState.rematchVotes;
+    const redVotes  = votes.filter(id => players.some(p => p.uuid === id && p.team === 'red')).length;
+    const blueVotes = votes.filter(id => players.some(p => p.uuid === id && p.team === 'blue')).length;
+    if (redVotes >= 2 && blueVotes >= 2) {
+      triggerRematch(metaRef.current, yPlayersRef.current, yRevealedRef.current);
+    }
+  }, [gameState.hostId, myUuid, gameState.phase, gameState.rematchVotes, players]);
+
   // ── Derived ───────────────────────────────────────────────────────────────
   const myPlayer = players.find(p => p.uuid === myUuid);
   const myTeam   = myPlayer?.team || null;
@@ -171,7 +211,9 @@ export default function CodenamesRoom() {
   const {
     phase, currentTeam, words, keyCard, revealed, clueWord, clueNumber,
     guessesLeft, winner, winReason, redRemaining, blueRemaining,
-    spymasterNeededTeam,
+    spymasterNeededTeam, gridRedReady, gridBlueReady,
+    gridRedVetoUsed, gridBlueVetoUsed, gridRedAction, gridBlueAction,
+    rematchVotes,
   } = gameState;
 
   const isCurrentTeam   = myTeam === currentTeam;
@@ -198,16 +240,30 @@ export default function CodenamesRoom() {
     }
   };
 
-  const handleStartGame   = () => startGame(metaRef.current, yRevealedRef.current);
-  const handleSubmitClue  = (word, number) => submitClue(metaRef.current, word, number);
-  const handlePass        = () => endTurn(metaRef.current);
-  const handlePlayAgain   = () => startGame(metaRef.current, yRevealedRef.current);
-  const handleVolunteer   = () => volunteerAsSpymaster(metaRef.current, yPlayersRef.current, myUuid);
+  const handleStartGame  = () => startGame(metaRef.current, yRevealedRef.current);
+  const handleSubmitClue = (word, number) => submitClue(metaRef.current, word, number);
+  const handlePass       = () => endTurn(metaRef.current);
+  const handleVolunteer  = () => volunteerAsSpymaster(metaRef.current, yPlayersRef.current, myUuid);
 
   const handleCardClick = (index) => {
     if (!isOperativeTurn || revealed[index]) return;
-    revealCard(metaRef.current, yRevealedRef.current, index);
+    setSelectedCard(prev => prev === index ? null : index);
   };
+
+  const handleConfirmCard = () => {
+    if (selectedCard === null) return;
+    revealCard(metaRef.current, yRevealedRef.current, selectedCard);
+    setSelectedCard(null);
+  };
+
+  const handleVoteGrid = (action) => {
+    if (!myTeam) return;
+    recordTeamVote(metaRef.current, myTeam, action);
+  };
+
+  const handleVoteRematch = () => voteRematch(metaRef.current, myUuid);
+
+  const handleRequeue = () => requeueToLobby(metaRef.current, yPlayersRef.current);
 
   const handleLeaveGame = () => {
     localStorage.removeItem('poordown_active_room');
@@ -470,6 +526,104 @@ export default function CodenamesRoom() {
     );
   }
 
+  // ── Phase: grid-veto ──────────────────────────────────────────────────────
+  if (phase === 'grid-veto') {
+    const myVoted    = myTeam === 'red' ? gridRedReady    : gridBlueReady;
+    const myVetoUsed = myTeam === 'red' ? gridRedVetoUsed : gridBlueVetoUsed;
+    const oppVoted   = myTeam === 'red' ? gridBlueReady   : gridRedReady;
+
+    const VoteStatus = ({ voted, action, label, color }) => (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: color, flexShrink: 0 }} />
+        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#2B2D42', fontWeight: '600' }}>{label}:</span>
+        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: voted ? (action === 'veto' ? '#E63946' : '#2D6A4F') : '#8D99AE', fontStyle: voted ? 'normal' : 'italic' }}>
+          {voted ? (action === 'veto' ? 'Requesting new grid' : 'Looks good') : 'Deciding...'}
+        </span>
+      </div>
+    );
+
+    return (
+      <>
+        <Head><title>Codenames — Grid Veto — {code}</title></Head>
+        <div style={{ minHeight: '100vh', backgroundColor: '#F8F4E8', display: 'flex', flexDirection: 'column' }}>
+          <PlayerBar players={players} myUuid={myUuid} phase={phase} currentTeam={currentTeam} />
+
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 16px', gap: '20px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <h2 style={{ fontFamily: 'Nunito, sans-serif', fontSize: '22px', fontWeight: '800', color: '#2B2D42', margin: '0 0 4px' }}>
+                Grid Veto
+              </h2>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8D99AE', margin: 0 }}>
+                Both teams must approve this board before the game begins.
+                {(gridRedVetoUsed || gridBlueVetoUsed) && ' (each team gets one veto)'}
+              </p>
+            </div>
+
+            {/* Board — words only, no colors during veto */}
+            <Board
+              words={words}
+              keyCard={keyCard}
+              revealed={revealed}
+              isSpymaster={false}
+              isClickable={false}
+              onCardClick={() => {}}
+              selectedCard={null}
+              showAll={false}
+            />
+
+            {/* Vote controls */}
+            <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', maxWidth: '480px', width: '100%', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <VoteStatus voted={gridRedReady}  action={gridRedAction}  label="Red team"  color="#DC2626" />
+              <VoteStatus voted={gridBlueReady} action={gridBlueAction} label="Blue team" color="#2563EB" />
+
+              {myTeam && !myVoted && (
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', paddingTop: '8px', borderTop: '1px solid #F0EDE6' }}>
+                  <button
+                    onClick={() => handleVoteGrid('approve')}
+                    style={{ padding: '10px 22px', backgroundColor: '#2D6A4F', color: 'white', border: 'none', borderRadius: '10px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}
+                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#245A42'; }}
+                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#2D6A4F'; }}
+                  >
+                    Looks good ✓
+                  </button>
+                  {!myVetoUsed && (
+                    <button
+                      onClick={() => handleVoteGrid('veto')}
+                      style={{ padding: '10px 22px', backgroundColor: 'white', color: '#E63946', border: '2px solid #E63946', borderRadius: '10px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}
+                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#FFF5F5'; }}
+                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'white'; }}
+                    >
+                      Request new grid ↻
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {myTeam && myVoted && (
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8D99AE', textAlign: 'center', margin: 0, paddingTop: '8px', borderTop: '1px solid #F0EDE6' }}>
+                  {oppVoted ? 'Resolving...' : 'Waiting for the other team...'}
+                </p>
+              )}
+
+              {!myTeam && (
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8D99AE', textAlign: 'center', margin: 0, paddingTop: '8px', borderTop: '1px solid #F0EDE6' }}>
+                  You're watching — teams are voting on this grid.
+                </p>
+              )}
+
+              {/* Show unused veto hint */}
+              {myTeam && !myVoted && myVetoUsed && (
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#8D99AE', textAlign: 'center', margin: '-8px 0 0' }}>
+                  Your team used its veto on the previous grid.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   // ── Phase: lobby ──────────────────────────────────────────────────────────
   if (phase === 'lobby') {
     const unassigned = players.filter(p => !p.team || !p.role);
@@ -545,6 +699,7 @@ export default function CodenamesRoom() {
             )}
           </div>
         </div>
+        <RulesModal />
       </>
     );
   }
@@ -560,6 +715,10 @@ export default function CodenamesRoom() {
     winReason === 'forfeit'  ? 'The other team left the game.' :
     'All agents found first!';
 
+  const redVoteCount  = rematchVotes.filter(id => players.some(p => p.uuid === id && p.team === 'red')).length;
+  const blueVoteCount = rematchVotes.filter(id => players.some(p => p.uuid === id && p.team === 'blue')).length;
+  const myRematchVote = rematchVotes.includes(myUuid);
+
   return (
     <>
       <Head><title>Codenames — {code}</title></Head>
@@ -574,6 +733,17 @@ export default function CodenamesRoom() {
           redRemaining={redRemaining}
           blueRemaining={blueRemaining}
         />
+
+        <PlayerBar players={players} myUuid={myUuid} phase={phase} currentTeam={currentTeam} />
+
+        {/* Game-over banner — non-blocking so the board stays visible */}
+        {phase === 'over' && winner && (
+          <div style={{ backgroundColor: winnerColor, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: '18px', fontWeight: '800', color: 'white' }}>
+              {gameOverIcon} {winnerLabel} wins! — {gameOverMsg}
+            </span>
+          </div>
+        )}
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 16px', gap: '20px' }}>
 
@@ -599,9 +769,11 @@ export default function CodenamesRoom() {
             words={words}
             keyCard={keyCard}
             revealed={revealed}
-            isSpymaster={isSpymasterView}
+            isSpymaster={isSpymasterView && phase !== 'over'}
             isClickable={isOperativeTurn}
             onCardClick={handleCardClick}
+            selectedCard={selectedCard}
+            showAll={phase === 'over'}
           />
 
           {isSpymasterTurn && (
@@ -630,8 +802,76 @@ export default function CodenamesRoom() {
             </p>
           )}
 
+          {/* Post-game actions */}
+          {phase === 'over' && (
+            <div style={{ backgroundColor: 'white', borderRadius: '16px', padding: '20px 24px', maxWidth: '480px', width: '100%', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {/* Rematch voting */}
+              <div>
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', color: '#8D99AE', margin: '0 0 8px' }}>
+                  Rematch — need 2 from each team
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={handleVoteRematch}
+                    disabled={myRematchVote}
+                    style={{ padding: '8px 18px', backgroundColor: myRematchVote ? '#F5F0E8' : '#2D6A4F', color: myRematchVote ? '#8D99AE' : 'white', border: 'none', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: '700', cursor: myRematchVote ? 'default' : 'pointer' }}
+                  >
+                    {myRematchVote ? 'Voted ✓' : 'Vote Rematch'}
+                  </button>
+                  <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8D99AE' }}>
+                    🔴 {redVoteCount}/2 &nbsp; 🔵 {blueVoteCount}/2
+                  </span>
+                </div>
+              </div>
+
+              <div style={{ borderTop: '1px solid #F0EDE6', paddingTop: '14px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                {isHost && (
+                  <button
+                    onClick={handleRequeue}
+                    style={{ padding: '9px 20px', backgroundColor: 'white', color: '#2B2D42', border: '2px solid #E8E4D8', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#2B2D42'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#E8E4D8'; }}
+                  >
+                    ← Back to Lobby
+                  </button>
+                )}
+                <button
+                  onClick={() => { localStorage.removeItem('poordown_active_room'); router.push('/codenames'); }}
+                  style={{ padding: '9px 20px', backgroundColor: 'white', color: '#E63946', border: '2px solid #FECDD3', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#E63946'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#FECDD3'; }}
+                >
+                  Leave Room
+                </button>
+              </div>
+            </div>
+          )}
+
           {phase !== 'over' && <LeaveButton />}
         </div>
+
+        {/* Card confirmation bar */}
+        {selectedCard !== null && isOperativeTurn && (
+          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: 'white', borderTop: '2px solid #7C3AED', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', zIndex: 50, boxShadow: '0 -4px 20px rgba(0,0,0,0.1)' }}>
+            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#2B2D42' }}>
+              Guess <strong style={{ fontFamily: 'JetBrains Mono, monospace', letterSpacing: '1px', color: '#7C3AED' }}>{words[selectedCard]}</strong>?
+            </span>
+            <button
+              onClick={handleConfirmCard}
+              style={{ padding: '9px 22px', backgroundColor: '#7C3AED', color: 'white', border: 'none', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#6D28D9'; }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#7C3AED'; }}
+            >
+              Confirm
+            </button>
+            <button
+              onClick={() => setSelectedCard(null)}
+              style={{ padding: '9px 16px', backgroundColor: 'white', color: '#8D99AE', border: '1.5px solid #E8E4D8', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}
+            >
+              Cancel
+            </button>
+          </div>
+        )}
 
         {/* Spymaster-needed overlay */}
         {phase === 'spymaster-needed' && <SpymasterNeededOverlay />}
@@ -639,38 +879,7 @@ export default function CodenamesRoom() {
         {/* Leave confirm dialog */}
         {showLeaveConfirm && <LeaveConfirmOverlay />}
 
-        {/* Game over overlay */}
-        {phase === 'over' && winner && (
-          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
-            <div style={{ backgroundColor: 'white', borderRadius: '20px', padding: '48px 40px', textAlign: 'center', maxWidth: '420px', width: '100%', boxShadow: '0 24px 80px rgba(0,0,0,0.3)' }}>
-              <div style={{ fontSize: '52px', marginBottom: '16px' }}>{gameOverIcon}</div>
-              <h2 style={{ fontFamily: 'Nunito, sans-serif', fontSize: '36px', fontWeight: '800', color: winnerColor, margin: '0 0 10px 0' }}>
-                {winnerLabel} wins!
-              </h2>
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#8D99AE', margin: '0 0 32px 0', lineHeight: 1.5 }}>
-                {gameOverMsg}
-              </p>
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                {isHost && (
-                  <button
-                    onClick={handlePlayAgain}
-                    style={{ padding: '12px 28px', backgroundColor: '#2D6A4F', color: 'white', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '700', fontFamily: 'Inter, sans-serif', cursor: 'pointer' }}
-                    onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#245A42'; }}
-                    onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#2D6A4F'; }}
-                  >
-                    Play Again
-                  </button>
-                )}
-                <button
-                  onClick={() => { localStorage.removeItem('poordown_active_room'); router.push('/codenames'); }}
-                  style={{ padding: '12px 28px', backgroundColor: 'white', color: '#2B2D42', border: '2px solid #E8E4D8', borderRadius: '12px', fontSize: '15px', fontWeight: '600', fontFamily: 'Inter, sans-serif', cursor: 'pointer' }}
-                >
-                  Leave Room
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <RulesModal />
       </div>
     </>
   );

@@ -1,6 +1,6 @@
 import Card from './Card';
 
-export default function Board({ words, keyCard, revealed, isSpymaster, isClickable, onCardClick }) {
+export default function Board({ words, keyCard, revealed, isSpymaster, isClickable, onCardClick, selectedCard, showAll }) {
   if (!words || words.length !== 25) return null;
 
   return (
@@ -23,6 +23,8 @@ export default function Board({ words, keyCard, revealed, isSpymaster, isClickab
           isSpymaster={isSpymaster}
           isClickable={isClickable && !revealed[i]}
           onClick={() => onCardClick(i)}
+          selected={selectedCard === i}
+          showAll={showAll}
         />
       ))}
     </div>
