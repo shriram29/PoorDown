@@ -14,6 +14,7 @@ import {
 } from '../../../lib/games/codenames/state';
 import PlayerBar from '../../../components/games/codenames/hud/PlayerBar';
 import RulesModal from '../../../components/games/codenames/ui/RulesModal';
+import ActivityLog from '../../../components/games/codenames/ui/ActivityLog';
 
 const TEAM_COLORS = { red: '#DC2626', blue: '#2563EB' };
 const TEAM_BG     = { red: '#FEE2E2', blue: '#DBEAFE' };
@@ -56,9 +57,12 @@ export default function CodenamesRoom() {
     rematchVotes:    [],
   });
 
+  const [activityLog, setActivityLog] = useState([]);
+
   const metaRef      = useRef(null);
   const yPlayersRef  = useRef(null);
   const yRevealedRef = useRef(null);
+  const logStateRef  = useRef(null);
 
   // ── Setup ─────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -202,6 +206,57 @@ export default function CodenamesRoom() {
     }
   }, [gameState.hostId, myUuid, gameState.phase, gameState.rematchVotes, players]);
 
+  // ── Activity log ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!gameState.words.length) return;
+
+    const prev = logStateRef.current;
+    const curr = gameState;
+
+    if (!prev) {
+      logStateRef.current = { ...curr, revealed: [...curr.revealed] };
+      return;
+    }
+
+    const newEntries = [];
+
+    if (curr.clueWord && curr.clueWord !== prev.clueWord) {
+      const emoji = curr.currentTeam === 'red' ? '🔴' : '🔵';
+      const num   = curr.clueNumber === 0 ? '∞' : curr.clueNumber;
+      newEntries.push(`${emoji} Clue: "${curr.clueWord}", ${num}`);
+    }
+
+    curr.revealed.forEach((r, i) => {
+      if (r && !prev.revealed[i]) {
+        const type  = curr.keyCard[i];
+        const word  = curr.words[i];
+        const label = { red: 'Red agent ✓', blue: 'Blue agent ✓', neutral: 'Neutral', assassin: 'Assassin 💀' }[type];
+        const icon  = { red: '🔴', blue: '🔵', neutral: '⬜', assassin: '⚫' }[type];
+        newEntries.push(`${icon} ${word} — ${label}`);
+      }
+    });
+
+    if (prev.phase === 'operatives-guess' && curr.phase === 'spymaster-clue' && prev.currentTeam && !newEntries.some(e => e.includes('Clue:'))) {
+      const emoji = prev.currentTeam === 'red' ? '🔴' : '🔵';
+      newEntries.push(`${emoji} Turn ended`);
+    }
+
+    if (curr.phase === 'over' && prev.phase !== 'over' && curr.winner) {
+      const label = curr.winner === 'red' ? 'Red' : 'Blue';
+      const icon  = curr.winReason === 'assassin' ? '💀' : '🎉';
+      newEntries.push(`${icon} ${label} team wins!`);
+    }
+
+    if (newEntries.length > 0) {
+      setActivityLog(log => [
+        ...log.slice(-30),
+        ...newEntries.map((msg, j) => ({ id: Date.now() + j, msg })),
+      ]);
+    }
+
+    logStateRef.current = { ...curr, revealed: [...curr.revealed] };
+  }, [gameState]);
+
   // ── Derived ───────────────────────────────────────────────────────────────
   const myPlayer = players.find(p => p.uuid === myUuid);
   const myTeam   = myPlayer?.team || null;
@@ -222,7 +277,13 @@ export default function CodenamesRoom() {
   const isSpymasterView = myRole === 'spymaster';
   const canVolunteer    = phase === 'spymaster-needed' && myTeam === spymasterNeededTeam && myRole === 'operative';
 
+  const devMode = router.query.dev === 'true';
+
   const canStart = () => {
+    if (devMode) {
+      return players.filter(p => p.team === 'red'  && p.role).length >= 1
+          && players.filter(p => p.team === 'blue' && p.role).length >= 1;
+    }
     const rs = players.filter(p => p.team === 'red'  && p.role === 'spymaster').length;
     const ro = players.filter(p => p.team === 'red'  && p.role === 'operative').length;
     const bs = players.filter(p => p.team === 'blue' && p.role === 'spymaster').length;
@@ -647,6 +708,11 @@ export default function CodenamesRoom() {
               <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8D99AE', margin: '4px 0 0' }}>
                 Room&nbsp;<span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: '700', color: '#2B2D42', letterSpacing: '2px' }}>{code}</span>
               </p>
+              {devMode && (
+                <span style={{ display: 'inline-block', marginTop: '6px', padding: '2px 10px', backgroundColor: '#FEF9C3', border: '1px solid #FCD34D', borderRadius: '20px', fontFamily: 'Inter, sans-serif', fontSize: '11px', fontWeight: '700', color: '#92400E', letterSpacing: '0.5px' }}>
+                  DEV MODE — reduced player requirements
+                </span>
+              )}
             </div>
             <div style={{ width: '48px' }} />
           </div>
@@ -688,7 +754,9 @@ export default function CodenamesRoom() {
                 </button>
                 {!ready && (
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: '#8D99AE', margin: 0 }}>
-                    Each team needs at least 1 spymaster and 1 operative.
+                    {devMode
+                      ? 'Each team needs at least 1 player with any role.'
+                      : 'Each team needs at least 1 spymaster and 1 operative.'}
                   </p>
                 )}
               </>
@@ -775,6 +843,8 @@ export default function CodenamesRoom() {
             selectedCard={selectedCard}
             showAll={phase === 'over'}
           />
+
+          <ActivityLog entries={activityLog} />
 
           {isSpymasterTurn && (
             <ClueInput currentTeam={currentTeam} onSubmit={handleSubmitClue} />
