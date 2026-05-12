@@ -82,14 +82,15 @@ export default function RulesModal() {
           <div style={{
             backgroundColor: 'white',
             borderRadius: '20px',
-            padding: '32px',
             maxWidth: '540px',
             width: '100%',
             maxHeight: '80vh',
-            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
             boxShadow: '0 24px 80px rgba(0,0,0,0.3)',
+            overflow: 'hidden',
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '28px 32px 20px', flexShrink: 0 }}>
               <h2 style={{ fontFamily: 'Nunito, sans-serif', fontSize: '24px', fontWeight: '800', color: '#2B2D42', margin: 0 }}>
                 How to Play
               </h2>
@@ -101,7 +102,7 @@ export default function RulesModal() {
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ overflowY: 'auto', padding: '0 32px 28px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {RULES.map(({ q, a }) => (
                 <div key={q}>
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', color: '#7C3AED', margin: '0 0 4px' }}>

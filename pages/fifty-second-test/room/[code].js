@@ -175,7 +175,8 @@ export default function FiftySecondTestRoom() {
     <>
       <Head>
         <title>Room {code} — 50 Second Test</title>
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="icon" type="image/png" href="/favicon.png" />
       </Head>
 
       <div style={{ minHeight: '100vh', backgroundColor: '#F8F4E8', padding: '40px 20px' }}>

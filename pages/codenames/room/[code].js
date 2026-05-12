@@ -710,16 +710,18 @@ export default function CodenamesRoom() {
               </p>
             </div>
 
-            <Board
-              words={words}
-              keyCard={keyCard}
-              revealed={revealed}
-              isSpymaster={false}
-              isClickable={false}
-              onCardClick={() => {}}
-              selectedCard={null}
-              showAll={false}
-            />
+            <div style={{ width: 'min(calc(100vw - 32px), calc(100vh - 320px))', aspectRatio: '1 / 1', flexShrink: 0 }}>
+              <Board
+                words={words}
+                keyCard={keyCard}
+                revealed={revealed}
+                isSpymaster={false}
+                isClickable={false}
+                onCardClick={() => {}}
+                selectedCard={null}
+                showAll={false}
+              />
+            </div>
 
             <div style={{ backgroundColor: D.surface, border: `1px solid ${D.border2}`, borderRadius: '16px', padding: '20px 24px', maxWidth: '480px', width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <VoteStatus voted={gridRedReady}  action={gridRedAction}  label="Red team"  vivid={TEAM_VIVID.red} />

@@ -103,7 +103,8 @@ export default function FiftySecondTest() {
     <>
       <Head>
         <title>The 50 Second Test - PoorDown</title>
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="icon" type="image/png" href="/favicon.png" />
       </Head>
 
       <div style={{ minHeight: '100vh', backgroundColor: '#0d0d1a', padding: '40px 20px', position: 'relative', overflow: 'hidden' }}>

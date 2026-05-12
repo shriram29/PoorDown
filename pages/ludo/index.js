@@ -12,7 +12,8 @@ export default function LudoLobby() {
       <Head>
         <title>Ludo - PoorDown</title>
         <meta name="description" content="Play Ludo online with friends. Create or join a room." />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="icon" type="image/png" href="/favicon.png" />
       </Head>
 
       <div

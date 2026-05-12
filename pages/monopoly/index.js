@@ -29,7 +29,8 @@ export default function MonopolyLobby() {
       <Head>
         <title>Monopoly - PoorDown</title>
         <meta name="description" content="Play Monopoly online with friends. Create or join a room." />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="icon" type="image/png" href="/favicon.png" />
       </Head>
 
       <div

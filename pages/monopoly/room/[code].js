@@ -642,7 +642,8 @@ export default function GameRoom() {
     <>
       <Head>
         <title>Room {code} — PoorDown</title>
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="icon" type="image/png" href="/favicon.png" />
       </Head>
 
       <style>{`

@@ -93,7 +93,8 @@ export default function Home() {
       <Head>
         <title>PoorDown - Online Board Games</title>
         <meta name="description" content="Play Monopoly, Ludo and more with friends online. Free, no account needed." />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="icon" type="image/png" href="/favicon.png" />
       </Head>
 
       <IdentityModal isOpen={showIdentityModal} onComplete={handleIdentityComplete} />
