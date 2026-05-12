@@ -503,61 +503,128 @@ export default function CodenamesRoom() {
 
   // ── Lobby TeamColumn helper ───────────────────────────────────────────────
   const TeamColumn = ({ team }) => {
-    const spymasters = players.filter(p => p.team === team && p.role === 'spymaster');
-    const operatives = players.filter(p => p.team === team && p.role === 'operative');
-    const vivid   = TEAM_VIVID[team];
-    const surface = TEAM_SURFACE[team];
-    const border  = TEAM_BORDER[team];
-    const label   = team === 'red' ? 'Red Team' : 'Blue Team';
-    const iAmSpymaster = myTeam === team && myRole === 'spymaster';
-    const iAmOperative = myTeam === team && myRole === 'operative';
+    const spymasters   = players.filter(p => p.team === team && p.role === 'spymaster');
+    const operatives   = players.filter(p => p.team === team && p.role === 'operative');
+    const vivid        = TEAM_VIVID[team];
+    const surface      = TEAM_SURFACE[team];
+    const border       = TEAM_BORDER[team];
+    const isMine       = myTeam === team;
+    const iAmSpymaster = isMine && myRole === 'spymaster';
+    const iAmOperative = isMine && myRole === 'operative';
+    const agentCount   = spymasters.length + operatives.length;
 
-    const slotBtn = (role, btnLabel) => (
-      <button
-        onClick={() => assignSelf(team, role)}
-        style={{
-          marginTop: '8px', padding: '6px 14px', borderRadius: '8px',
-          border: `1.5px solid ${border}`, backgroundColor: D.surface2, color: vivid,
-          fontSize: '12px', fontWeight: '600', fontFamily: 'Inter, sans-serif',
-          cursor: 'pointer', transition: 'border-color 0.15s, background-color 0.15s',
-        }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = vivid; e.currentTarget.style.backgroundColor = surface; }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = border; e.currentTarget.style.backgroundColor = D.surface2; }}
-      >
-        {btnLabel}
-      </button>
-    );
-
-    const playerRow = (p) => (
-      <div key={p.uuid} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-        <div style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: vivid, opacity: 0.7 }} />
-        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: p.uuid === myUuid ? '700' : '400', color: p.uuid === myUuid ? D.text : D.sub }}>
-          {p.name}{p.uuid === myUuid ? ' (you)' : ''}
+    const AgentCard = ({ p, role }) => (
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: '10px',
+        padding: '9px 12px',
+        backgroundColor: D.bg,
+        border: `1px solid ${p.uuid === myUuid ? border : D.border2}`,
+        borderRadius: '10px',
+        marginBottom: '6px',
+        boxShadow: p.uuid === myUuid ? `inset 0 0 0 1px ${vivid}33` : 'none',
+      }}>
+        <div style={{
+          width: '30px', height: '30px', borderRadius: '50%', flexShrink: 0,
+          backgroundColor: surface, border: `1.5px solid ${vivid}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: 'Nunito, sans-serif', fontSize: '13px', fontWeight: '800', color: vivid,
+        }}>
+          {p.name[0].toUpperCase()}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: p.uuid === myUuid ? '700' : '500', color: p.uuid === myUuid ? D.text : D.sub, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {p.name}{p.uuid === myUuid ? ' (you)' : ''}
+          </div>
+        </div>
+        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '9px', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', color: vivid, opacity: 0.6, flexShrink: 0 }}>
+          {role === 'spymaster' ? 'SPY' : 'OP'}
         </span>
       </div>
     );
 
+    const JoinSlot = ({ role }) => (
+      <button
+        onClick={() => assignSelf(team, role)}
+        style={{
+          width: '100%', padding: '9px 12px',
+          border: `1.5px dashed ${border}`, borderRadius: '10px', marginBottom: '6px',
+          display: 'flex', alignItems: 'center', gap: '10px',
+          backgroundColor: 'transparent', cursor: 'pointer',
+          transition: 'background-color 0.15s, border-color 0.15s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.backgroundColor = surface; e.currentTarget.style.borderColor = vivid; }}
+        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.borderColor = border; }}
+      >
+        <div style={{
+          width: '30px', height: '30px', borderRadius: '50%', flexShrink: 0,
+          border: `1.5px dashed ${vivid}`, opacity: 0.6,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: vivid, fontSize: '18px', lineHeight: 1,
+        }}>+</div>
+        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', fontWeight: '600', color: vivid, opacity: 0.8 }}>
+          {role === 'spymaster' ? 'Claim spymaster' : 'Join as operative'}
+        </span>
+      </button>
+    );
+
     return (
-      <div style={{ flex: 1, backgroundColor: D.surface, borderRadius: '16px', padding: '20px', border: myTeam === team ? `2px solid ${border}` : `2px solid ${D.border2}`, boxShadow: myTeam === team ? `0 0 20px ${vivid}22` : 'none', transition: 'box-shadow 0.3s' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-          <div style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: vivid }} />
-          <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: '18px', fontWeight: '800', color: D.text }}>{label}</span>
+      <div style={{
+        backgroundColor: D.surface,
+        border: isMine ? `2px solid ${border}` : `1px solid ${D.border2}`,
+        borderRadius: '16px',
+        overflow: 'hidden',
+        display: 'flex', flexDirection: 'column',
+        boxShadow: isMine ? `0 0 40px ${vivid}18` : 'none',
+        transition: 'box-shadow 0.4s',
+      }}>
+        {/* Team header */}
+        <div style={{
+          background: `linear-gradient(135deg, ${surface} 0%, ${D.bg} 100%)`,
+          borderBottom: `2px solid ${border}`,
+          padding: '18px 20px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '42px', height: '42px', borderRadius: '10px',
+              backgroundColor: D.bg, border: `2px solid ${border}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '22px', flexShrink: 0,
+            }}>
+              {team === 'red' ? '🔴' : '🔵'}
+            </div>
+            <div>
+              <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: '20px', fontWeight: '800', color: D.text, lineHeight: 1.1 }}>
+                {team === 'red' ? 'Red Team' : 'Blue Team'}
+              </div>
+              <div style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', color: vivid, letterSpacing: '1px', textTransform: 'uppercase', marginTop: '3px', opacity: 0.7 }}>
+                {agentCount === 0 ? 'No agents yet' : `${agentCount} ${agentCount === 1 ? 'agent' : 'agents'}`}
+              </div>
+            </div>
+          </div>
+          {isMine && (
+            <span style={{ padding: '3px 10px', backgroundColor: `${vivid}22`, border: `1px solid ${border}`, borderRadius: '20px', fontFamily: 'Inter, sans-serif', fontSize: '10px', fontWeight: '700', color: vivid, letterSpacing: '0.5px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+              Your team
+            </span>
+          )}
         </div>
 
-        <div style={{ marginBottom: '12px' }}>
-          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', fontWeight: '700', color: vivid, letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 6px 0', opacity: 0.7 }}>Spymaster</p>
-          {spymasters.length > 0 ? spymasters.map(playerRow) : (
-            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: D.muted, fontStyle: 'italic' }}>No spymaster yet</span>
-          )}
-          {!iAmSpymaster && slotBtn('spymaster', 'Join as Spymaster')}
-        </div>
-
-        <div>
-          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', fontWeight: '700', color: vivid, letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 6px 0', opacity: 0.7 }}>Operatives</p>
-          {operatives.length > 0 ? operatives.map(playerRow) : (
-            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: D.muted, fontStyle: 'italic' }}>No operatives yet</span>
-          )}
-          {!iAmOperative && slotBtn('operative', 'Join as Operative')}
+        {/* Roles */}
+        <div style={{ padding: '16px 18px', flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', fontWeight: '700', color: vivid, letterSpacing: '1.2px', textTransform: 'uppercase', margin: '0 0 8px', opacity: 0.55 }}>
+              Spymaster
+            </p>
+            {spymasters.map(p => <AgentCard key={p.uuid} p={p} role="spymaster" />)}
+            {!iAmSpymaster && <JoinSlot role="spymaster" />}
+          </div>
+          <div>
+            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', fontWeight: '700', color: vivid, letterSpacing: '1.2px', textTransform: 'uppercase', margin: '0 0 8px', opacity: 0.55 }}>
+              Operatives
+            </p>
+            {operatives.map(p => <AgentCard key={p.uuid} p={p} role="operative" />)}
+            {!iAmOperative && <JoinSlot role="operative" />}
+          </div>
         </div>
       </div>
     );
@@ -703,80 +770,107 @@ export default function CodenamesRoom() {
 
     return (
       <>
-        <Head><title>Codenames Lobby — {code}</title></Head>
-        <div style={{ minHeight: '100vh', backgroundColor: D.bg, padding: '32px 20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: '760px', margin: '0 auto 32px' }}>
+        <Head><title>Codenames — {code}</title></Head>
+        <style>{`
+          @keyframes readyPulse {
+            0%, 100% { box-shadow: 0 0 30px rgba(74,222,128,0.3), 0 0 60px rgba(74,222,128,0.1); }
+            50%       { box-shadow: 0 0 50px rgba(74,222,128,0.5), 0 0 100px rgba(74,222,128,0.15); }
+          }
+        `}</style>
+        <div style={{ minHeight: '100vh', backgroundColor: D.bg, display: 'flex', flexDirection: 'column' }}>
+
+          {/* Header */}
+          <div style={{ backgroundColor: D.surface, borderBottom: `1px solid ${D.border2}`, padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <button
               onClick={() => router.push('/codenames')}
-              style={{ background: 'none', border: 'none', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: D.muted, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              style={{ background: 'none', border: 'none', fontFamily: 'Inter, sans-serif', fontSize: '13px', color: D.muted, cursor: 'pointer', padding: '6px 0' }}
             >
               ← Back
             </button>
             <div style={{ textAlign: 'center' }}>
-              <h1 style={{ fontFamily: 'Nunito, sans-serif', fontSize: '32px', fontWeight: '800', color: D.text, margin: 0, letterSpacing: '-0.5px' }}>
+              <h1 style={{ fontFamily: 'Nunito, sans-serif', fontSize: '26px', fontWeight: '800', color: D.text, margin: 0, letterSpacing: '-0.5px', lineHeight: 1 }}>
                 Code<span style={{ color: '#F87171' }}>names</span>
               </h1>
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: D.muted, margin: '4px 0 0' }}>
-                Room&nbsp;<span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: '700', color: D.sub, letterSpacing: '2px' }}>{code}</span>
-              </p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '4px' }}>
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', color: D.muted, textTransform: 'uppercase', letterSpacing: '1px' }}>Room</span>
+                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '13px', fontWeight: '700', color: D.sub, letterSpacing: '3px' }}>{code}</span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {devMode && (
-                <span style={{ display: 'inline-block', marginTop: '6px', padding: '2px 10px', backgroundColor: '#3D2900', border: '1px solid #92400E', borderRadius: '20px', fontFamily: 'Inter, sans-serif', fontSize: '11px', fontWeight: '700', color: '#FCD34D', letterSpacing: '0.5px' }}>
-                  DEV MODE — reduced player requirements
+                <span style={{ padding: '3px 8px', backgroundColor: '#3D2900', border: '1px solid #92400E', borderRadius: '6px', fontFamily: 'Inter, sans-serif', fontSize: '10px', fontWeight: '700', color: '#FCD34D', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                  Dev
                 </span>
               )}
             </div>
-            <div style={{ width: '48px' }} />
           </div>
 
-          <div style={{ maxWidth: '760px', margin: '0 auto', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-            <TeamColumn team="red" />
-            <TeamColumn team="blue" />
-          </div>
+          {/* Main content */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '28px 20px', gap: '20px', maxWidth: '860px', margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
 
-          {unassigned.length > 0 && (
-            <div style={{ maxWidth: '760px', margin: '20px auto 0', padding: '16px', backgroundColor: D.surface, border: `1px solid ${D.border2}`, borderRadius: '12px' }}>
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', fontWeight: '700', color: D.muted, letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 8px 0' }}>Not yet assigned</p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {/* Team panels — strict 50/50 grid with VS divider */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'stretch', gap: '0' }}>
+              <TeamColumn team="red" />
+
+              {/* VS divider */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 18px', gap: '10px' }}>
+                <div style={{ width: '1px', flex: 1, background: `linear-gradient(to bottom, transparent, ${D.border}, transparent)` }} />
+                <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: '13px', fontWeight: '800', color: D.muted, letterSpacing: '2px' }}>VS</span>
+                <div style={{ width: '1px', flex: 1, background: `linear-gradient(to bottom, transparent, ${D.border}, transparent)` }} />
+              </div>
+
+              <TeamColumn team="blue" />
+            </div>
+
+            {/* Unassigned players */}
+            {unassigned.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', color: D.muted, textTransform: 'uppercase', letterSpacing: '1px' }}>In lobby:</span>
                 {unassigned.map(p => (
-                  <span key={p.uuid} style={{ padding: '4px 12px', backgroundColor: D.surface2, border: `1px solid ${D.border}`, borderRadius: '20px', fontFamily: 'Inter, sans-serif', fontSize: '13px', color: D.sub }}>
+                  <span key={p.uuid} style={{ padding: '3px 10px', backgroundColor: D.surface2, border: `1px solid ${D.border}`, borderRadius: '20px', fontFamily: 'Inter, sans-serif', fontSize: '12px', color: D.sub }}>
                     {p.name}{p.uuid === myUuid ? ' (you)' : ''}
                   </span>
                 ))}
               </div>
-            </div>
-          )}
-
-          <div style={{ maxWidth: '760px', margin: '24px auto 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-            {isHost ? (
-              <>
-                <button
-                  onClick={handleStartGame}
-                  disabled={!ready}
-                  style={{
-                    padding: '14px 44px', backgroundColor: ready ? '#166534' : D.surface2,
-                    color: ready ? '#4ADE80' : D.muted, border: `2px solid ${ready ? '#166534' : D.border}`,
-                    borderRadius: '12px', fontSize: '16px', fontWeight: '700', fontFamily: 'Inter, sans-serif',
-                    cursor: ready ? 'pointer' : 'not-allowed', transition: 'all 0.2s',
-                    boxShadow: ready ? '0 0 24px rgba(74,222,128,0.25)' : 'none',
-                  }}
-                  onMouseEnter={e => { if (ready) e.currentTarget.style.backgroundColor = '#14532D'; }}
-                  onMouseLeave={e => { if (ready) e.currentTarget.style.backgroundColor = '#166534'; }}
-                >
-                  Start Game
-                </button>
-                {!ready && (
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: D.muted, margin: 0 }}>
-                    {devMode
-                      ? 'Each team needs at least 1 player with any role.'
-                      : 'Each team needs at least 1 spymaster and 1 operative.'}
-                  </p>
-                )}
-              </>
-            ) : (
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: D.muted }}>
-                Waiting for host to start the game...
-              </p>
             )}
+
+            {/* Start / waiting */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', paddingBottom: '8px' }}>
+              {isHost ? (
+                <>
+                  <button
+                    onClick={handleStartGame}
+                    disabled={!ready}
+                    style={{
+                      padding: '16px 72px',
+                      background: ready ? 'linear-gradient(135deg, #166534, #15803D)' : D.surface2,
+                      color: ready ? '#4ADE80' : D.muted,
+                      border: `2px solid ${ready ? '#166534' : D.border}`,
+                      borderRadius: '14px',
+                      fontSize: '18px', fontWeight: '800', fontFamily: 'Nunito, sans-serif',
+                      letterSpacing: '1px', textTransform: 'uppercase',
+                      cursor: ready ? 'pointer' : 'not-allowed',
+                      animation: ready ? 'readyPulse 2.5s ease-in-out infinite' : 'none',
+                      transition: 'background 0.3s, color 0.3s, border-color 0.3s',
+                    }}
+                    onMouseEnter={e => { if (ready) { e.currentTarget.style.background = 'linear-gradient(135deg, #14532D, #166534)'; e.currentTarget.style.animation = 'none'; }}}
+                    onMouseLeave={e => { if (ready) { e.currentTarget.style.background = 'linear-gradient(135deg, #166534, #15803D)'; e.currentTarget.style.animation = 'readyPulse 2.5s ease-in-out infinite'; }}}
+                  >
+                    ▶ Start Game
+                  </button>
+                  {!ready && (
+                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: D.muted, margin: 0 }}>
+                      {devMode ? 'Each team needs at least 1 player with any role.' : 'Each team needs 1 spymaster and 1+ operative.'}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <div style={{ padding: '14px 28px', backgroundColor: D.surface, border: `1px solid ${D.border2}`, borderRadius: '12px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: D.muted }}>
+                  Waiting for host to start the game...
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
         <RulesModal />

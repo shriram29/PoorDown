@@ -97,7 +97,7 @@ export default function Card({ word, type, revealed, isSpymaster, isClickable, o
           <span>{word}</span>
         </div>
 
-        {/* Back — solid color, no word */}
+        {/* Back — solid color; shows word at game over */}
         <div style={{
           position: 'absolute',
           inset: 0,
@@ -106,13 +106,30 @@ export default function Card({ word, type, revealed, isSpymaster, isClickable, o
           transform: 'rotateY(180deg)',
           borderRadius: '10px',
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
+          gap: '3px',
+          padding: '6px',
           boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
           ...BACK_STYLES[type],
         }}>
           {type === 'assassin' && (
-            <span style={{ fontSize: '24px', lineHeight: 1 }}>💀</span>
+            <span style={{ fontSize: showAll ? '14px' : '24px', lineHeight: 1 }}>💀</span>
+          )}
+          {showAll && (
+            <span style={{
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '11px',
+              fontWeight: '700',
+              color: 'rgba(255,255,255,0.92)',
+              letterSpacing: '0.7px',
+              textTransform: 'uppercase',
+              textAlign: 'center',
+              lineHeight: 1.2,
+            }}>
+              {word}
+            </span>
           )}
         </div>
 
