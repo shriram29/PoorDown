@@ -41,6 +41,22 @@ export default function JoinRoom({ defaultName = '' }) {
     router.push(`/monopoly/room/${roomCode}`);
   };
 
+  const active = !!name.trim() && code.length === 6 && !loading;
+
+  const inputStyle = {
+    width: '100%',
+    padding: '12px 16px',
+    borderRadius: '12px',
+    border: '2px solid rgba(139,128,252,0.2)',
+    fontSize: '16px',
+    fontFamily: 'Inter, sans-serif',
+    backgroundColor: '#16162a',
+    color: '#ffffff',
+    outline: 'none',
+    boxSizing: 'border-box',
+    transition: 'border-color 0.2s',
+  };
+
   return (
     <form onSubmit={handleJoin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       <div>
@@ -50,7 +66,8 @@ export default function JoinRoom({ defaultName = '' }) {
             marginBottom: '8px',
             fontFamily: 'Inter, sans-serif',
             fontWeight: '600',
-            color: '#2B2D42',
+            fontSize: '14px',
+            color: '#8c80fc',
           }}
         >
           Your Name
@@ -61,20 +78,9 @@ export default function JoinRoom({ defaultName = '' }) {
           onChange={(e) => setName(e.target.value)}
           placeholder="Enter your name"
           maxLength={20}
-          style={{
-            width: '100%',
-            padding: '12px 16px',
-            borderRadius: '12px',
-            border: '2px solid #E8E4D8',
-            fontSize: '16px',
-            fontFamily: 'Inter, sans-serif',
-            backgroundColor: 'white',
-            outline: 'none',
-            boxSizing: 'border-box',
-            transition: 'border-color 0.2s',
-          }}
-          onFocus={(e) => (e.target.style.borderColor = '#2D6A4F')}
-          onBlur={(e) => (e.target.style.borderColor = '#E8E4D8')}
+          style={inputStyle}
+          onFocus={(e) => (e.target.style.borderColor = '#03deca')}
+          onBlur={(e) => (e.target.style.borderColor = 'rgba(139,128,252,0.2)')}
         />
       </div>
 
@@ -85,7 +91,8 @@ export default function JoinRoom({ defaultName = '' }) {
             marginBottom: '8px',
             fontFamily: 'Inter, sans-serif',
             fontWeight: '600',
-            color: '#2B2D42',
+            fontSize: '14px',
+            color: '#8c80fc',
           }}
         >
           Room Code
@@ -97,50 +104,44 @@ export default function JoinRoom({ defaultName = '' }) {
           placeholder="Enter 6-char code"
           maxLength={6}
           style={{
-            width: '100%',
-            padding: '12px 16px',
-            borderRadius: '12px',
-            border: '2px solid #E8E4D8',
+            ...inputStyle,
             fontSize: '20px',
             fontFamily: 'JetBrains Mono, monospace',
             textAlign: 'center',
             letterSpacing: '4px',
-            backgroundColor: 'white',
-            outline: 'none',
-            boxSizing: 'border-box',
-            transition: 'border-color 0.2s',
           }}
-          onFocus={(e) => (e.target.style.borderColor = '#2D6A4F')}
-          onBlur={(e) => (e.target.style.borderColor = '#E8E4D8')}
+          onFocus={(e) => (e.target.style.borderColor = '#03deca')}
+          onBlur={(e) => (e.target.style.borderColor = 'rgba(139,128,252,0.2)')}
         />
       </div>
 
       {error && (
-        <p style={{ color: '#E63946', fontFamily: 'Inter, sans-serif', fontSize: '14px', margin: 0 }}>
+        <p style={{ color: '#ff4d56', fontFamily: 'Inter, sans-serif', fontSize: '14px', margin: 0 }}>
           {error}
         </p>
       )}
 
       <button
         type="submit"
-        disabled={!name.trim() || code.length !== 6 || loading}
+        disabled={!active}
         style={{
           padding: '14px 24px',
-          backgroundColor: name.trim() && code.length === 6 ? '#1D3557' : '#8D99AE',
-          color: 'white',
+          backgroundColor: active ? '#03deca' : 'rgba(139,128,252,0.15)',
+          color: active ? '#0d0d1a' : 'rgba(139,128,252,0.4)',
           border: 'none',
           borderRadius: '12px',
           fontSize: '16px',
-          fontWeight: '600',
+          fontWeight: '700',
           fontFamily: 'Inter, sans-serif',
-          cursor: name.trim() && code.length === 6 ? 'pointer' : 'not-allowed',
+          cursor: active ? 'pointer' : 'not-allowed',
           transition: 'background-color 0.2s',
+          boxShadow: active ? '0 4px 16px rgba(3,222,202,0.35)' : 'none',
         }}
         onMouseEnter={(e) => {
-          if (name.trim() && code.length === 6) e.target.style.backgroundColor = '#15263E';
+          if (active) e.target.style.backgroundColor = '#02c4b4';
         }}
         onMouseLeave={(e) => {
-          e.target.style.backgroundColor = name.trim() && code.length === 6 ? '#1D3557' : '#8D99AE';
+          e.target.style.backgroundColor = active ? '#03deca' : 'rgba(139,128,252,0.15)';
         }}
       >
         {loading ? 'Joining...' : '🚀 Join Room'}

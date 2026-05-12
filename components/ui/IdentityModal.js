@@ -46,36 +46,37 @@ export default function IdentityModal({ isOpen, onComplete }) {
   return (
     <AnimatePresence>
       {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              backgroundColor: 'rgba(43, 45, 66, 0.85)',
-              backdropFilter: 'blur(6px)',
-              zIndex: 200,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '20px',
-            }}
-          >
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(13, 13, 26, 0.9)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 200,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}
+        >
           <motion.div
             initial={{ opacity: 0, scale: 0.88, y: 24 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.88, y: 24 }}
             transition={{ type: 'spring', damping: 22, stiffness: 280 }}
             style={{
-              backgroundColor: 'white',
-              borderRadius: '16px',
+              backgroundColor: '#1e1e38',
+              borderRadius: '20px',
               padding: '40px',
               width: '100%',
               maxWidth: '460px',
               maxHeight: '90vh',
               overflowY: 'auto',
-              boxShadow: '0 24px 80px rgba(0,0,0,0.35)',
+              boxShadow: '0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,128,252,0.2)',
+              border: '1px solid rgba(139,128,252,0.15)',
             }}
             onKeyDown={handleKeyDown}
           >
@@ -86,7 +87,7 @@ export default function IdentityModal({ isOpen, onComplete }) {
                   fontFamily: 'Nunito, sans-serif',
                   fontSize: '28px',
                   fontWeight: '800',
-                  color: '#2B2D42',
+                  color: '#ffffff',
                   margin: '0 0 10px 0',
                   lineHeight: 1.2,
                 }}
@@ -97,7 +98,7 @@ export default function IdentityModal({ isOpen, onComplete }) {
                 style={{
                   fontFamily: 'Inter, sans-serif',
                   fontSize: '14px',
-                  color: '#8D99AE',
+                  color: '#8c80fc',
                   margin: 0,
                 }}
               >
@@ -119,17 +120,17 @@ export default function IdentityModal({ isOpen, onComplete }) {
                   width: '100%',
                   padding: '14px 18px',
                   borderRadius: '12px',
-                  border: '2px solid #E8E4D8',
+                  border: '2px solid rgba(139,128,252,0.2)',
                   fontSize: '18px',
                   fontFamily: 'Inter, sans-serif',
-                  color: '#2B2D42',
-                  backgroundColor: '#FAFAF8',
+                  color: '#ffffff',
+                  backgroundColor: '#16162a',
                   outline: 'none',
                   boxSizing: 'border-box',
                   transition: 'border-color 0.2s',
                 }}
-                onFocus={(e) => (e.target.style.borderColor = '#E63946')}
-                onBlur={(e) => (e.target.style.borderColor = '#E8E4D8')}
+                onFocus={(e) => (e.target.style.borderColor = '#4a4aff')}
+                onBlur={(e) => (e.target.style.borderColor = 'rgba(139,128,252,0.2)')}
               />
 
               <div>
@@ -138,7 +139,7 @@ export default function IdentityModal({ isOpen, onComplete }) {
                     fontFamily: 'Inter, sans-serif',
                     fontSize: '13px',
                     fontWeight: '600',
-                    color: '#2B2D42',
+                    color: '#8c80fc',
                     margin: '0 0 10px 0',
                     textTransform: 'uppercase',
                     letterSpacing: '0.5px',
@@ -168,17 +169,17 @@ export default function IdentityModal({ isOpen, onComplete }) {
                           gap: '4px',
                           padding: '10px 4px 8px',
                           borderRadius: '10px',
-                          border: selected ? '2px solid #2D6A4F' : '2px solid #E8E4D8',
-                          backgroundColor: selected ? '#EDF7F2' : '#FAFAF8',
+                          border: selected ? '2px solid #4a4aff' : '2px solid rgba(139,128,252,0.15)',
+                          backgroundColor: selected ? 'rgba(74,74,255,0.15)' : '#16162a',
                           cursor: 'pointer',
                           transition: 'border-color 0.15s, background-color 0.15s',
                           outline: 'none',
                         }}
                         onMouseEnter={(e) => {
-                          if (!selected) e.currentTarget.style.borderColor = '#8D99AE';
+                          if (!selected) e.currentTarget.style.borderColor = 'rgba(139,128,252,0.4)';
                         }}
                         onMouseLeave={(e) => {
-                          if (!selected) e.currentTarget.style.borderColor = '#E8E4D8';
+                          if (!selected) e.currentTarget.style.borderColor = 'rgba(139,128,252,0.15)';
                         }}
                       >
                         <span style={{ fontSize: '24px', lineHeight: 1 }}>{t.emoji}</span>
@@ -186,7 +187,7 @@ export default function IdentityModal({ isOpen, onComplete }) {
                           style={{
                             fontFamily: 'Inter, sans-serif',
                             fontSize: '10px',
-                            color: selected ? '#2D6A4F' : '#8D99AE',
+                            color: selected ? '#8c80fc' : 'rgba(139,128,252,0.5)',
                             fontWeight: selected ? '700' : '400',
                             textAlign: 'center',
                             lineHeight: 1.2,
@@ -205,8 +206,8 @@ export default function IdentityModal({ isOpen, onComplete }) {
                 disabled={!isValid}
                 style={{
                   padding: '15px 24px',
-                  backgroundColor: isValid ? '#E63946' : '#C8C4B8',
-                  color: 'white',
+                  backgroundColor: isValid ? '#4a4aff' : 'rgba(139,128,252,0.2)',
+                  color: isValid ? 'white' : 'rgba(139,128,252,0.5)',
                   border: 'none',
                   borderRadius: '12px',
                   fontSize: '17px',
@@ -215,12 +216,13 @@ export default function IdentityModal({ isOpen, onComplete }) {
                   cursor: isValid ? 'pointer' : 'not-allowed',
                   transition: 'background-color 0.2s, transform 0.1s',
                   letterSpacing: '0.2px',
+                  boxShadow: isValid ? '0 4px 20px rgba(74,74,255,0.4)' : 'none',
                 }}
                 onMouseEnter={(e) => {
-                  if (isValid) e.target.style.backgroundColor = '#CC2F3B';
+                  if (isValid) e.target.style.backgroundColor = '#3a3aef';
                 }}
                 onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = isValid ? '#E63946' : '#C8C4B8';
+                  e.target.style.backgroundColor = isValid ? '#4a4aff' : 'rgba(139,128,252,0.2)';
                 }}
                 onMouseDown={(e) => {
                   if (isValid) e.target.style.transform = 'scale(0.97)';
@@ -233,7 +235,7 @@ export default function IdentityModal({ isOpen, onComplete }) {
               </button>
             </form>
           </motion.div>
-          </motion.div>
+        </motion.div>
       )}
     </AnimatePresence>
   );

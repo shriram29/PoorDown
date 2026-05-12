@@ -25,10 +25,11 @@ function DieFace({ value, size = 120 }) {
       style={{
         width: size,
         height: size,
-        backgroundColor: value ? '#2B2D42' : '#E8E4D8',
+        backgroundColor: value ? '#16162a' : '#16162a',
         borderRadius: size * 0.17,
         position: 'relative',
-        boxShadow: value ? '0 8px 24px rgba(43,45,66,0.3)' : 'none',
+        border: value ? '2px solid rgba(74,74,255,0.5)' : '2px solid rgba(139,128,252,0.2)',
+        boxShadow: value ? '0 8px 24px rgba(74,74,255,0.25)' : 'none',
         flexShrink: 0,
       }}
     >
@@ -40,7 +41,7 @@ function DieFace({ value, size = 120 }) {
             width: dotSize,
             height: dotSize,
             borderRadius: '50%',
-            backgroundColor: 'white',
+            backgroundColor: '#03deca',
             top: padding + row * step - dotSize / 2,
             left: padding + col * step - dotSize / 2,
           }}
@@ -55,7 +56,7 @@ function DieFace({ value, size = 120 }) {
             justifyContent: 'center',
             fontFamily: 'Inter, sans-serif',
             fontSize: '14px',
-            color: '#8D99AE',
+            color: '#8c80fc',
           }}
         >
           Roll it
@@ -105,9 +106,11 @@ export default function FiftySecondTest() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <div style={{ minHeight: '100vh', backgroundColor: '#F8F4E8', padding: '40px 20px' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: '#0d0d1a', padding: '40px 20px', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: '-80px', right: '-80px', width: '360px', height: '360px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(3,222,202,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '48px', position: 'relative', zIndex: 1 }}>
           <button
             onClick={() => router.push('/')}
             style={{
@@ -115,43 +118,49 @@ export default function FiftySecondTest() {
               border: 'none',
               fontFamily: 'Inter, sans-serif',
               fontSize: '14px',
-              color: '#8D99AE',
+              color: '#8c80fc',
               cursor: 'pointer',
               marginBottom: '16px',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = '#8c80fc')}
           >
             ← All Games
           </button>
-          <h1
-            style={{
-              fontFamily: 'Playfair Display, serif',
-              fontSize: '40px',
-              fontWeight: '800',
-              color: '#2B2D42',
-              margin: '0 0 8px 0',
-              letterSpacing: '-1px',
-            }}
-          >
-            The 50 Second Test
-          </h1>
-          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#8D99AE', margin: '0 0 24px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '8px' }}>
+            <img src="/assets/cd.svg" alt="" aria-hidden="true" style={{ width: 44, filter: 'drop-shadow(0 0 10px rgba(3,222,202,0.6))' }} />
+            <h1
+              style={{
+                fontFamily: 'Nunito, sans-serif',
+                fontSize: '40px',
+                fontWeight: '800',
+                color: '#ffffff',
+                margin: 0,
+                letterSpacing: '-1px',
+              }}
+            >
+              The <span style={{ color: '#03deca' }}>50 Second</span> Test
+            </h1>
+          </div>
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '15px', color: '#8c80fc', margin: '0 0 24px 0' }}>
             Roll the die. Draw a card. Simple.
           </p>
           <button
             onClick={createRoom}
             style={{
               padding: '12px 28px',
-              backgroundColor: '#457B9D',
-              color: 'white',
+              backgroundColor: '#03deca',
+              color: '#0d0d1a',
               border: 'none',
               borderRadius: '12px',
               fontSize: '15px',
-              fontWeight: '600',
+              fontWeight: '700',
               fontFamily: 'Inter, sans-serif',
               cursor: 'pointer',
+              boxShadow: '0 4px 16px rgba(3,222,202,0.35)',
             }}
           >
             Create Room to Test Together →
@@ -166,15 +175,18 @@ export default function FiftySecondTest() {
             gap: '32px',
             maxWidth: '800px',
             margin: '0 auto',
+            position: 'relative',
+            zIndex: 1,
           }}
         >
           {/* ── LEFT: Die ── */}
           <div
             style={{
-              backgroundColor: 'white',
+              backgroundColor: '#1e1e38',
               borderRadius: '20px',
               padding: '40px 32px',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+              border: '1px solid rgba(139,128,252,0.15)',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
@@ -183,10 +195,10 @@ export default function FiftySecondTest() {
           >
             <h2
               style={{
-                fontFamily: 'Playfair Display, serif',
+                fontFamily: 'Nunito, sans-serif',
                 fontSize: '22px',
                 fontWeight: '700',
-                color: '#2B2D42',
+                color: '#ffffff',
                 margin: 0,
               }}
             >
@@ -196,7 +208,7 @@ export default function FiftySecondTest() {
             <DieFace value={dieValue} />
 
             {dieValue && (
-              <p style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '18px', color: '#2B2D42', margin: 0, fontWeight: '700' }}>
+              <p style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '18px', color: '#03deca', margin: 0, fontWeight: '700' }}>
                 You rolled a {dieValue}
               </p>
             )}
@@ -205,7 +217,7 @@ export default function FiftySecondTest() {
               onClick={rollDie}
               style={{
                 padding: '14px 36px',
-                backgroundColor: '#2B2D42',
+                backgroundColor: '#4a4aff',
                 color: 'white',
                 border: 'none',
                 borderRadius: '12px',
@@ -213,6 +225,7 @@ export default function FiftySecondTest() {
                 fontWeight: '600',
                 fontFamily: 'Inter, sans-serif',
                 cursor: 'pointer',
+                boxShadow: '0 4px 16px rgba(74,74,255,0.4)',
               }}
             >
               Roll Die
@@ -222,10 +235,11 @@ export default function FiftySecondTest() {
           {/* ── RIGHT: Cards ── */}
           <div
             style={{
-              backgroundColor: 'white',
+              backgroundColor: '#1e1e38',
               borderRadius: '20px',
               padding: '40px 32px',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+              border: '1px solid rgba(139,128,252,0.15)',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
@@ -234,10 +248,10 @@ export default function FiftySecondTest() {
           >
             <h2
               style={{
-                fontFamily: 'Playfair Display, serif',
+                fontFamily: 'Nunito, sans-serif',
                 fontSize: '22px',
                 fontWeight: '700',
-                color: '#2B2D42',
+                color: '#ffffff',
                 margin: 0,
               }}
             >
@@ -249,15 +263,15 @@ export default function FiftySecondTest() {
               style={{
                 width: '100px',
                 height: '140px',
-                backgroundColor: drawnCard ? 'white' : '#E8E4D8',
-                border: drawnCard ? `3px solid ${drawnCard.suit.color}` : '3px solid #D0CCC0',
+                backgroundColor: drawnCard ? '#16162a' : '#16162a',
+                border: drawnCard ? `3px solid ${drawnCard.suit.color}` : '3px solid rgba(139,128,252,0.2)',
                 borderRadius: '12px',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                boxShadow: drawnCard ? '0 6px 20px rgba(0,0,0,0.15)' : 'none',
+                boxShadow: drawnCard ? `0 6px 20px ${drawnCard.suit.color}44` : 'none',
                 position: 'relative',
               }}
             >
@@ -305,7 +319,7 @@ export default function FiftySecondTest() {
                   </span>
                 </>
               ) : (
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8D99AE' }}>
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8c80fc' }}>
                   Draw one
                 </span>
               )}
@@ -316,7 +330,7 @@ export default function FiftySecondTest() {
               style={{
                 fontFamily: 'Inter, sans-serif',
                 fontSize: '14px',
-                color: deckEmpty ? '#E63946' : '#8D99AE',
+                color: deckEmpty ? '#ff4d56' : '#8c80fc',
                 margin: 0,
                 fontWeight: deckEmpty ? '600' : '400',
               }}
@@ -330,14 +344,15 @@ export default function FiftySecondTest() {
                 disabled={deckEmpty}
                 style={{
                   padding: '14px 24px',
-                  backgroundColor: deckEmpty ? '#8D99AE' : '#E63946',
-                  color: 'white',
+                  backgroundColor: deckEmpty ? 'rgba(139,128,252,0.15)' : '#03deca',
+                  color: deckEmpty ? 'rgba(139,128,252,0.4)' : '#0d0d1a',
                   border: 'none',
                   borderRadius: '12px',
                   fontSize: '16px',
                   fontWeight: '600',
                   fontFamily: 'Inter, sans-serif',
                   cursor: deckEmpty ? 'not-allowed' : 'pointer',
+                  boxShadow: deckEmpty ? 'none' : '0 4px 16px rgba(3,222,202,0.35)',
                 }}
               >
                 Draw Card
@@ -347,9 +362,9 @@ export default function FiftySecondTest() {
                 onClick={shuffle}
                 style={{
                   padding: '12px 24px',
-                  backgroundColor: 'white',
-                  color: '#2B2D42',
-                  border: '2px solid #E8E4D8',
+                  backgroundColor: 'transparent',
+                  color: '#8c80fc',
+                  border: '2px solid rgba(139,128,252,0.25)',
                   borderRadius: '12px',
                   fontSize: '15px',
                   fontWeight: '600',

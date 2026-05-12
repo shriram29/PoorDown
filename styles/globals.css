@@ -5,14 +5,41 @@
 @tailwind utilities;
 
 :root {
-  --board-green: #2D6A4F;
-  --board-cream: #F8F4E8;
-  --board-red: #E63946;
-  --board-blue: #1D3557;
-  --board-gold: #F4A261;
-  --board-dark: #2B2D42;
-  --board-jail: #E76F51;
-  --board-rail: #8D99AE;
+  /* Brand palette */
+  --color-blue: #4a4aff;
+  --color-teal: #03deca;
+  --color-orange: #ef8800;
+  --color-purple: #8c80fc;
+  --color-pink: #f143ae;
+  --color-pink-light: #fac4ee;
+  --color-red: #e20000;
+  --color-coral: #ff4d56;
+  --color-yellow: #ffe27e;
+
+  /* Surfaces */
+  --bg-primary: #0d0d1a;
+  --bg-surface: #16162a;
+  --bg-card: #1e1e38;
+  --bg-card-hover: #252542;
+
+  /* Text */
+  --text-primary: #ffffff;
+  --text-muted: #8c80fc;
+  --text-dim: rgba(255,255,255,0.4);
+
+  /* Borders */
+  --border: rgba(139, 128, 252, 0.18);
+  --border-active: rgba(74, 74, 255, 0.6);
+
+  /* Legacy aliases kept for board/game components */
+  --board-green: #4a4aff;
+  --board-cream: #0d0d1a;
+  --board-red: #ff4d56;
+  --board-blue: #03deca;
+  --board-gold: #ef8800;
+  --board-dark: #ffffff;
+  --board-jail: #f143ae;
+  --board-rail: #8c80fc;
 }
 
 * {
@@ -21,8 +48,8 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  background-color: var(--board-cream);
-  color: var(--board-dark);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 @layer utilities {

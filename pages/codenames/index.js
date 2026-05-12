@@ -46,12 +46,12 @@ export default function CodenamesLobby() {
     flex: 1,
     padding: '12px',
     border: 'none',
-    borderBottom: active ? '3px solid #2B2D42' : '3px solid transparent',
+    borderBottom: active ? '3px solid #f143ae' : '3px solid transparent',
     backgroundColor: 'transparent',
     fontFamily: 'Inter, sans-serif',
     fontWeight: active ? '700' : '500',
     fontSize: '15px',
-    color: active ? '#2B2D42' : '#8D99AE',
+    color: active ? '#ffffff' : '#8c80fc',
     cursor: 'pointer',
     transition: 'color 0.15s, border-color 0.15s',
   });
@@ -64,8 +64,12 @@ export default function CodenamesLobby() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <div style={{ minHeight: '100vh', backgroundColor: '#F8F4E8', padding: '40px 20px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: '#0d0d1a', padding: '40px 20px', position: 'relative', overflow: 'hidden' }}>
+        {/* Ambient glows */}
+        <div style={{ position: 'absolute', top: '-80px', right: '-80px', width: '360px', height: '360px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(241,67,174,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: '-60px', left: '-60px', width: '320px', height: '320px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,128,252,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+        <div style={{ textAlign: 'center', marginBottom: '48px', position: 'relative', zIndex: 1 }}>
           <button
             onClick={() => router.push('/')}
             style={{
@@ -73,32 +77,37 @@ export default function CodenamesLobby() {
               border: 'none',
               fontFamily: 'Inter, sans-serif',
               fontSize: '14px',
-              color: '#8D99AE',
+              color: '#8c80fc',
               cursor: 'pointer',
               marginBottom: '24px',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = '#8c80fc')}
           >
             ← All Games
           </button>
 
-          <motion.h1
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            style={{
-              fontFamily: 'Nunito, sans-serif',
-              fontSize: '56px',
-              fontWeight: '800',
-              color: '#2B2D42',
-              margin: '0 0 12px 0',
-              letterSpacing: '-1.5px',
-            }}
-          >
-            Code<span style={{ color: '#DC2626' }}>names</span>
-          </motion.h1>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '12px' }}>
+            <img src="/assets/diamond.svg" alt="" aria-hidden="true" style={{ width: 48, filter: 'drop-shadow(0 0 12px rgba(241,67,174,0.6))' }} />
+            <motion.h1
+              initial={{ opacity: 0, y: -16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              style={{
+                fontFamily: 'Nunito, sans-serif',
+                fontSize: '56px',
+                fontWeight: '800',
+                color: '#ffffff',
+                margin: 0,
+                letterSpacing: '-1.5px',
+              }}
+            >
+              Code<span style={{ color: '#f143ae' }}>names</span>
+            </motion.h1>
+          </div>
 
           <motion.p
             initial={{ opacity: 0 }}
@@ -107,11 +116,11 @@ export default function CodenamesLobby() {
             style={{
               fontFamily: 'Inter, sans-serif',
               fontSize: '16px',
-              color: '#8D99AE',
+              color: '#8c80fc',
               margin: 0,
             }}
           >
-            Two teams. 25 words. One wrong guess and it's over.
+            Two teams. 25 words. One wrong guess and it&apos;s over.
           </motion.p>
         </div>
 
@@ -122,28 +131,30 @@ export default function CodenamesLobby() {
             style={{
               maxWidth: '440px',
               margin: '0 auto 20px',
-              backgroundColor: 'white',
+              backgroundColor: '#1e1e38',
               borderRadius: '16px',
-              border: '2px solid #7C3AED',
+              border: '1px solid rgba(241,67,174,0.4)',
               padding: '16px 20px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               gap: '12px',
-              boxShadow: '0 4px 20px rgba(124,58,237,0.1)',
+              boxShadow: '0 4px 20px rgba(241,67,174,0.12)',
+              position: 'relative',
+              zIndex: 1,
             }}
           >
             <div>
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', fontWeight: '700', color: '#7C3AED', letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 3px 0' }}>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', fontWeight: '700', color: '#f143ae', letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 3px 0' }}>
                 Active Game
               </p>
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#2B2D42', margin: 0 }}>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#ffffff', margin: 0 }}>
                 Room{' '}
                 <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: '700', letterSpacing: '2px' }}>
                   {activeRoom.roomCode}
                 </span>
                 {activeRoom.isHost && (
-                  <span style={{ color: '#8D99AE', fontSize: '12px', marginLeft: '6px' }}>· Host</span>
+                  <span style={{ color: '#8c80fc', fontSize: '12px', marginLeft: '6px' }}>· Host</span>
                 )}
               </p>
             </div>
@@ -151,7 +162,7 @@ export default function CodenamesLobby() {
               onClick={() => router.push(`/codenames/room/${activeRoom.roomCode}${activeRoom.isHost ? '?host=true' : ''}`)}
               style={{
                 padding: '8px 18px',
-                backgroundColor: '#7C3AED',
+                backgroundColor: '#f143ae',
                 color: 'white',
                 border: 'none',
                 borderRadius: '10px',
@@ -160,6 +171,7 @@ export default function CodenamesLobby() {
                 fontWeight: '700',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
+                boxShadow: '0 4px 12px rgba(241,67,174,0.4)',
               }}
             >
               Resume →
@@ -174,14 +186,17 @@ export default function CodenamesLobby() {
           style={{
             maxWidth: '440px',
             margin: '0 auto',
-            backgroundColor: 'white',
+            backgroundColor: '#1e1e38',
             borderRadius: '20px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+            border: '1px solid rgba(139,128,252,0.15)',
             overflow: 'hidden',
+            position: 'relative',
+            zIndex: 1,
           }}
         >
           {/* Tabs */}
-          <div style={{ display: 'flex', borderBottom: '1px solid #E8E4D8' }}>
+          <div style={{ display: 'flex', borderBottom: '1px solid rgba(139,128,252,0.15)' }}>
             <button style={tabStyle(tab === 'create')} onClick={() => setTab('create')}>
               Create Room
             </button>
@@ -193,15 +208,15 @@ export default function CodenamesLobby() {
           <div style={{ padding: '28px 28px 32px' }}>
             {tab === 'create' ? (
               <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#8D99AE', margin: 0, lineHeight: 1.6 }}>
-                  Create a new room and share the code with your friends. You'll pick teams together before the game starts.
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: '#8c80fc', margin: 0, lineHeight: 1.6 }}>
+                  Create a new room and share the code with your friends. You&apos;ll pick teams together before the game starts.
                 </p>
                 <button
                   type="submit"
                   disabled={loading}
                   style={{
                     padding: '14px 24px',
-                    backgroundColor: '#2B2D42',
+                    backgroundColor: '#f143ae',
                     color: 'white',
                     border: 'none',
                     borderRadius: '12px',
@@ -210,9 +225,10 @@ export default function CodenamesLobby() {
                     fontFamily: 'Inter, sans-serif',
                     cursor: 'pointer',
                     transition: 'background-color 0.2s',
+                    boxShadow: '0 4px 16px rgba(241,67,174,0.4)',
                   }}
-                  onMouseEnter={e => (e.target.style.backgroundColor = '#1a1c2e')}
-                  onMouseLeave={e => (e.target.style.backgroundColor = '#2B2D42')}
+                  onMouseEnter={e => (e.target.style.backgroundColor = '#d8359a')}
+                  onMouseLeave={e => (e.target.style.backgroundColor = '#f143ae')}
                 >
                   {loading ? 'Creating...' : 'Create Room →'}
                 </button>
@@ -226,7 +242,7 @@ export default function CodenamesLobby() {
                       marginBottom: '8px',
                       fontFamily: 'Inter, sans-serif',
                       fontWeight: '600',
-                      color: '#2B2D42',
+                      color: '#8c80fc',
                       fontSize: '14px',
                     }}
                   >
@@ -242,18 +258,19 @@ export default function CodenamesLobby() {
                       width: '100%',
                       padding: '12px 16px',
                       borderRadius: '12px',
-                      border: '2px solid #E8E4D8',
+                      border: '2px solid rgba(139,128,252,0.2)',
                       fontSize: '22px',
                       fontFamily: 'JetBrains Mono, monospace',
                       textAlign: 'center',
                       letterSpacing: '6px',
-                      backgroundColor: 'white',
+                      backgroundColor: '#16162a',
+                      color: '#ffffff',
                       outline: 'none',
                       boxSizing: 'border-box',
                       transition: 'border-color 0.2s',
                     }}
-                    onFocus={e => (e.target.style.borderColor = '#2B2D42')}
-                    onBlur={e => (e.target.style.borderColor = '#E8E4D8')}
+                    onFocus={e => (e.target.style.borderColor = '#f143ae')}
+                    onBlur={e => (e.target.style.borderColor = 'rgba(139,128,252,0.2)')}
                   />
                 </div>
                 <button
@@ -261,8 +278,8 @@ export default function CodenamesLobby() {
                   disabled={joinCode.length !== 6 || loading}
                   style={{
                     padding: '14px 24px',
-                    backgroundColor: joinCode.length === 6 ? '#2B2D42' : '#8D99AE',
-                    color: 'white',
+                    backgroundColor: joinCode.length === 6 ? '#f143ae' : 'rgba(139,128,252,0.15)',
+                    color: joinCode.length === 6 ? 'white' : 'rgba(139,128,252,0.4)',
                     border: 'none',
                     borderRadius: '12px',
                     fontSize: '16px',
@@ -270,9 +287,10 @@ export default function CodenamesLobby() {
                     fontFamily: 'Inter, sans-serif',
                     cursor: joinCode.length === 6 ? 'pointer' : 'not-allowed',
                     transition: 'background-color 0.2s',
+                    boxShadow: joinCode.length === 6 ? '0 4px 16px rgba(241,67,174,0.4)' : 'none',
                   }}
-                  onMouseEnter={e => { if (joinCode.length === 6) e.target.style.backgroundColor = '#1a1c2e'; }}
-                  onMouseLeave={e => { e.target.style.backgroundColor = joinCode.length === 6 ? '#2B2D42' : '#8D99AE'; }}
+                  onMouseEnter={e => { if (joinCode.length === 6) e.target.style.backgroundColor = '#d8359a'; }}
+                  onMouseLeave={e => { e.target.style.backgroundColor = joinCode.length === 6 ? '#f143ae' : 'rgba(139,128,252,0.15)'; }}
                 >
                   {loading ? 'Joining...' : 'Join Room →'}
                 </button>

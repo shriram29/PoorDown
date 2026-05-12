@@ -18,11 +18,15 @@ export default function LudoLobby() {
       <div
         style={{
           minHeight: '100vh',
-          backgroundColor: '#F8F4E8',
+          backgroundColor: '#0d0d1a',
           padding: '40px 20px',
+          position: 'relative',
+          overflow: 'hidden',
         }}
       >
-        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+        <div style={{ position: 'absolute', top: '-80px', left: '-80px', width: '360px', height: '360px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,77,86,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+        <div style={{ textAlign: 'center', marginBottom: '48px', position: 'relative', zIndex: 1 }}>
           <button
             onClick={() => router.push('/')}
             style={{
@@ -30,32 +34,37 @@ export default function LudoLobby() {
               border: 'none',
               fontFamily: 'Inter, sans-serif',
               fontSize: '14px',
-              color: '#8D99AE',
+              color: '#8c80fc',
               cursor: 'pointer',
               marginBottom: '24px',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = '#ffffff')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = '#8c80fc')}
           >
             ← All Games
           </button>
 
-          <motion.h1
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            style={{
-              fontFamily: 'Playfair Display, serif',
-              fontSize: '56px',
-              fontWeight: '800',
-              color: '#2B2D42',
-              margin: '0 0 12px 0',
-              letterSpacing: '-1.5px',
-            }}
-          >
-            Poor<span style={{ color: '#E63946' }}>Down</span>
-          </motion.h1>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '12px' }}>
+            <img src="/assets/controller.svg" alt="" aria-hidden="true" style={{ width: 48, filter: 'drop-shadow(0 0 12px rgba(255,77,86,0.6))' }} />
+            <motion.h1
+              initial={{ opacity: 0, y: -16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              style={{
+                fontFamily: 'Nunito, sans-serif',
+                fontSize: '56px',
+                fontWeight: '800',
+                color: '#ffffff',
+                margin: 0,
+                letterSpacing: '-1.5px',
+              }}
+            >
+              Lu<span style={{ color: '#ff4d56' }}>do</span>
+            </motion.h1>
+          </div>
 
           <motion.p
             initial={{ opacity: 0 }}
@@ -64,11 +73,11 @@ export default function LudoLobby() {
             style={{
               fontFamily: 'Inter, sans-serif',
               fontSize: '18px',
-              color: '#8D99AE',
+              color: '#8c80fc',
               margin: 0,
             }}
           >
-            Ludo — race your tokens home first.
+            Race your tokens home first.
           </motion.p>
         </div>
 
@@ -79,6 +88,8 @@ export default function LudoLobby() {
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
             gap: '32px',
+            position: 'relative',
+            zIndex: 1,
           }}
         >
           <motion.div
@@ -86,26 +97,27 @@ export default function LudoLobby() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.45 }}
             style={{
-              backgroundColor: 'white',
+              backgroundColor: '#1e1e38',
               borderRadius: '20px',
               padding: '32px',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+              border: '1px solid rgba(139,128,252,0.15)',
             }}
           >
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <span style={{ fontSize: '40px' }}>🎮</span>
+              <img src="/assets/arcade.svg" alt="" aria-hidden="true" style={{ width: 48, marginBottom: '12px' }} />
               <h2
                 style={{
-                  fontFamily: 'Playfair Display, serif',
+                  fontFamily: 'Nunito, sans-serif',
                   fontSize: '24px',
                   fontWeight: '700',
-                  color: '#2B2D42',
-                  margin: '14px 0 6px 0',
+                  color: '#ffffff',
+                  margin: '0 0 6px 0',
                 }}
               >
                 Create a Room
               </h2>
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8D99AE', margin: 0 }}>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8c80fc', margin: 0 }}>
                 Start a new game and invite friends
               </p>
             </div>
@@ -117,26 +129,27 @@ export default function LudoLobby() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.45 }}
             style={{
-              backgroundColor: 'white',
+              backgroundColor: '#1e1e38',
               borderRadius: '20px',
               padding: '32px',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+              border: '1px solid rgba(139,128,252,0.15)',
             }}
           >
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <span style={{ fontSize: '40px' }}>🚀</span>
+              <img src="/assets/vr.svg" alt="" aria-hidden="true" style={{ width: 48, marginBottom: '12px' }} />
               <h2
                 style={{
-                  fontFamily: 'Playfair Display, serif',
+                  fontFamily: 'Nunito, sans-serif',
                   fontSize: '24px',
                   fontWeight: '700',
-                  color: '#2B2D42',
-                  margin: '14px 0 6px 0',
+                  color: '#ffffff',
+                  margin: '0 0 6px 0',
                 }}
               >
                 Join a Room
               </h2>
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8D99AE', margin: 0 }}>
+              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: '#8c80fc', margin: 0 }}>
                 Enter a room code to join
               </p>
             </div>
