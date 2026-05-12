@@ -1,6 +1,7 @@
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useState } from 'react';
+import { generateRoomCode } from '../../lib/roomCode';
 import { buildDeck } from '../../lib/games/fifty-second-test/cards';
 
 const DOT_POSITIONS = {
@@ -66,9 +67,6 @@ function DieFace({ value, size = 120 }) {
   );
 }
 
-function generateCode() {
-  return Math.random().toString(36).slice(2, 7).toUpperCase();
-}
 
 export default function FiftySecondTest() {
   const router = useRouter();
@@ -93,7 +91,7 @@ export default function FiftySecondTest() {
   };
 
   const createRoom = () => {
-    const code = generateCode();
+    const code = generateRoomCode();
     router.push(`/fifty-second-test/room/${code}?host=true`);
   };
 

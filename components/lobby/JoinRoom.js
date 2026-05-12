@@ -15,7 +15,7 @@ export default function JoinRoom({ defaultName = '' }) {
   const handleJoin = async (e) => {
     e.preventDefault();
     const trimmed = name.trim();
-    if (!trimmed || code.length !== 6) return;
+    if (!trimmed || code.length !== 4) return;
 
     setLoading(true);
     setError('');
@@ -41,7 +41,7 @@ export default function JoinRoom({ defaultName = '' }) {
     router.push(`/monopoly/room/${roomCode}`);
   };
 
-  const active = !!name.trim() && code.length === 6 && !loading;
+  const active = !!name.trim() && code.length === 4 && !loading;
 
   const inputStyle = {
     width: '100%',
@@ -100,9 +100,9 @@ export default function JoinRoom({ defaultName = '' }) {
         <input
           type="text"
           value={code}
-          onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
-          placeholder="Enter 6-char code"
-          maxLength={6}
+          onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^ABCDEFGHJKLMNPQRSTUVWXYZ23456789]/g, ''))}
+          placeholder="Enter 4-char code"
+          maxLength={4}
           style={{
             ...inputStyle,
             fontSize: '20px',

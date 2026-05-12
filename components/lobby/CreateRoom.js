@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { nanoid } from 'nanoid';
+import { generateRoomCode } from '../../lib/roomCode';
 
 export default function CreateRoom({ defaultName = '' }) {
   const router = useRouter();
@@ -32,7 +32,7 @@ export default function CreateRoom({ defaultName = '' }) {
       }
     }
 
-    const roomCode = nanoid(6).toUpperCase();
+    const roomCode = generateRoomCode();
     localStorage.setItem('poordown_active_room', JSON.stringify({
       gameId: 'monopoly', gameName: 'Monopoly', roomCode, isHost: true,
     }));

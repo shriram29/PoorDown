@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { motion } from 'framer-motion';
-import { nanoid } from 'nanoid';
+import { generateRoomCode, sanitizeRoomInput } from '../../lib/roomCode';
 
 export default function CodenamesLobby() {
   const router = useRouter();
@@ -24,7 +24,7 @@ export default function CodenamesLobby() {
   const handleCreate = (e) => {
     e.preventDefault();
     setLoading(true);
-    const roomCode = nanoid(6).toUpperCase();
+    const roomCode = generateRoomCode();
     localStorage.setItem('poordown_active_room', JSON.stringify({
       gameId: 'codenames', gameName: 'Codenames', roomCode, isHost: true,
     }));
@@ -33,7 +33,7 @@ export default function CodenamesLobby() {
 
   const handleJoin = (e) => {
     e.preventDefault();
-    if (joinCode.length !== 6) return;
+    if (joinCode.length !== 4) return;
     setLoading(true);
     const roomCode = joinCode.toUpperCase();
     localStorage.setItem('poordown_active_room', JSON.stringify({
@@ -252,9 +252,9 @@ export default function CodenamesLobby() {
                   <input
                     type="text"
                     value={joinCode}
-                    onChange={e => setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
-                    placeholder="XXXXXX"
-                    maxLength={6}
+                    onChange={e => setJoinCode(sanitizeRoomInput(e.target.value))}
+                    placeholder="XXXX"
+                    maxLength={4}
                     style={{
                       width: '100%',
                       padding: '12px 16px',
@@ -276,22 +276,22 @@ export default function CodenamesLobby() {
                 </div>
                 <button
                   type="submit"
-                  disabled={joinCode.length !== 6 || loading}
+                  disabled={joinCode.length !== 4 || loading}
                   style={{
                     padding: '14px 24px',
-                    backgroundColor: joinCode.length === 6 ? '#f143ae' : 'rgba(139,128,252,0.15)',
-                    color: joinCode.length === 6 ? 'white' : 'rgba(139,128,252,0.4)',
+                    backgroundColor: joinCode.length === 4 ? '#f143ae' : 'rgba(139,128,252,0.15)',
+                    color: joinCode.length === 4 ? 'white' : 'rgba(139,128,252,0.4)',
                     border: 'none',
                     borderRadius: '12px',
                     fontSize: '16px',
                     fontWeight: '600',
                     fontFamily: 'Inter, sans-serif',
-                    cursor: joinCode.length === 6 ? 'pointer' : 'not-allowed',
+                    cursor: joinCode.length === 4 ? 'pointer' : 'not-allowed',
                     transition: 'background-color 0.2s',
-                    boxShadow: joinCode.length === 6 ? '0 4px 16px rgba(241,67,174,0.4)' : 'none',
+                    boxShadow: joinCode.length === 4 ? '0 4px 16px rgba(241,67,174,0.4)' : 'none',
                   }}
-                  onMouseEnter={e => { if (joinCode.length === 6) e.target.style.backgroundColor = '#d8359a'; }}
-                  onMouseLeave={e => { e.target.style.backgroundColor = joinCode.length === 6 ? '#f143ae' : 'rgba(139,128,252,0.15)'; }}
+                  onMouseEnter={e => { if (joinCode.length === 4) e.target.style.backgroundColor = '#d8359a'; }}
+                  onMouseLeave={e => { e.target.style.backgroundColor = joinCode.length === 4 ? '#f143ae' : 'rgba(139,128,252,0.15)'; }}
                 >
                   {loading ? 'Joining...' : 'Join Room →'}
                 </button>
