@@ -7,18 +7,13 @@ export default function ActivityLog({ entries }) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [entries.length]);
 
-  if (!entries.length) return null;
-
   return (
     <div style={{
-      maxWidth: '700px',
-      width: '100%',
-      backgroundColor: '#161B22',
-      border: '1px solid #21262D',
-      borderRadius: '10px',
-      padding: '10px 14px',
-      maxHeight: '108px',
-      overflowY: 'auto',
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      padding: '10px 14px 12px',
     }}>
       <p style={{
         fontFamily: 'Inter, sans-serif',
@@ -27,15 +22,27 @@ export default function ActivityLog({ entries }) {
         letterSpacing: '1px',
         textTransform: 'uppercase',
         color: '#484F58',
-        margin: '0 0 6px',
+        margin: '0 0 8px',
+        flexShrink: 0,
       }}>
         Game log
       </p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '4px',
+      }}>
+        {entries.length === 0 && (
+          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: '#484F58', fontStyle: 'italic', margin: 0 }}>
+            No events yet
+          </p>
+        )}
         {entries.map((entry) => (
           <p key={entry.id} style={{
             fontFamily: 'Inter, sans-serif',
-            fontSize: '12px',
+            fontSize: '11px',
             color: '#8B949E',
             margin: 0,
             lineHeight: 1.5,

@@ -8,10 +8,10 @@ export default function Board({ words, keyCard, revealed, isSpymaster, isClickab
       style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(5, 1fr)',
-        gap: '8px',
-        maxWidth: '700px',
+        gridTemplateRows: 'repeat(5, 1fr)',
+        gap: '7px',
         width: '100%',
-        margin: '0 auto',
+        height: '100%',
       }}
     >
       {words.map((word, i) => (

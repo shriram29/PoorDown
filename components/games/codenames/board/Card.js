@@ -51,7 +51,7 @@ export default function Card({ word, type, revealed, isSpymaster, isClickable, o
   return (
     <div
       style={{
-        height: '92px',
+        height: '100%',
         perspective: '700px',
         cursor: isClickable && !revealed ? 'pointer' : 'default',
         userSelect: 'none',

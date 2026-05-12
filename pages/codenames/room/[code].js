@@ -38,6 +38,7 @@ export default function CodenamesRoom() {
   const { code } = router.query;
 
   const [myUuid, setMyUuid]           = useState(null);
+  const [isMobile, setIsMobile]       = useState(false);
   const [players, setPlayers]         = useState([]);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [countdown, setCountdown]     = useState(null);
@@ -269,6 +270,14 @@ export default function CodenamesRoom() {
 
     logStateRef.current = { ...curr, revealed: [...curr.revealed] };
   }, [gameState]);
+
+  // ── Mobile detection ──────────────────────────────────────────────────────
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   // ── Derived ───────────────────────────────────────────────────────────────
   const myPlayer = players.find(p => p.uuid === myUuid);
@@ -893,146 +902,340 @@ export default function CodenamesRoom() {
   const blueVoteCount = rematchVotes.filter(id => players.some(p => p.uuid === id && p.team === 'blue')).length;
   const myRematchVote = rematchVotes.includes(myUuid);
 
+  // ── Team side panel renderer ──────────────────────────────────────────────
+  const renderTeamPanel = (team, showLog) => {
+    const vivid    = TEAM_VIVID[team];
+    const surf     = TEAM_SURFACE[team];
+    const bdr      = TEAM_BORDER[team];
+    const isLeft   = team === 'red';
+    const score    = team === 'red' ? redRemaining : blueRemaining;
+    const isActive = phase !== 'over' && currentTeam === team;
+    const teamPs   = players.filter(p => p.team === team);
+    const spy      = teamPs.find(p => p.role === 'spymaster');
+    const ops      = teamPs.filter(p => p.role === 'operative');
+    const myHere   = myTeam === team;
+
+    const PlayerRow = ({ p, roleLabel }) => {
+      const isMe = p.uuid === myUuid;
+      const isActivePlayer =
+        isActive && (
+          (phase === 'spymaster-clue'   && p.role === 'spymaster') ||
+          (phase === 'operatives-guess' && p.role === 'operative')
+        );
+      return (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '7px',
+          padding: '5px 8px',
+          backgroundColor: isMe ? D.bg : 'transparent',
+          border: `1px solid ${isMe ? bdr : 'transparent'}`,
+          borderRadius: '8px',
+          marginBottom: '3px',
+        }}>
+          {isActivePlayer && (
+            <div style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: vivid, flexShrink: 0, animation: 'pulse 1.5s infinite' }} />
+          )}
+          <div style={{
+            width: '24px', height: '24px', borderRadius: '50%', flexShrink: 0,
+            backgroundColor: surf, border: `1.5px solid ${vivid}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: 'Nunito, sans-serif', fontSize: '11px', fontWeight: '800', color: vivid,
+          }}>
+            {p.name[0].toUpperCase()}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <span style={{
+              fontFamily: 'Inter, sans-serif', fontSize: '12px',
+              fontWeight: isMe ? '700' : '500',
+              color: isMe ? D.text : D.sub,
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              display: 'block',
+            }}>
+              {p.name}{isMe ? ' (you)' : ''}
+            </span>
+          </div>
+          <span style={{
+            fontFamily: 'Inter, sans-serif', fontSize: '9px', fontWeight: '700',
+            letterSpacing: '0.8px', textTransform: 'uppercase', color: vivid, opacity: 0.55, flexShrink: 0,
+          }}>
+            {roleLabel}
+          </span>
+        </div>
+      );
+    };
+
+    return (
+      <div style={{
+        display: 'flex', flexDirection: 'column',
+        height: '100%', overflow: 'hidden',
+        backgroundColor: isActive ? surf + '55' : D.surface,
+        borderRight: isLeft  ? `1px solid ${D.border2}` : 'none',
+        borderLeft:  !isLeft ? `1px solid ${D.border2}` : 'none',
+        transition: 'background-color 0.4s',
+      }}>
+
+        {/* Score + team name */}
+        <div style={{ padding: '14px 14px 10px', borderBottom: `1px solid ${D.border2}`, flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '2px' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px' }}>
+              <span style={{
+                fontFamily: 'Nunito, sans-serif', fontSize: '52px', fontWeight: '800',
+                color: vivid, lineHeight: 1,
+              }}>{score}</span>
+              <span style={{
+                fontFamily: 'Inter, sans-serif', fontSize: '9px', color: vivid, opacity: 0.5,
+                textTransform: 'uppercase', letterSpacing: '0.8px', paddingBottom: '7px',
+              }}>left</span>
+            </div>
+            {isActive && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', paddingTop: '6px' }}>
+                <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: vivid, animation: 'pulse 1.5s infinite' }} />
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '9px', color: vivid, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                  {phase === 'spymaster-clue' ? 'Clue' : 'Guess'}
+                </span>
+              </div>
+            )}
+          </div>
+          <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: '12px', fontWeight: '800', color: D.muted, letterSpacing: '0.3px' }}>
+            {team === 'red' ? 'Red Team' : 'Blue Team'}
+          </div>
+          {myHere && myRole === 'spymaster' && phase !== 'over' && (
+            <div style={{ marginTop: '7px', padding: '4px 8px', backgroundColor: D.bg, borderRadius: '6px', border: `1px solid ${bdr}` }}>
+              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', color: vivid, fontWeight: '600' }}>
+                👁 Spymaster view
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Players */}
+        <div style={{ padding: '10px 8px 4px', flexShrink: 0 }}>
+          {spy
+            ? <PlayerRow p={spy} roleLabel="SPY" />
+            : <div style={{ padding: '4px 8px 7px' }}><span style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: D.muted, fontStyle: 'italic' }}>No spymaster</span></div>
+          }
+          {ops.map(p => <PlayerRow key={p.uuid} p={p} roleLabel="OP" />)}
+          {teamPs.length === 0 && (
+            <div style={{ padding: '4px 8px' }}><span style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: D.muted, fontStyle: 'italic' }}>No players</span></div>
+          )}
+        </div>
+
+        {/* Activity log (right / blue panel) */}
+        {showLog && (
+          <>
+            <div style={{ height: '1px', backgroundColor: D.border2, margin: '6px 0 0', flexShrink: 0 }} />
+            <ActivityLog entries={activityLog} />
+          </>
+        )}
+
+      </div>
+    );
+  };
+
+  // ── Board size formula ────────────────────────────────────────────────────
+  const boardSize = isMobile
+    ? 'min(calc(100vw - 24px), calc(100vh - 230px))'
+    : 'min(calc(100vw - 472px), calc(100vh - 168px))';
+
   return (
     <>
       <Head><title>Codenames — {code}</title></Head>
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: D.bg }}>
+      <style>{`
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+      `}</style>
 
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', backgroundColor: D.bg }}>
+
+        {/* ── Slim header ─────────────────────────────────────────────────── */}
         <GameHUD
           phase={phase}
           currentTeam={currentTeam}
           clueWord={clueWord}
           clueNumber={clueNumber}
           guessesLeft={guessesLeft}
-          redRemaining={redRemaining}
-          blueRemaining={blueRemaining}
+          winner={winner}
+          winnerLabel={winnerLabel}
+          roomCode={code}
+          onLeave={() => setShowLeaveConfirm(true)}
         />
 
-        <PlayerBar players={players} myUuid={myUuid} phase={phase} currentTeam={currentTeam} />
-
+        {/* Win banner */}
         {phase === 'over' && winner && (
-          <div style={{ backgroundColor: winnerColor, padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', boxShadow: `0 4px 20px ${winnerColor}66` }}>
-            <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: '20px', fontWeight: '800', color: 'white', letterSpacing: '-0.3px' }}>
+          <div style={{
+            backgroundColor: winnerColor, flexShrink: 0,
+            padding: '7px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: '10px', boxShadow: `0 2px 16px ${winnerColor}55`,
+          }}>
+            <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: '17px', fontWeight: '800', color: 'white' }}>
               {gameOverIcon} {winnerLabel} wins! — {gameOverMsg}
             </span>
           </div>
         )}
 
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 16px', gap: '20px' }}>
+        {/* ── Main content ────────────────────────────────────────────────── */}
+        <div style={{
+          flex: 1,
+          display: isMobile ? 'flex' : 'grid',
+          flexDirection: isMobile ? 'column' : undefined,
+          gridTemplateColumns: isMobile ? undefined : '220px 1fr 220px',
+          overflow: 'hidden',
+        }}>
 
-          {isSpymasterView && phase !== 'over' && (
-            <div style={{ padding: '8px 18px', backgroundColor: TEAM_SURFACE[myTeam] || D.surface, border: `1.5px solid ${TEAM_BORDER[myTeam] || D.border}`, borderRadius: '10px', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: '600', color: TEAM_VIVID[myTeam] || D.sub }}>
-              👁 Spymaster view — don't show your screen to your team!
-            </div>
-          )}
+          {/* Left: Red team panel (desktop) */}
+          {!isMobile && renderTeamPanel('red', false)}
 
-          {myTeam && !isCurrentTeam && phase === 'operatives-guess' && (
-            <div style={{ padding: '8px 18px', backgroundColor: D.surface, border: `1px solid ${D.border2}`, borderRadius: '10px', fontFamily: 'Inter, sans-serif', fontSize: '13px', color: D.sub }}>
-              Waiting for {currentTeam === 'red' ? '🔴 Red' : '🔵 Blue'} team...
-            </div>
-          )}
+          {/* Center: board + actions */}
+          <div style={{
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            padding: isMobile ? '8px 12px' : '10px 14px',
+            gap: '8px', overflow: 'hidden',
+            flex: isMobile ? 1 : undefined,
+          }}>
 
-          {myTeam && !isCurrentTeam && phase === 'spymaster-clue' && (
-            <div style={{ padding: '8px 18px', backgroundColor: D.surface, border: `1px solid ${D.border2}`, borderRadius: '10px', fontFamily: 'Inter, sans-serif', fontSize: '13px', color: D.sub }}>
-              {currentTeam === 'red' ? '🔴 Red' : '🔵 Blue'} spymaster is thinking...
-            </div>
-          )}
-
-          <Board
-            words={words}
-            keyCard={keyCard}
-            revealed={revealed}
-            isSpymaster={isSpymasterView && phase !== 'over'}
-            isClickable={isOperativeTurn}
-            onCardClick={handleCardClick}
-            selectedCard={selectedCard}
-            showAll={phase === 'over'}
-          />
-
-          <ActivityLog entries={activityLog} />
-
-          {isSpymasterTurn && (
-            <ClueInput currentTeam={currentTeam} onSubmit={handleSubmitClue} />
-          )}
-
-          {isOperativeTurn && (
-            <button
-              onClick={handlePass}
-              style={{
-                padding: '10px 24px',
-                backgroundColor: TEAM_SURFACE[currentTeam],
-                border: `1.5px solid ${TEAM_BORDER[currentTeam]}`,
-                borderRadius: '10px',
-                fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: '600',
-                color: TEAM_VIVID[currentTeam], cursor: 'pointer', transition: 'border-color 0.15s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = TEAM_VIVID[currentTeam]; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = TEAM_BORDER[currentTeam]; }}
-            >
-              Pass Turn
-            </button>
-          )}
-
-          {!myRole && phase !== 'over' && (
-            <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: D.muted }}>
-              You're watching — you weren't assigned a role before the game started.
-            </p>
-          )}
-
-          {phase === 'over' && (
-            <div style={{ backgroundColor: D.surface, border: `1px solid ${D.border2}`, borderRadius: '16px', padding: '20px 24px', maxWidth: '480px', width: '100%', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', color: D.muted, margin: '0 0 10px' }}>
-                  Rematch — need 2 from each team
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                  <button
-                    onClick={handleVoteRematch}
-                    disabled={myRematchVote}
-                    style={{ padding: '8px 18px', backgroundColor: myRematchVote ? '#166534' : D.surface2, color: myRematchVote ? '#4ADE80' : D.sub, border: `1.5px solid ${myRematchVote ? '#166534' : D.border}`, borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: '700', cursor: myRematchVote ? 'default' : 'pointer' }}
-                  >
-                    {myRematchVote ? 'Voted ✓' : 'Vote Rematch'}
-                  </button>
-                  <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '13px', color: D.sub }}>
-                    🔴 {redVoteCount}/2 &nbsp; 🔵 {blueVoteCount}/2
-                  </span>
+            {/* Mobile: compact score bar */}
+            {isMobile && (
+              <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                  <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: '28px', fontWeight: '800', color: TEAM_VIVID.red, lineHeight: 1 }}>{redRemaining}</span>
+                  <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '9px', color: TEAM_VIVID.red, opacity: 0.6, textTransform: 'uppercase' }}>RED</span>
+                </div>
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', color: D.muted, letterSpacing: '0.8px', textTransform: 'uppercase', textAlign: 'center' }}>
+                  {phase === 'spymaster-clue' ? (currentTeam === 'red' ? '🔴 thinking' : '🔵 thinking') :
+                   phase === 'operatives-guess' ? (currentTeam === 'red' ? '🔴 guessing' : '🔵 guessing') : ''}
+                </span>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                  <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '9px', color: TEAM_VIVID.blue, opacity: 0.6, textTransform: 'uppercase' }}>BLUE</span>
+                  <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: '28px', fontWeight: '800', color: TEAM_VIVID.blue, lineHeight: 1 }}>{blueRemaining}</span>
                 </div>
               </div>
+            )}
 
-              <div style={{ borderTop: `1px solid ${D.border2}`, paddingTop: '14px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                {isHost && (
-                  <button
-                    onClick={handleRequeue}
-                    style={{ padding: '9px 20px', backgroundColor: D.surface2, color: D.sub, border: `1.5px solid ${D.border}`, borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = D.sub; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = D.border; }}
-                  >
-                    ← Back to Lobby
-                  </button>
-                )}
-                <button
-                  onClick={() => { localStorage.removeItem('poordown_active_room'); router.push('/codenames'); }}
-                  style={{ padding: '9px 20px', backgroundColor: D.surface2, color: '#F87171', border: '1.5px solid #7F1D1D', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = '#EF4444'; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = '#7F1D1D'; }}
-                >
-                  Leave Room
-                </button>
-              </div>
+            {/* Board — square container sized to fill space */}
+            <div style={{ width: boardSize, height: boardSize, flexShrink: 0 }}>
+              <Board
+                words={words}
+                keyCard={keyCard}
+                revealed={revealed}
+                isSpymaster={isSpymasterView && phase !== 'over'}
+                isClickable={isOperativeTurn}
+                onCardClick={handleCardClick}
+                selectedCard={selectedCard}
+                showAll={phase === 'over'}
+              />
             </div>
-          )}
 
-          {phase !== 'over' && <LeaveButton />}
+            {/* Action area */}
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+
+              {isSpymasterTurn && (
+                <ClueInput currentTeam={currentTeam} onSubmit={handleSubmitClue} />
+              )}
+
+              {isOperativeTurn && (
+                <button
+                  onClick={handlePass}
+                  style={{
+                    padding: '8px 20px',
+                    backgroundColor: TEAM_SURFACE[currentTeam],
+                    border: `1.5px solid ${TEAM_BORDER[currentTeam]}`,
+                    borderRadius: '8px',
+                    fontFamily: 'Inter, sans-serif', fontSize: '13px', fontWeight: '600',
+                    color: TEAM_VIVID[currentTeam], cursor: 'pointer',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = TEAM_VIVID[currentTeam]; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = TEAM_BORDER[currentTeam]; }}
+                >
+                  Pass Turn
+                </button>
+              )}
+
+              {!myRole && phase !== 'over' && (
+                <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: D.muted, margin: 0 }}>
+                  Watching — you joined after the game started.
+                </p>
+              )}
+
+              {phase === 'over' && (
+                <div style={{
+                  backgroundColor: D.surface, border: `1px solid ${D.border2}`,
+                  borderRadius: '14px', padding: '14px 18px',
+                  width: '100%', maxWidth: isMobile ? undefined : 'calc(100vw - 480px)',
+                  display: 'flex', flexDirection: 'column', gap: '12px',
+                }}>
+                  <div>
+                    <p style={{ fontFamily: 'Inter, sans-serif', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', color: D.muted, margin: '0 0 8px' }}>
+                      Rematch — need 2 from each team
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                      <button
+                        onClick={handleVoteRematch}
+                        disabled={myRematchVote}
+                        style={{ padding: '7px 16px', backgroundColor: myRematchVote ? '#166534' : D.surface2, color: myRematchVote ? '#4ADE80' : D.sub, border: `1.5px solid ${myRematchVote ? '#166534' : D.border}`, borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '12px', fontWeight: '700', cursor: myRematchVote ? 'default' : 'pointer' }}
+                      >
+                        {myRematchVote ? 'Voted ✓' : 'Vote Rematch'}
+                      </button>
+                      <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '12px', color: D.sub }}>
+                        🔴 {redVoteCount}/2 · 🔵 {blueVoteCount}/2
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ borderTop: `1px solid ${D.border2}`, paddingTop: '10px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {isHost && (
+                      <button
+                        onClick={handleRequeue}
+                        style={{ padding: '7px 14px', backgroundColor: D.surface2, color: D.sub, border: `1.5px solid ${D.border}`, borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
+                      >
+                        ← Back to Lobby
+                      </button>
+                    )}
+                    <button
+                      onClick={() => { localStorage.removeItem('poordown_active_room'); router.push('/codenames'); }}
+                      style={{ padding: '7px 14px', backgroundColor: D.surface2, color: '#F87171', border: '1.5px solid #7F1D1D', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
+                    >
+                      Leave Room
+                    </button>
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            {/* Mobile: mini log (last 2 entries) */}
+            {isMobile && activityLog.length > 0 && (
+              <div style={{ width: '100%', flexShrink: 0 }}>
+                {activityLog.slice(-2).map(entry => (
+                  <p key={entry.id} style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', color: D.muted, margin: '1px 0', lineHeight: 1.4 }}>
+                    {entry.msg}
+                  </p>
+                ))}
+              </div>
+            )}
+
+          </div>
+
+          {/* Right: Blue team panel + log (desktop) */}
+          {!isMobile && renderTeamPanel('blue', true)}
+
         </div>
 
+        {/* Confirm card — fixed bottom strip */}
         {selectedCard !== null && isOperativeTurn && (
-          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, backgroundColor: '#1A1040', borderTop: '2px solid #7C3AED', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', zIndex: 50, boxShadow: '0 -6px 24px rgba(124,58,237,0.3)' }}>
+          <div style={{
+            position: 'fixed', bottom: 0, left: 0, right: 0,
+            backgroundColor: '#1A1040', borderTop: '2px solid #7C3AED',
+            padding: '13px 20px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px',
+            zIndex: 50, boxShadow: '0 -6px 24px rgba(124,58,237,0.3)',
+          }}>
             <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', color: D.sub }}>
-              Guess <strong style={{ fontFamily: 'JetBrains Mono, monospace', letterSpacing: '1px', color: '#C4B5FD' }}>{words[selectedCard]}</strong>?
+              Guess{' '}
+              <strong style={{ fontFamily: 'JetBrains Mono, monospace', letterSpacing: '1px', color: '#C4B5FD' }}>
+                {words[selectedCard]}
+              </strong>?
             </span>
             <button
               onClick={handleConfirmCard}
-              style={{ padding: '9px 22px', backgroundColor: '#7C3AED', color: 'white', border: 'none', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}
+              style={{ padding: '8px 20px', backgroundColor: '#7C3AED', color: 'white', border: 'none', borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: '700', cursor: 'pointer' }}
               onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#6D28D9'; }}
               onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#7C3AED'; }}
             >
@@ -1040,19 +1243,15 @@ export default function CodenamesRoom() {
             </button>
             <button
               onClick={() => setSelectedCard(null)}
-              style={{ padding: '9px 16px', backgroundColor: 'transparent', color: D.muted, border: `1.5px solid ${D.border}`, borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}
+              style={{ padding: '8px 14px', backgroundColor: 'transparent', color: D.muted, border: `1.5px solid ${D.border}`, borderRadius: '8px', fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}
             >
               Cancel
             </button>
           </div>
         )}
 
-        {/* Spymaster-needed overlay */}
         {phase === 'spymaster-needed' && <SpymasterNeededOverlay />}
-
-        {/* Leave confirm dialog */}
         {showLeaveConfirm && <LeaveConfirmOverlay />}
-
         <RulesModal />
       </div>
     </>
