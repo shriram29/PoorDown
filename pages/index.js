@@ -41,6 +41,15 @@ const GAMES = [
     glow: 'rgba(241,67,174,0.35)',
     available: true,
   },
+  {
+    id: 'flip-7',
+    name: 'Flip 7',
+    asset: '/assets/flip7.svg',
+    description: 'Press your luck. Collect 7 unique numbers. Bust and score zero. First to 200 wins.',
+    color: '#FF6B35',
+    glow: 'rgba(255,107,53,0.35)',
+    available: true,
+  },
 ];
 
 const TOKEN_ICONS = {
