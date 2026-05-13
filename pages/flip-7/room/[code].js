@@ -401,11 +401,11 @@ const RULES_SECTIONS = [
   },
   {
     title: 'Flip Three ✕3',
-    body: 'The drawer immediately deals 3 cards (one at a time) to any active players they choose. Each card resolves normally: number → bust check, modifier → placed, action → resolved.',
+    body: 'The drawer picks ONE target (including themselves). That target immediately flips the next 3 cards from the deck — all 3 go to that same player. If a Freeze or Flip Three is revealed during the three flips, it is set aside and resolved by the target after all 3 cards are done (chain reaction). You cannot split the 3 cards across different players.',
   },
   {
     title: 'Second Chance ♻',
-    body: 'The drawer keeps this card. When they would bust (draw a duplicate number), they may discard Second Chance instead — surviving the bust. Only one per player; extras go to another active player.',
+    body: 'When drawn: if you don\'t have one, keep it. If you already have one, you must immediately give it to an active player who doesn\'t have one (your choice). If no such player exists, it\'s discarded. When you would bust, discard your Second Chance card instead — you survive. Unused Second Chance cards do not carry over to the next round.',
   },
   {
     title: 'Scoring',
@@ -464,37 +464,24 @@ function RulesPanel({ open, onClose }) {
   );
 }
 
-// ── Flip Three assigner ───────────────────────────────────────────────────────
+// ── Flip Three target picker ──────────────────────────────────────────────────
 
-function FlipThreeAssigner({ cards, targets, onAssign }) {
-  const [sel, setSel] = useState(null);
+function FlipThreeTargetPicker({ players, onPick }) {
+  const targets = players.filter(p => !p.busted && !p.stayed);
   return (
-    <div>
-      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: '#8c80fc', textAlign: 'center', margin: '0 0 10px 0' }}>
-        {sel === null ? 'Select a card to assign' : 'Now pick a player to give it to'}
-      </p>
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 12 }}>
-        {cards.map((card, i) => (
-          <button key={i} onClick={() => setSel(i === sel ? null : i)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 3, borderRadius: 8, outline: sel === i ? `2px solid ${GAME_COLOR}` : '2px solid transparent', transform: sel === i ? 'translateY(-5px)' : 'none', transition: 'transform 0.15s, outline 0.15s' }}>
-            {card.type === 'number' && <NumberCard value={card.value} />}
-            {card.type === 'modifier' && <ModifierCard value={card.value} />}
-            {card.type === 'action' && <ActionCard value={card.value} />}
-          </button>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+      <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: GAME_COLOR, fontWeight: '700' }}>
+        ✕3 Flip Three — pick who draws 3 cards:
+      </span>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+        {targets.map(t => (
+          <button key={t.uuid} onClick={() => onPick(t.uuid)}
+            style={{ padding: '8px 16px', backgroundColor: SURFACE, border: `2px solid ${GAME_COLOR}55`, borderRadius: 10, fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: '600', color: TEXT, cursor: 'pointer' }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = GAME_COLOR)}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = `${GAME_COLOR}55`)}
+          >{t.name}</button>
         ))}
       </div>
-      {sel !== null && (
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>
-          {targets.map(t => (
-            <button key={t.uuid} onClick={() => { onAssign(t.uuid, sel); setSel(null); }}
-              style={{ padding: '7px 14px', backgroundColor: '#16162a', border: `2px solid ${GAME_COLOR}44`, borderRadius: 8, fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: '600', color: '#fff', cursor: 'pointer' }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = GAME_COLOR)}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = `${GAME_COLOR}44`)}
-            >
-              {t.name}
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -579,6 +566,7 @@ export default function Flip7Room() {
         deck: JSON.parse(meta.get('deck') || '[]'),
         currentPlayerIdx: meta.get('currentPlayerIdx') ?? 0,
         pendingAction: meta.get('pendingAction') ? JSON.parse(meta.get('pendingAction')) : null,
+        pendingQueue: JSON.parse(meta.get('pendingQueue') || '[]'),
         cumulativeScores: JSON.parse(meta.get('cumulativeScores') || '{}'),
         winner: meta.get('winner') || null,
         roundNum: meta.get('roundNum') ?? 0,
@@ -658,8 +646,9 @@ export default function Flip7Room() {
       if (card.value === 'second-chance') {
         if (!p.hasSecondChance) { p.hasSecondChance = true; }
         else {
-          const i = allPlayers.findIndex((op, j) => j !== playerIdx && !op.busted && !op.stayed && !op.hasSecondChance);
-          if (i !== -1) extras.giveSecondChanceTo = i;
+          const eligible = allPlayers.filter((op, j) => j !== playerIdx && !op.busted && !op.stayed && !op.hasSecondChance);
+          if (eligible.length > 0) extras.needsSecondChancePass = true;
+          // no eligible players → card is discarded (already handled by action-card discard path)
         }
       } else if (card.value === 'freeze') {
         const others = allPlayers.filter((op, j) => j !== playerIdx && !op.busted && !op.stayed);
@@ -693,10 +682,6 @@ export default function Flip7Room() {
     const { player: updated, extras } = applyCard(players[currentIdx], card, players, currentIdx);
     let newPlayers = players.map((p, i) => i === currentIdx ? updated : p);
 
-    if (extras.giveSecondChanceTo !== undefined) {
-      newPlayers[extras.giveSecondChanceTo] = { ...newPlayers[extras.giveSecondChanceTo], hasSecondChance: true };
-    }
-
     // Action cards are resolved immediately and go to discard; number/modifier stay with player
     if (card.type === 'action') discardPile.push(card);
 
@@ -716,23 +701,20 @@ export default function Flip7Room() {
 
     if (extras.needsFreezeTarget) {
       meta.set('pendingAction', JSON.stringify({ type: 'freeze', drawerIdx: currentIdx }));
-      return; // turn advances after freeze is resolved
+      return;
+    }
+
+    if (extras.needsSecondChancePass) {
+      meta.set('pendingAction', JSON.stringify({ type: 'second-chance-pass', drawerIdx: currentIdx }));
+      return;
     }
 
     if (extras.needsFlipThree) {
-      if (newDeck.length < 3) {
-        newDeck = [...newDeck, ...shuffleCards(discardPile)];
-        discardPile = [];
-        meta.set('discardPile', JSON.stringify(discardPile));
-      }
-      const ftCards = newDeck.slice(0, 3);
-      newDeck = newDeck.slice(3);
-      meta.set('deck', JSON.stringify(newDeck));
-      meta.set('pendingAction', JSON.stringify({ type: 'flip-three', drawerIdx: currentIdx, cards: ftCards, assignedCount: 0 }));
-      return; // turn advances after all 3 cards are assigned
+      meta.set('pendingAction', JSON.stringify({ type: 'flip-three-target', drawerIdx: currentIdx }));
+      return;
     }
 
-    // Normal card (number, modifier, or second-chance) → advance turn
+    // Normal card → advance turn
     const allDone = newPlayers.every(p => p.busted || p.stayed);
     if (allDone) endRound(meta, newPlayers, JSON.parse(meta.get('cumulativeScores') || '{}'));
     else advanceTurn(meta, newPlayers);
@@ -750,6 +732,20 @@ export default function Flip7Room() {
     else advanceTurn(meta, players);
   }, [advanceTurn]);
 
+  // Resolves the next item in the pending queue, or advances turn if queue is empty
+  const resolveNextOrAdvance = useCallback((meta, players) => {
+    const queue = JSON.parse(meta.get('pendingQueue') || '[]');
+    if (queue.length > 0) {
+      meta.set('pendingAction', JSON.stringify(queue[0]));
+      meta.set('pendingQueue', JSON.stringify(queue.slice(1)));
+    } else {
+      meta.set('pendingAction', null);
+      const allDone = players.every(p => p.busted || p.stayed);
+      if (allDone) endRound(meta, players, JSON.parse(meta.get('cumulativeScores') || '{}'));
+      else advanceTurn(meta, players);
+    }
+  }, [advanceTurn]);
+
   const handleFreezeTarget = useCallback((targetUuid) => {
     const meta = metaRef.current;
     if (!meta) return;
@@ -757,10 +753,89 @@ export default function Flip7Room() {
     const idx = players.findIndex(p => p.uuid === targetUuid);
     if (idx !== -1) players[idx] = { ...players[idx], frozen: true };
     meta.set('players', JSON.stringify(players));
-    meta.set('pendingAction', null);
-    advanceTurn(meta, players);
-  }, [advanceTurn]);
+    resolveNextOrAdvance(meta, players);
+  }, [resolveNextOrAdvance]);
 
+  const handleSecondChancePass = useCallback((recipientUuid) => {
+    const meta = metaRef.current;
+    if (!meta) return;
+    let players = JSON.parse(meta.get('players') || '[]');
+    const idx = players.findIndex(p => p.uuid === recipientUuid);
+    if (idx !== -1) players[idx] = { ...players[idx], hasSecondChance: true };
+    meta.set('players', JSON.stringify(players));
+    resolveNextOrAdvance(meta, players);
+  }, [resolveNextOrAdvance]);
+
+  const handleFlipThreeTarget = useCallback((targetUuid) => {
+    const meta = metaRef.current;
+    if (!meta) return;
+    const pending = JSON.parse(meta.get('pendingAction') || 'null');
+    if (!pending || pending.type !== 'flip-three-target') return;
+
+    let players = JSON.parse(meta.get('players') || '[]');
+    let deck = JSON.parse(meta.get('deck') || '[]');
+    let discardPile = JSON.parse(meta.get('discardPile') || '[]');
+
+    const targetIdx = players.findIndex(p => p.uuid === targetUuid);
+    if (targetIdx === -1) return;
+
+    if (deck.length < 3) {
+      deck = [...deck, ...shuffleCards(discardPile)];
+      discardPile = [];
+    }
+    const ftCards = deck.slice(0, 3);
+    deck = deck.slice(3);
+
+    const queuedActions = [];
+
+    for (const card of ftCards) {
+      if (players[targetIdx].busted) {
+        discardPile.push(card);
+        continue;
+      }
+      if (card.type === 'action') {
+        discardPile.push(card);
+        if (card.value === 'freeze') {
+          const others = players.filter((op, j) => j !== targetIdx && !op.busted && !op.stayed);
+          if (others.length > 0) queuedActions.push({ type: 'freeze', drawerIdx: targetIdx });
+        } else if (card.value === 'flip-three') {
+          queuedActions.push({ type: 'flip-three-target', drawerIdx: targetIdx });
+        } else if (card.value === 'second-chance') {
+          const { player: updated, extras } = applyCard(players[targetIdx], card, players, targetIdx);
+          players[targetIdx] = updated;
+          if (extras.needsSecondChancePass) {
+            queuedActions.push({ type: 'second-chance-pass', drawerIdx: targetIdx });
+          }
+        }
+      } else {
+        const { player: updated, extras } = applyCard(players[targetIdx], card, players, targetIdx);
+        players[targetIdx] = updated;
+        if (extras.giveSecondChanceTo !== undefined) {
+          players[extras.giveSecondChanceTo] = { ...players[extras.giveSecondChanceTo], hasSecondChance: true };
+        }
+      }
+    }
+
+    meta.set('deck', JSON.stringify(deck));
+    meta.set('discardPile', JSON.stringify(discardPile));
+    meta.set('players', JSON.stringify(players));
+
+    // Merge new queued actions with any existing queue
+    const existingQueue = JSON.parse(meta.get('pendingQueue') || '[]');
+    const fullQueue = [...queuedActions, ...existingQueue];
+
+    if (fullQueue.length > 0) {
+      meta.set('pendingAction', JSON.stringify(fullQueue[0]));
+      meta.set('pendingQueue', JSON.stringify(fullQueue.slice(1)));
+    } else {
+      meta.set('pendingAction', null);
+      const allDone = players.every(p => p.busted || p.stayed);
+      if (allDone) endRound(meta, players, JSON.parse(meta.get('cumulativeScores') || '{}'));
+      else advanceTurn(meta, players);
+    }
+  }, [applyCard, advanceTurn]);
+
+  // Legacy stub kept so no reference errors; no longer called
   const handleFlipThreeAssign = useCallback((targetUuid, cardIdx) => {
     const meta = metaRef.current;
     if (!meta) return;
@@ -777,7 +852,6 @@ export default function Flip7Room() {
     const { player: updated, extras } = applyCard(players[targetIdx], card, players, targetIdx);
     players[targetIdx] = updated;
 
-    // The assigned card itself: if action, goes to discard after resolution
     if (card.type === 'action') discardPile.push(card);
 
     if (extras.giveSecondChanceTo !== undefined) {
@@ -810,14 +884,11 @@ export default function Flip7Room() {
     meta.set('discardPile', JSON.stringify(discardPile));
 
     if (remaining.length === 0) {
-      meta.set('pendingAction', null);
-      const allDone = players.every(p => p.busted || p.stayed);
-      if (allDone) endRound(meta, players, JSON.parse(meta.get('cumulativeScores') || '{}'));
-      else advanceTurn(meta, players);
+      resolveNextOrAdvance(meta, players);
     } else {
       meta.set('pendingAction', JSON.stringify({ ...pending, cards: remaining, assignedCount: pending.assignedCount + 1 }));
     }
-  }, [applyCard, advanceTurn]);
+  }, [applyCard, resolveNextOrAdvance]);
 
   const handleStartRound = useCallback(() => {
     const meta = metaRef.current;
@@ -948,9 +1019,8 @@ export default function Flip7Room() {
   if (phase === 'playing') {
     const freezeTargets = pendingAction?.type === 'freeze'
       ? players.filter((p, i) => i !== pendingAction.drawerIdx && !p.busted && !p.stayed) : [];
-    const flipThreeCards = pendingAction?.type === 'flip-three' ? pendingAction.cards : [];
-    const flipThreeTargets = pendingAction?.type === 'flip-three'
-      ? players.filter(p => !p.busted && !p.stayed) : [];
+    const scPassTargets = pendingAction?.type === 'second-chance-pass'
+      ? players.filter((p, i) => i !== pendingAction.drawerIdx && !p.busted && !p.stayed && !p.hasSecondChance) : [];
     const drawerName = pendingAction ? players[pendingAction.drawerIdx]?.name : null;
 
     return (
@@ -1096,16 +1166,39 @@ export default function Flip7Room() {
                   </div>
                 )}
 
-                {/* Flip Three — my turn to assign */}
-                {pendingAction?.type === 'flip-three' && isMyPendingAction && (
-                  <FlipThreeAssigner cards={flipThreeCards} targets={flipThreeTargets} onAssign={handleFlipThreeAssign} />
+                {/* Second Chance pass — my turn to pick recipient */}
+                {pendingAction?.type === 'second-chance-pass' && isMyPendingAction && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#a07ad8', fontWeight: '700' }}>♻ You already have Second Chance — give it to:</span>
+                    {scPassTargets.map(t => (
+                      <button key={t.uuid} onClick={() => handleSecondChancePass(t.uuid)}
+                        style={{ padding: '7px 14px', backgroundColor: SURFACE, border: '2px solid #6a3aa855', borderRadius: 8, fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: '600', color: '#a07ad8', cursor: 'pointer' }}
+                        onMouseEnter={e => (e.currentTarget.style.borderColor = '#a07ad8')}
+                        onMouseLeave={e => (e.currentTarget.style.borderColor = '#6a3aa855')}
+                      >{t.name}</button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Second Chance pass — watching */}
+                {pendingAction?.type === 'second-chance-pass' && !isMyPendingAction && (
+                  <div style={{ textAlign: 'center' }}>
+                    <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#a07ad8' }}>
+                      ♻ <span style={{ fontWeight: '700' }}>{drawerName}</span> is passing their extra Second Chance...
+                    </span>
+                  </div>
+                )}
+
+                {/* Flip Three — my turn to pick target */}
+                {pendingAction?.type === 'flip-three-target' && isMyPendingAction && (
+                  <FlipThreeTargetPicker players={players} onPick={handleFlipThreeTarget} />
                 )}
 
                 {/* Flip Three — watching */}
-                {pendingAction?.type === 'flip-three' && !isMyPendingAction && (
+                {pendingAction?.type === 'flip-three-target' && !isMyPendingAction && (
                   <div style={{ textAlign: 'center' }}>
                     <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: GAME_COLOR }}>
-                      <span style={{ fontWeight: '700' }}>{drawerName}</span> is dealing {flipThreeCards.length} card{flipThreeCards.length !== 1 ? 's' : ''}...
+                      <span style={{ fontWeight: '700' }}>{drawerName}</span> is choosing who draws 3 cards...
                     </span>
                   </div>
                 )}
