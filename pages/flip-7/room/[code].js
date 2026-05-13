@@ -937,25 +937,29 @@ export default function Flip7Room() {
   const winnerPlayer = winner ? (players.find(p => p.uuid === winner) || lobbyPlayers.find(p => p.uuid === winner)) : null;
 
   const HeaderBar = () => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, height: 48, paddingLeft: 16, paddingRight: 16, borderBottom: `1px solid ${PANEL_BORDER}`, flexShrink: 0, backgroundColor: PANEL_DARK }}>
-      <button onClick={() => router.push('/flip-7')} style={{ background: 'none', border: 'none', color: TEXT_DIM, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: 13, padding: 0, display: 'flex', alignItems: 'center', gap: 4 }}
+    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', height: 48, paddingLeft: 16, paddingRight: 16, borderBottom: `1px solid ${PANEL_BORDER}`, flexShrink: 0, backgroundColor: PANEL_DARK }}>
+      <button onClick={() => router.push('/flip-7')} style={{ background: 'none', border: 'none', color: TEXT_DIM, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: 13, padding: 0, display: 'flex', alignItems: 'center', gap: 4, zIndex: 1 }}
         onMouseEnter={e => (e.currentTarget.style.color = TEXT)}
         onMouseLeave={e => (e.currentTarget.style.color = TEXT_DIM)}
       >← Leave</button>
-      <div style={{ width: 1, height: 20, backgroundColor: PANEL_BORDER }} />
-      <img src="/assets/flip7.svg" alt="" style={{ width: 20 }} />
-      <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: '800', fontSize: 16, color: TEXT }}>
-        Flip <span style={{ color: GAME_COLOR }}>7</span>
-      </span>
-      {roundNum > 0 && <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: TEXT_DIM, backgroundColor: SURFACE, padding: '2px 8px', borderRadius: 5, border: `1px solid ${PANEL_BORDER}` }}>Round {roundNum}</span>}
-      <div style={{ flex: 1 }} />
-      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: TEXT_DIM, letterSpacing: '1px' }}>{code}</span>
-      <button onClick={copyLink} style={{ padding: '4px 10px', border: `1px solid ${copied ? GOLD : PANEL_BORDER}`, borderRadius: 6, backgroundColor: 'transparent', fontFamily: 'Inter, sans-serif', fontSize: 11, color: copied ? GOLD : TEXT_DIM, cursor: 'pointer' }}>
-        {copied ? 'Copied!' : 'Copy link'}
-      </button>
-      <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: TEXT_DIM + '66' }}>
-        {peers === 0 ? '—' : `${peers} other${peers === 1 ? '' : 's'}`}
-      </span>
+      {/* Center logo */}
+      <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <img src="/assets/flip7.svg" alt="" style={{ width: 20 }} />
+        <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: '800', fontSize: 16, color: TEXT }}>
+          Flip <span style={{ color: GAME_COLOR }}>7</span>
+        </span>
+        {roundNum > 0 && <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: TEXT_DIM, backgroundColor: SURFACE, padding: '2px 8px', borderRadius: 5, border: `1px solid ${PANEL_BORDER}` }}>Round {roundNum}</span>}
+      </div>
+      {/* Right side */}
+      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10, zIndex: 1 }}>
+        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: TEXT_DIM, letterSpacing: '1px' }}>{code}</span>
+        <button onClick={copyLink} style={{ padding: '4px 10px', border: `1px solid ${copied ? GOLD : PANEL_BORDER}`, borderRadius: 6, backgroundColor: 'transparent', fontFamily: 'Inter, sans-serif', fontSize: 11, color: copied ? GOLD : TEXT_DIM, cursor: 'pointer' }}>
+          {copied ? 'Copied!' : 'Copy link'}
+        </button>
+        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: TEXT_DIM + '66' }}>
+          {peers === 0 ? '—' : `${peers} other${peers === 1 ? '' : 's'}`}
+        </span>
+      </div>
     </div>
   );
 

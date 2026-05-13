@@ -8,7 +8,6 @@ import { handPoints } from '../../../lib/games/uno/deck';
 
 const GAME_COLOR = '#E53935';
 const GAME_GLOW = 'rgba(229,57,53,0.4)';
-
 const BG = '#0a0f1e';
 const SURFACE = '#0f1729';
 const PANEL = '#162037';
@@ -24,17 +23,11 @@ const PLAYER_COLORS = [
 ];
 
 const CARD_BG = {
-  red: '#C62828',
-  yellow: '#F9A825',
-  green: '#2E7D32',
-  blue: '#1565C0',
+  red: '#C62828', yellow: '#F9A825', green: '#2E7D32', blue: '#1565C0',
 };
-
 const COLOR_LABEL = { red: 'Red', yellow: 'Yellow', green: 'Green', blue: 'Blue' };
 
 function mod(n, m) { return ((n % m) + m) % m; }
-
-// ── Card symbol helper ────────────────────────────────────────────────────────
 
 function cardSymbol(card) {
   if (card.type === 'number') return String(card.value);
@@ -46,42 +39,44 @@ function cardSymbol(card) {
   return '?';
 }
 
-// ── UnoCard component ─────────────────────────────────────────────────────────
+// ── UnoCard ───────────────────────────────────────────────────────────────────
 
-function UnoCard({ card, playable, onClick, large, small, dimmed }) {
+function UnoCard({ card, playable, onClick, large, small, dimmed, draggable: isDraggable, onDragStart }) {
   const [hov, setHov] = useState(false);
-  const w = large ? 80 : small ? 38 : 56;
-  const h = large ? 120 : small ? 56 : 84;
-  const r = large ? 12 : 8;
+  const w = large ? 96 : small ? 38 : 72;
+  const h = large ? 144 : small ? 56 : 108;
+  const r = large ? 14 : small ? 8 : 10;
   const isWild = card.type === 'wild' || card.type === 'wild-draw-four';
   const bg = isWild ? '#1a1a2e' : (CARD_BG[card.color] || '#333');
   const sym = cardSymbol(card);
   const symSize = card.type === 'number'
-    ? (large ? 40 : small ? 16 : 26)
-    : (large ? 24 : small ? 12 : 16);
+    ? (large ? 50 : small ? 16 : 34)
+    : (large ? 32 : small ? 12 : 22);
+  const isInteractive = playable || isDraggable;
 
   return (
     <div
+      draggable={isDraggable || false}
+      onDragStart={onDragStart}
       onClick={playable ? onClick : undefined}
-      onMouseEnter={() => playable && setHov(true)}
+      onMouseEnter={() => isInteractive && setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
         width: w, height: h, borderRadius: r,
         backgroundColor: bg,
-        border: `2px solid ${hov && playable ? '#fff' : 'rgba(255,255,255,0.25)'}`,
+        border: `2px solid ${hov && isInteractive ? '#fff' : 'rgba(255,255,255,0.25)'}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        cursor: playable ? 'pointer' : 'default',
+        cursor: isInteractive ? 'pointer' : 'default',
         opacity: dimmed ? 0.38 : 1,
-        transform: hov && playable ? 'translateY(-16px) scale(1.06)' : 'none',
-        boxShadow: hov && playable
-          ? `0 14px 32px rgba(0,0,0,0.75), 0 0 22px ${bg}99`
+        transform: hov && isInteractive ? 'translateY(-22px) scale(1.08)' : 'none',
+        boxShadow: hov && isInteractive
+          ? `0 20px 40px rgba(0,0,0,0.8), 0 0 28px ${bg}99`
           : '0 3px 10px rgba(0,0,0,0.55)',
-        transition: 'transform 0.15s, box-shadow 0.15s, opacity 0.15s',
+        transition: 'transform 0.15s, box-shadow 0.15s, opacity 0.15s, border-color 0.1s',
         flexShrink: 0, position: 'relative', overflow: 'hidden',
-        animation: large ? 'cardAppear 0.3s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
+        animation: large ? 'cardDrop 0.45s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
       }}
     >
-      {/* Wild quadrants */}
       {isWild && (
         <>
           <div style={{ position: 'absolute', top: 0, left: 0, width: '50%', height: '50%', backgroundColor: CARD_BG.red }} />
@@ -90,15 +85,13 @@ function UnoCard({ card, playable, onClick, large, small, dimmed }) {
           <div style={{ position: 'absolute', bottom: 0, right: 0, width: '50%', height: '50%', backgroundColor: CARD_BG.blue }} />
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ backgroundColor: '#1a1a2e', borderRadius: '50%', width: '62%', height: '62%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.6)' }}>
-              <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: '900', fontSize: large ? 13 : small ? 7 : 10, color: 'white', textAlign: 'center', lineHeight: 1 }}>
+              <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: '900', fontSize: large ? 16 : small ? 7 : 13, color: 'white', textAlign: 'center', lineHeight: 1 }}>
                 {card.type === 'wild-draw-four' ? '+4' : 'W'}
               </span>
             </div>
           </div>
         </>
       )}
-
-      {/* Regular card */}
       {!isWild && (
         <>
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -116,39 +109,39 @@ function UnoCard({ card, playable, onClick, large, small, dimmed }) {
 // ── Card back ─────────────────────────────────────────────────────────────────
 
 function CardBack({ large, small }) {
-  const w = large ? 80 : small ? 38 : 56;
-  const h = large ? 120 : small ? 56 : 84;
+  const w = large ? 96 : small ? 38 : 72;
+  const h = large ? 144 : small ? 56 : 108;
   return (
     <div style={{
-      width: w, height: h, borderRadius: large ? 12 : 8,
+      width: w, height: h, borderRadius: large ? 14 : 8,
       backgroundColor: '#12183a',
       border: `2px solid ${GAME_COLOR}44`,
       backgroundImage: `repeating-linear-gradient(45deg, ${GAME_COLOR}09 0px, ${GAME_COLOR}09 2px, transparent 2px, transparent 10px)`,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       boxShadow: '0 3px 10px rgba(0,0,0,0.55)', flexShrink: 0,
     }}>
-      <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: '900', fontSize: large ? 13 : small ? 7 : 10, color: `${GAME_COLOR}88`, letterSpacing: '1px' }}>UNO</span>
+      <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: '900', fontSize: large ? 16 : small ? 7 : 13, color: `${GAME_COLOR}88`, letterSpacing: '1px' }}>UNO</span>
     </div>
   );
 }
 
-// ── Other player mini panel ────────────────────────────────────────────────────
+// ── Other player panel ────────────────────────────────────────────────────────
 
-function OtherPlayer({ player, isActive, color }) {
+function OtherPlayer({ player, isActive, color, canCallOut, onCallOut }) {
   const count = player.hand.length;
   return (
     <div style={{
       backgroundColor: isActive ? PANEL : SURFACE,
       border: `2px solid ${isActive ? color : PANEL_BORDER}`,
       borderTop: `4px solid ${color}`,
-      borderRadius: 12, padding: '10px 14px', minWidth: 120, flexShrink: 0,
+      borderRadius: 12, padding: '10px 14px', minWidth: 130, flexShrink: 0,
       boxShadow: isActive ? `0 0 20px ${color}55` : '0 4px 12px rgba(0,0,0,0.4)',
       transition: 'border-color 0.25s, box-shadow 0.25s',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
         <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: '700', fontSize: 13, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 100 }}>{player.name}</span>
         {isActive && <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: color, flexShrink: 0, animation: 'blink 1s infinite' }} />}
-        {count === 1 && <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 9, fontWeight: '800', color: GAME_COLOR, backgroundColor: `${GAME_COLOR}22`, padding: '1px 5px', borderRadius: 4, flexShrink: 0 }}>UNO!</span>}
+        {count === 1 && !canCallOut && <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 9, fontWeight: '800', color: GAME_COLOR, backgroundColor: `${GAME_COLOR}22`, padding: '1px 5px', borderRadius: 4, flexShrink: 0 }}>UNO!</span>}
       </div>
       <div style={{ display: 'flex', gap: 3, alignItems: 'flex-end' }}>
         {Array.from({ length: Math.min(count, 6) }).map((_, i) => (
@@ -157,6 +150,25 @@ function OtherPlayer({ player, isActive, color }) {
         {count > 6 && <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: TEXT_DIM, marginLeft: 2, alignSelf: 'center' }}>+{count - 6}</span>}
         {count === 0 && <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: TEXT_DIM }}>No cards</span>}
       </div>
+      {canCallOut && (
+        <button
+          onClick={onCallOut}
+          style={{
+            marginTop: 8, width: '100%', padding: '5px 0',
+            backgroundColor: `${GAME_COLOR}20`,
+            border: `1px solid ${GAME_COLOR}88`,
+            borderRadius: 6,
+            fontFamily: 'Inter, sans-serif', fontSize: 11, fontWeight: '700',
+            color: GAME_COLOR, cursor: 'pointer',
+            animation: 'calloutPulse 1.4s ease-in-out infinite',
+            transition: 'background-color 0.15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = `${GAME_COLOR}40`; }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = `${GAME_COLOR}20`; }}
+        >
+          Call out! (+2)
+        </button>
+      )}
     </div>
   );
 }
@@ -203,17 +215,17 @@ function ColorChooser({ onChoose }) {
 // ── Rules panel ───────────────────────────────────────────────────────────────
 
 const RULES = [
-  { title: 'Goal', body: 'Be the first to empty your hand each round. The winner collects points from all other players\' remaining cards. First to 500 cumulative points wins the game.' },
+  { title: 'Goal', body: 'Be the first to empty your hand each round. The winner collects points from all other players\' remaining cards. First to 500 cumulative points wins.' },
   { title: 'Setup', body: 'Each player is dealt 7 cards. The top card of the draw pile is flipped to start the discard pile.' },
-  { title: 'On your turn', body: 'Play one card from your hand that matches the top discard card by color or value. If you can\'t (or don\'t want to) play, draw one card — then your turn ends.' },
+  { title: 'On your turn', body: 'Play a card by clicking it or dragging it onto the discard pile. The card must match the current color or type. If you can\'t play, draw one card and your turn ends.' },
   { title: 'Matching', body: 'A card can be played if it matches the current color OR the type/value of the top discard card. Wild cards can always be played.' },
   { title: 'Skip ⊘', body: 'The next player in sequence loses their turn.' },
   { title: 'Reverse ↺', body: 'Reverses the direction of play. In a 2-player game it acts like a Skip.' },
   { title: 'Draw Two +2', body: 'The next player must draw 2 cards and loses their turn.' },
   { title: 'Wild W', body: 'Play on any card. You choose the new active color.' },
   { title: 'Wild Draw Four +4', body: 'Play on any card. You choose the new color AND the next player draws 4 and loses their turn.' },
-  { title: 'UNO!', body: 'When you are down to 1 card, "UNO!" is automatically announced.' },
-  { title: 'Scoring', body: 'Number cards = face value · Skip / Reverse / Draw Two = 20 pts · Wild / Wild Draw Four = 50 pts. Points come from other players\' leftover hands.' },
+  { title: 'UNO!', body: 'When you reach 1 card, hit the "UNO!" button immediately. If another player spots you haven\'t called it, they can press "Call out!" on your panel — you\'ll draw 2 penalty cards.' },
+  { title: 'Scoring', body: 'Number cards = face value · Skip / Reverse / Draw Two = 20 pts · Wild / Wild Draw Four = 50 pts.' },
 ];
 
 function RulesPanel({ open, onClose }) {
@@ -248,18 +260,19 @@ export default function UnoRoom() {
   const [copied, setCopied] = useState(false);
   const [lobbyPlayers, setLobbyPlayers] = useState([]);
   const [showRules, setShowRules] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [gameState, setGameState] = useState({
     phase: 'connecting', players: [], deck: [], discardPile: [],
     currentPlayerIdx: 0, direction: 1, currentColor: null,
     pendingAction: null, cumulativeScores: {}, winner: null,
-    winnerUuid: null, roundNum: 0, hostId: null,
+    winnerUuid: null, roundNum: 0, hostId: null, unoStatus: {},
   });
 
   const metaRef = useRef(null);
   const yLobbyRef = useRef(null);
   const hasJoinedRef = useRef(false);
 
-  // ── Y.js setup ──────────────────────────────────────────────────────────────
+  // ── Y.js setup ───────────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (!code || typeof window === 'undefined') return;
@@ -323,6 +336,7 @@ export default function UnoRoom() {
         winnerUuid: meta.get('winnerUuid') || null,
         roundNum: meta.get('roundNum') ?? 0,
         hostId: meta.get('hostId') || null,
+        unoStatus: JSON.parse(meta.get('unoStatus') || '{}'),
       });
     };
 
@@ -379,6 +393,13 @@ export default function UnoRoom() {
       return;
     }
 
+    // Player must call UNO manually when reaching 1 card
+    if (player.hand.length === 1) {
+      const unoStatus = JSON.parse(meta.get('unoStatus') || '{}');
+      unoStatus[player.uuid] = false;
+      meta.set('unoStatus', JSON.stringify(unoStatus));
+    }
+
     const newColor = card.color || currentColor;
     const nextIdx = mod(currentIdx + direction, n);
     const skipIdx = mod(currentIdx + 2 * direction, n);
@@ -397,11 +418,7 @@ export default function UnoRoom() {
       meta.set('currentColor', newColor);
       meta.set('players', JSON.stringify(players));
       meta.set('discardPile', JSON.stringify(discardPile));
-      if (n === 2) {
-        // acts like skip: current player goes again — don't change idx
-      } else {
-        meta.set('currentPlayerIdx', mod(currentIdx + newDir, n));
-      }
+      if (n !== 2) meta.set('currentPlayerIdx', mod(currentIdx + newDir, n));
       return;
     }
 
@@ -427,7 +444,6 @@ export default function UnoRoom() {
       return;
     }
 
-    // Normal number card
     meta.set('players', JSON.stringify(players));
     meta.set('discardPile', JSON.stringify(discardPile));
     meta.set('currentColor', newColor);
@@ -489,6 +505,35 @@ export default function UnoRoom() {
     meta.set('currentPlayerIdx', mod(currentIdx + direction, n));
   }, []);
 
+  const handleCallUno = useCallback(() => {
+    const meta = metaRef.current;
+    if (!meta || !myUuid) return;
+    const unoStatus = JSON.parse(meta.get('unoStatus') || '{}');
+    unoStatus[myUuid] = true;
+    meta.set('unoStatus', JSON.stringify(unoStatus));
+  }, [myUuid]);
+
+  const handleCallOut = useCallback((targetUuid) => {
+    const meta = metaRef.current;
+    if (!meta) return;
+    const unoStatus = JSON.parse(meta.get('unoStatus') || '{}');
+    if (unoStatus[targetUuid]) return;
+    let players = JSON.parse(meta.get('players') || '[]');
+    const targetIdx = players.findIndex(p => p.uuid === targetUuid);
+    if (targetIdx === -1 || players[targetIdx].hand.length !== 1) return;
+    const { drawn, deck: d2, discardPile: dp2 } = drawFromDeck(
+      JSON.parse(meta.get('deck') || '[]'),
+      JSON.parse(meta.get('discardPile') || '[]'),
+      2
+    );
+    players[targetIdx] = { ...players[targetIdx], hand: [...players[targetIdx].hand, ...drawn] };
+    unoStatus[targetUuid] = true;
+    meta.set('players', JSON.stringify(players));
+    meta.set('deck', JSON.stringify(d2));
+    meta.set('discardPile', JSON.stringify(dp2));
+    meta.set('unoStatus', JSON.stringify(unoStatus));
+  }, []);
+
   const handleStartHand = useCallback(() => {
     const meta = metaRef.current;
     const yLobby = yLobbyRef.current;
@@ -516,6 +561,7 @@ export default function UnoRoom() {
     meta.set('winnerUuid', null);
     meta.set('roundNum', 0);
     meta.set('nextHandStartIdx', 0);
+    meta.set('unoStatus', '{}');
     meta.set('phase', 'lobby');
   }, []);
 
@@ -525,9 +571,16 @@ export default function UnoRoom() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleDropOnPile = useCallback((e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const cardId = e.dataTransfer.getData('text/plain');
+    if (cardId) handlePlayCard(cardId);
+  }, [handlePlayCard]);
+
   // ── Derived ──────────────────────────────────────────────────────────────────
 
-  const { phase, players, discardPile, currentPlayerIdx, direction, currentColor, pendingAction, cumulativeScores, winner, winnerUuid, roundNum, hostId } = gameState;
+  const { phase, players, discardPile, currentPlayerIdx, direction, currentColor, pendingAction, cumulativeScores, winner, winnerUuid, roundNum, hostId, unoStatus } = gameState;
 
   const isHost = myUuid === hostId;
   const myPlayer = players.find(p => p.uuid === myUuid);
@@ -541,20 +594,25 @@ export default function UnoRoom() {
   const handWinnerPlayer = winnerUuid
     ? (players.find(p => p.uuid === winnerUuid) || lobbyPlayers.find(p => p.uuid === winnerUuid))
     : null;
+  const myNeedsUno = myPlayer?.hand.length === 1 && unoStatus[myUuid] === false;
 
   // ── Header ────────────────────────────────────────────────────────────────────
 
   const HeaderBar = () => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, height: 48, paddingLeft: 16, paddingRight: 16, borderBottom: `1px solid ${PANEL_BORDER}`, flexShrink: 0, backgroundColor: PANEL_DARK }}>
-      <button onClick={() => router.push('/uno')} style={{ background: 'none', border: 'none', color: TEXT_DIM, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: 13, padding: 0, display: 'flex', alignItems: 'center', gap: 4 }} onMouseEnter={e => (e.currentTarget.style.color = TEXT)} onMouseLeave={e => (e.currentTarget.style.color = TEXT_DIM)}>← Leave</button>
-      <div style={{ width: 1, height: 20, backgroundColor: PANEL_BORDER }} />
-      <img src="/assets/uno.svg" alt="" style={{ width: 22 }} />
-      <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: '800', fontSize: 16, color: TEXT }}><span style={{ color: GAME_COLOR }}>U</span>NO</span>
-      {roundNum > 0 && <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: TEXT_DIM, backgroundColor: SURFACE, padding: '2px 8px', borderRadius: 5, border: `1px solid ${PANEL_BORDER}` }}>Hand {roundNum}</span>}
-      <div style={{ flex: 1 }} />
-      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: TEXT_DIM, letterSpacing: '1px' }}>{code}</span>
-      <button onClick={copyLink} style={{ padding: '4px 10px', border: `1px solid ${copied ? GOLD : PANEL_BORDER}`, borderRadius: 6, backgroundColor: 'transparent', fontFamily: 'Inter, sans-serif', fontSize: 11, color: copied ? GOLD : TEXT_DIM, cursor: 'pointer' }}>{copied ? 'Copied!' : 'Copy link'}</button>
-      <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: `${TEXT_DIM}66` }}>{peers === 0 ? '—' : `${peers} other${peers === 1 ? '' : 's'}`}</span>
+    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', height: 48, paddingLeft: 16, paddingRight: 16, borderBottom: `1px solid ${PANEL_BORDER}`, flexShrink: 0, backgroundColor: PANEL_DARK }}>
+      <button onClick={() => router.push('/uno')} style={{ background: 'none', border: 'none', color: TEXT_DIM, cursor: 'pointer', fontFamily: 'Inter, sans-serif', fontSize: 13, padding: 0, display: 'flex', alignItems: 'center', gap: 4, zIndex: 1 }} onMouseEnter={e => (e.currentTarget.style.color = TEXT)} onMouseLeave={e => (e.currentTarget.style.color = TEXT_DIM)}>← Leave</button>
+      {/* Center logo */}
+      <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <img src="/assets/uno.svg" alt="" style={{ width: 22 }} />
+        <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: '800', fontSize: 16, color: TEXT }}><span style={{ color: GAME_COLOR }}>U</span>NO</span>
+        {roundNum > 0 && <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: TEXT_DIM, backgroundColor: SURFACE, padding: '2px 8px', borderRadius: 5, border: `1px solid ${PANEL_BORDER}` }}>Hand {roundNum}</span>}
+      </div>
+      {/* Right side */}
+      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10, zIndex: 1 }}>
+        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: TEXT_DIM, letterSpacing: '1px' }}>{code}</span>
+        <button onClick={copyLink} style={{ padding: '4px 10px', border: `1px solid ${copied ? GOLD : PANEL_BORDER}`, borderRadius: 6, backgroundColor: 'transparent', fontFamily: 'Inter, sans-serif', fontSize: 11, color: copied ? GOLD : TEXT_DIM, cursor: 'pointer' }}>{copied ? 'Copied!' : 'Copy link'}</button>
+        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: `${TEXT_DIM}66` }}>{peers === 0 ? '—' : `${peers} other${peers === 1 ? '' : 's'}`}</span>
+      </div>
     </div>
   );
 
@@ -609,7 +667,6 @@ export default function UnoRoom() {
 
   if (phase === 'playing') {
     const otherPlayers = players.filter(p => p.uuid !== myUuid);
-    const myIdx = players.findIndex(p => p.uuid === myUuid);
 
     return (
       <>
@@ -621,27 +678,41 @@ export default function UnoRoom() {
           <div style={{ padding: '12px 16px', borderBottom: `1px solid ${PANEL_BORDER}`, display: 'flex', gap: 10, overflowX: 'auto', flexShrink: 0, backgroundColor: PANEL_DARK, scrollbarWidth: 'thin' }}>
             {players.filter(p => p.uuid !== myUuid).map(p => {
               const pi = players.findIndex(pl => pl.uuid === p.uuid);
+              const canCallOut = p.hand.length === 1 && unoStatus[p.uuid] === false;
               return (
                 <OtherPlayer
                   key={p.uuid}
                   player={p}
                   isActive={!pendingAction && pi === currentPlayerIdx}
                   color={PLAYER_COLORS[pi % PLAYER_COLORS.length]}
+                  canCallOut={canCallOut}
+                  onCallOut={() => handleCallOut(p.uuid)}
                 />
               );
             })}
             {otherPlayers.length === 0 && (
               <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: `${TEXT_DIM}55`, margin: 0, alignSelf: 'center' }}>Waiting for other players...</p>
             )}
-            {/* Direction indicator */}
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
               <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: TEXT_DIM }}>Order</span>
               <span style={{ fontSize: 16, color: TEXT_DIM }}>{direction === 1 ? '→' : '←'}</span>
             </div>
           </div>
 
-          {/* Game table */}
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 40, backgroundColor: SURFACE, padding: '16px 24px', overflowY: 'auto' }}>
+          {/* Game table — drop zone */}
+          <div
+            style={{
+              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 40,
+              backgroundColor: isDragOver ? `${SURFACE}cc` : SURFACE,
+              padding: '16px 24px', overflowY: 'auto',
+              outline: isDragOver ? `3px dashed ${GAME_COLOR}88` : '3px dashed transparent',
+              outlineOffset: -6,
+              transition: 'outline-color 0.15s, background-color 0.15s',
+            }}
+            onDragOver={isMyTurn ? (e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setIsDragOver(true); }) : undefined}
+            onDragLeave={() => setIsDragOver(false)}
+            onDrop={isMyTurn ? handleDropOnPile : undefined}
+          >
             {/* Draw pile */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
               <div
@@ -649,10 +720,10 @@ export default function UnoRoom() {
                 style={{ cursor: isMyTurn ? 'pointer' : 'default', position: 'relative' }}
               >
                 {gameState.deck.length > 2 && (
-                  <div style={{ position: 'absolute', top: 6, left: 6, right: -6, bottom: -6, borderRadius: 12, backgroundColor: '#0c1530', border: `2px solid ${GAME_COLOR}22` }} />
+                  <div style={{ position: 'absolute', top: 6, left: 6, right: -6, bottom: -6, borderRadius: 14, backgroundColor: '#0c1530', border: `2px solid ${GAME_COLOR}22` }} />
                 )}
                 {gameState.deck.length > 1 && (
-                  <div style={{ position: 'absolute', top: 3, left: 3, right: -3, bottom: -3, borderRadius: 12, backgroundColor: '#0e1836', border: `2px solid ${GAME_COLOR}33` }} />
+                  <div style={{ position: 'absolute', top: 3, left: 3, right: -3, bottom: -3, borderRadius: 14, backgroundColor: '#0e1836', border: `2px solid ${GAME_COLOR}33` }} />
                 )}
                 <div style={{ position: 'relative', filter: isMyTurn ? `drop-shadow(0 0 18px ${GAME_GLOW})` : 'none', transition: 'filter 0.2s', animation: isMyTurn ? 'deckPulse 2.5s ease-in-out infinite' : 'none' }}>
                   <CardBack large />
@@ -666,30 +737,32 @@ export default function UnoRoom() {
               </span>
             </div>
 
-            {/* Current color + discard pile */}
+            {/* Discard pile */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-              {/* Color ring */}
               {currentColor && (
-                <div style={{ width: 14, height: 14, borderRadius: '50%', backgroundColor: CARD_BG[currentColor], border: `3px solid ${CARD_BG[currentColor]}`, boxShadow: `0 0 14px ${CARD_BG[currentColor]}` }} />
+                <div style={{ width: 16, height: 16, borderRadius: '50%', backgroundColor: CARD_BG[currentColor], border: `3px solid ${CARD_BG[currentColor]}`, boxShadow: `0 0 16px ${CARD_BG[currentColor]}` }} />
               )}
-              {topCard && <UnoCard card={topCard} large />}
+              {/* key forces remount and replays cardDrop animation on each new card */}
+              {topCard && <UnoCard key={topCard.id} card={topCard} large />}
+              {!topCard && <div style={{ width: 96, height: 144, borderRadius: 14, border: `2px dashed ${PANEL_BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: TEXT_DIM, fontSize: 11 }}>Empty</span></div>}
               <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: TEXT_DIM }}>
                 {currentColor ? COLOR_LABEL[currentColor] : '—'} active
               </span>
             </div>
+
+            {isDragOver && (
+              <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', fontFamily: 'Nunito, sans-serif', fontWeight: '800', fontSize: 16, color: `${GAME_COLOR}cc`, pointerEvents: 'none' }}>
+                Drop to play
+              </div>
+            )}
           </div>
 
-          {/* My hand + action bar */}
+          {/* Hand + actions */}
           <div style={{ flexShrink: 0, backgroundColor: PANEL_DARK, borderTop: `1px solid ${PANEL_BORDER}`, padding: '12px 16px 16px' }}>
             {/* Status line */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
               {isMyTurn && !pendingAction && (
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: TEXT_DIM }}>
-                  Your turn
-                  {myPlayer && myPlayer.hand.length === 1 && (
-                    <span style={{ marginLeft: 8, color: GAME_COLOR, fontWeight: '700' }}>🎴 UNO!</span>
-                  )}
-                </span>
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: TEXT_DIM }}>Your turn</span>
               )}
               {!isMyTurn && !pendingAction && activePlayer && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -704,7 +777,7 @@ export default function UnoRoom() {
                   <span style={{ color: TEXT, fontWeight: '700' }}>{players[pendingAction.playerIdx]?.name}</span> is choosing a color...
                 </span>
               )}
-              {isMyTurn && myPlayer && (
+              {myPlayer && (
                 <span style={{ marginLeft: 'auto', fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: TEXT_DIM }}>
                   {myPlayer.hand.length} card{myPlayer.hand.length !== 1 ? 's' : ''}
                 </span>
@@ -712,7 +785,7 @@ export default function UnoRoom() {
             </div>
 
             {/* My hand */}
-            <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8, scrollbarWidth: 'thin', alignItems: 'flex-end', minHeight: 100 }}>
+            <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8, scrollbarWidth: 'thin', alignItems: 'flex-end', minHeight: 136 }}>
               {myPlayer ? myPlayer.hand.map(card => {
                 const playable = isMyTurn && !pendingAction && canPlayCard(card, topCard, currentColor);
                 return (
@@ -722,6 +795,11 @@ export default function UnoRoom() {
                     playable={playable}
                     dimmed={isMyTurn && !pendingAction && !playable}
                     onClick={() => handlePlayCard(card.id)}
+                    draggable={playable}
+                    onDragStart={e => {
+                      e.dataTransfer.setData('text/plain', card.id);
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
                   />
                 );
               }) : (
@@ -729,9 +807,9 @@ export default function UnoRoom() {
               )}
             </div>
 
-            {/* Draw button */}
-            {isMyTurn && !pendingAction && (
-              <div style={{ marginTop: 6 }}>
+            {/* Action buttons */}
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
+              {isMyTurn && !pendingAction && (
                 <button
                   onClick={handleDraw}
                   style={{ padding: '8px 20px', backgroundColor: SURFACE, border: `1px solid ${PANEL_BORDER}`, borderRadius: 8, fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: '600', color: TEXT_DIM, cursor: 'pointer', transition: 'border-color 0.15s, color 0.15s' }}
@@ -740,22 +818,62 @@ export default function UnoRoom() {
                 >
                   Draw Card
                 </button>
-              </div>
-            )}
+              )}
+              {myNeedsUno && (
+                <button
+                  onClick={handleCallUno}
+                  style={{
+                    padding: '8px 28px',
+                    backgroundColor: GAME_COLOR,
+                    border: 'none',
+                    borderRadius: 8,
+                    fontFamily: 'Nunito, sans-serif',
+                    fontSize: 18,
+                    fontWeight: '900',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    letterSpacing: '2px',
+                    animation: 'unoPulse 0.9s ease-in-out infinite',
+                    boxShadow: `0 0 24px ${GAME_GLOW}`,
+                  }}
+                >
+                  UNO!
+                </button>
+              )}
+              {myPlayer?.hand.length === 1 && unoStatus[myUuid] === true && (
+                <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: '800', fontSize: 14, color: GAME_COLOR }}>🎴 UNO called!</span>
+              )}
+              {isMyTurn && (
+                <span style={{ marginLeft: 'auto', fontFamily: 'Inter, sans-serif', fontSize: 11, color: `${TEXT_DIM}88` }}>
+                  drag or click a card to play
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Color chooser overlay */}
         {isMyPendingColor && <ColorChooser onChoose={handleChooseColor} />}
 
-        {/* Rules button + panel */}
         <button onClick={() => setShowRules(v => !v)} style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 301, width: 40, height: 40, borderRadius: '50%', backgroundColor: showRules ? GAME_COLOR : PANEL, border: `2px solid ${showRules ? GAME_COLOR : PANEL_BORDER}`, color: showRules ? '#fff' : TEXT_DIM, fontFamily: 'Inter, sans-serif', fontSize: 16, fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.4)', transition: 'background-color 0.2s' }}>?</button>
         <RulesPanel open={showRules} onClose={() => setShowRules(false)} />
 
         <style>{`
-          @keyframes cardAppear { from { transform: scale(0.7) rotateY(90deg); opacity: 0; } to { transform: scale(1) rotateY(0deg); opacity: 1; } }
+          @keyframes cardDrop {
+            0%   { transform: scale(0.55) translateY(-40px) rotate(-18deg); opacity: 0; }
+            60%  { transform: scale(1.1) translateY(4px) rotate(3deg); opacity: 1; }
+            80%  { transform: scale(0.97) translateY(-2px) rotate(-1deg); opacity: 1; }
+            100% { transform: scale(1) translateY(0) rotate(0deg); opacity: 1; }
+          }
           @keyframes deckPulse { 0%, 100% { filter: drop-shadow(0 0 8px ${GAME_GLOW}); } 50% { filter: drop-shadow(0 0 22px ${GAME_GLOW}); } }
           @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+          @keyframes unoPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 10px ${GAME_GLOW}; }
+            50% { transform: scale(1.07); box-shadow: 0 0 32px ${GAME_GLOW}, 0 0 60px ${GAME_GLOW}; }
+          }
+          @keyframes calloutPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.65; }
+          }
         `}</style>
       </>
     );
@@ -765,11 +883,10 @@ export default function UnoRoom() {
 
   if (phase === 'hand-end') {
     const sortedScores = Object.entries(cumulativeScores).sort(([, a], [, b]) => b - a);
-    const handWinnerPoints = winnerUuid ? (cumulativeScores[winnerUuid] ?? 0) : 0;
-    const prevHandPoints = handWinnerUuid => {
-      const p = players.find(pl => pl.uuid === handWinnerUuid);
+    const prevHandPoints = (uuid) => {
+      const p = players.find(pl => pl.uuid === uuid);
       if (!p) return 0;
-      return players.filter(pl => pl.uuid !== handWinnerUuid).reduce((s, pl) => s + handPoints(pl.hand), 0);
+      return players.filter(pl => pl.uuid !== uuid).reduce((s, pl) => s + handPoints(pl.hand), 0);
     };
 
     return (
@@ -789,7 +906,6 @@ export default function UnoRoom() {
                 </p>
               </div>
 
-              {/* Players' remaining hands */}
               <div style={{ backgroundColor: PANEL, borderRadius: 14, border: `1px solid ${PANEL_BORDER}`, overflow: 'hidden', marginBottom: 14 }}>
                 <div style={{ padding: '10px 18px', borderBottom: `1px solid ${PANEL_BORDER}` }}>
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, fontWeight: '700', color: TEXT_DIM, textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>Remaining Cards</p>
@@ -812,7 +928,6 @@ export default function UnoRoom() {
                 ))}
               </div>
 
-              {/* Score leaderboard */}
               <div style={{ backgroundColor: PANEL, borderRadius: 14, border: `1px solid ${PANEL_BORDER}`, overflow: 'hidden', marginBottom: 24 }}>
                 <div style={{ padding: '10px 18px', borderBottom: `1px solid ${PANEL_BORDER}` }}>
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, fontWeight: '700', color: TEXT_DIM, textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>Race to 500</p>
@@ -846,6 +961,9 @@ export default function UnoRoom() {
         </div>
         <button onClick={() => setShowRules(v => !v)} style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 301, width: 40, height: 40, borderRadius: '50%', backgroundColor: showRules ? GAME_COLOR : PANEL, border: `2px solid ${showRules ? GAME_COLOR : PANEL_BORDER}`, color: showRules ? '#fff' : TEXT_DIM, fontFamily: 'Inter, sans-serif', fontSize: 16, fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.4)', transition: 'background-color 0.2s' }}>?</button>
         <RulesPanel open={showRules} onClose={() => setShowRules(false)} />
+        <style>{`
+          @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+        `}</style>
       </>
     );
   }
