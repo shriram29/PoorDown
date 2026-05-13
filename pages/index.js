@@ -50,6 +50,15 @@ const GAMES = [
     glow: 'rgba(255,107,53,0.35)',
     available: true,
   },
+  {
+    id: 'uno',
+    name: 'UNO',
+    asset: '/assets/uno.svg',
+    description: 'Match colors and numbers. Play your last card to win. First to 500 points takes it all.',
+    color: '#E53935',
+    glow: 'rgba(229,57,53,0.35)',
+    available: true,
+  },
 ];
 
 const TOKEN_ICONS = {
