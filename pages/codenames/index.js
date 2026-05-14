@@ -26,7 +26,7 @@ export default function CodenamesLobby() {
     setLoading(true);
     const roomCode = generateRoomCode();
     localStorage.setItem('poordown_active_room', JSON.stringify({
-      gameId: 'codenames', gameName: 'Codenames', roomCode, isHost: true,
+      gameId: 'codenames', gameName: 'Codenames', roomCode, isHost: true, lastSeen: Date.now(),
     }));
     router.push(`/codenames/room/${roomCode}?host=true`);
   };
@@ -37,7 +37,7 @@ export default function CodenamesLobby() {
     setLoading(true);
     const roomCode = joinCode.toUpperCase();
     localStorage.setItem('poordown_active_room', JSON.stringify({
-      gameId: 'codenames', gameName: 'Codenames', roomCode, isHost: false,
+      gameId: 'codenames', gameName: 'Codenames', roomCode, isHost: false, lastSeen: Date.now(),
     }));
     router.push(`/codenames/room/${roomCode}`);
   };

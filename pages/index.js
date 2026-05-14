@@ -96,14 +96,25 @@ export default function Home() {
       setShowIdentityModal(true);
     }
     try {
-      const room = localStorage.getItem('poordown_active_room');
-      if (room) setActiveRoom(JSON.parse(room));
+      const room = JSON.parse(localStorage.getItem('poordown_active_room'));
+      if (room) {
+        if (!room.lastSeen || Date.now() - room.lastSeen > 60 * 60 * 1000) {
+          localStorage.removeItem('poordown_active_room');
+        } else {
+          setActiveRoom(room);
+        }
+      }
     } catch {}
   }, []);
 
   const handleIdentityComplete = (newIdentity) => {
     setIdentity(newIdentity);
     setShowIdentityModal(false);
+    const redirect = localStorage.getItem('poordown_redirect');
+    if (redirect) {
+      localStorage.removeItem('poordown_redirect');
+      router.push(redirect);
+    }
   };
 
   return (

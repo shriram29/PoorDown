@@ -279,7 +279,11 @@ export default function UnoRoom() {
 
     const stored = localStorage.getItem('poordown_identity');
     const identity = stored ? JSON.parse(stored) : null;
-    if (!identity) { router.push('/'); return; }
+    if (!identity) {
+      localStorage.setItem('poordown_redirect', window.location.pathname + window.location.search);
+      router.push('/');
+      return;
+    }
     setMyUuid(identity.uuid);
 
     const isHost = new URLSearchParams(window.location.search).get('host') === 'true';
@@ -358,6 +362,20 @@ export default function UnoRoom() {
       doc.destroy();
     };
   }, [code]);
+
+  useEffect(() => {
+    const refresh = () => {
+      const stored = localStorage.getItem('poordown_active_room');
+      if (!stored) return;
+      try {
+        const room = JSON.parse(stored);
+        localStorage.setItem('poordown_active_room', JSON.stringify({ ...room, lastSeen: Date.now() }));
+      } catch {}
+    };
+    refresh();
+    const interval = setInterval(refresh, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // ── Game logic ───────────────────────────────────────────────────────────────
 

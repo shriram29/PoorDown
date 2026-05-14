@@ -221,11 +221,41 @@ function BustCard({ value }) {
   );
 }
 
+// ── Second Chance saved card (the near-bust that was blocked) ─────────────────
+
+function SecondChanceCard({ value }) {
+  return (
+    <div style={{ position: 'relative', flexShrink: 0 }}>
+      <div style={{
+        width: 38, height: 53, borderRadius: 7,
+        backgroundColor: '#6a3aa818',
+        border: '2px solid #a07ad8',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontFamily: 'Nunito, sans-serif', fontWeight: '800', fontSize: 16, color: '#a07ad8',
+      }}>
+        {value}
+      </div>
+      {/* ♻ badge */}
+      <div style={{
+        position: 'absolute', top: -6, right: -6,
+        width: 16, height: 16, borderRadius: '50%',
+        backgroundColor: '#a07ad8', border: `2px solid ${BG}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 8, color: '#fff', fontWeight: '900', lineHeight: 1,
+      }}>♻</div>
+    </div>
+  );
+}
+
 // ── Player table ──────────────────────────────────────────────────────────────
 
-function PlayerTable({ player, isActive, isMe, color, roundScore, isCurrentRound }) {
+function PlayerTable({ player, isActive, isMe, color, roundScore, isCurrentRound, onlineUuids, disconnectTimes }) {
   const done = player.busted || player.stayed;
   const borderColor = player.busted ? '#ff4d5666' : player.stayed ? '#2a9a7066' : isActive ? color : PANEL_BORDER;
+  const isOffline = onlineUuids !== null && !onlineUuids.has(player.uuid);
+  const disconnectSecsLeft = isOffline && disconnectTimes?.[player.uuid]
+    ? Math.max(0, 30 - Math.floor((Date.now() - disconnectTimes[player.uuid]) / 1000))
+    : null;
 
   return (
     <div style={{
@@ -243,6 +273,14 @@ function PlayerTable({ player, isActive, isMe, color, roundScore, isCurrentRound
         <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: '800', fontSize: 13, color: TEXT, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {player.name}{isMe ? ' ✦' : ''}
         </span>
+        {isOffline && (
+          <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <span style={{ fontSize: 9, color: '#ff4d56', fontWeight: '700', fontFamily: 'Inter, sans-serif', backgroundColor: '#ff4d5622', padding: '1px 5px', borderRadius: 4, letterSpacing: '0.3px' }}>OFFLINE</span>
+            {disconnectSecsLeft !== null && (
+              <span style={{ fontSize: 9, color: '#ff4d5699', fontFamily: 'Inter, sans-serif' }}>{disconnectSecsLeft}s</span>
+            )}
+          </span>
+        )}
         {player.busted && <span style={{ fontFamily: 'Inter, sans-serif', fontWeight: '800', fontSize: 10, color: '#ff4d56', letterSpacing: '0.5px' }}>BUST</span>}
         {player.stayed && <span style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: '700', fontSize: 11, color: GOLD }}>{roundScore}</span>}
         {player.frozen && !done && <span style={{ fontSize: 12 }}>❄️</span>}
@@ -261,6 +299,12 @@ function PlayerTable({ player, isActive, isMe, color, roundScore, isCurrentRound
           ? <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: TEXT_DIM + '55', alignSelf: 'center' }}>—</span>
           : <>
               {player.numberCards.map((n, i) => <NumberCard key={i} value={n} />)}
+              {player.secondChanceCard !== null && player.secondChanceCard !== undefined && (
+                <>
+                  <div style={{ width: 1, height: 48, backgroundColor: '#a07ad844', borderRadius: 1, alignSelf: 'center', flexShrink: 0, marginLeft: 1 }} />
+                  <SecondChanceCard value={player.secondChanceCard} />
+                </>
+              )}
               {player.busted && player.bustCard !== null && player.bustCard !== undefined && (
                 <>
                   <div style={{ width: 1, height: 48, backgroundColor: '#ff4d5444', borderRadius: 1, alignSelf: 'center', flexShrink: 0, marginLeft: 1 }} />
@@ -468,6 +512,20 @@ function RulesPanel({ open, onClose }) {
 
 function FlipThreeTargetPicker({ players, onPick }) {
   const targets = players.filter(p => !p.busted && !p.stayed);
+  if (targets.length === 0) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+        <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: TEXT_DIM, fontWeight: '600' }}>
+          No valid targets for Flip Three
+        </span>
+        <button onClick={() => onPick(null)}
+          style={{ padding: '8px 20px', backgroundColor: SURFACE, border: `2px solid ${PANEL_BORDER}`, borderRadius: 10, fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: '600', color: TEXT, cursor: 'pointer' }}
+          onMouseEnter={e => (e.currentTarget.style.borderColor = TEXT_DIM)}
+          onMouseLeave={e => (e.currentTarget.style.borderColor = PANEL_BORDER)}
+        >Continue</button>
+      </div>
+    );
+  }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
       <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: GAME_COLOR, fontWeight: '700' }}>
@@ -499,14 +557,19 @@ export default function Flip7Room() {
   const [showRules, setShowRules] = useState(false);
   const [lastDrawnCard, setLastDrawnCard] = useState(null);
   const [drawAnimKey, setDrawAnimKey] = useState(0);
+  const [onlineUuids, setOnlineUuids] = useState(null); // null until awareness fires
+  const [disconnectTimes, setDisconnectTimes] = useState({}); // uuid → timestamp, local
+  const [tick, setTick] = useState(0);
   const [gameState, setGameState] = useState({
     phase: 'connecting', players: [], deck: [],
     currentPlayerIdx: 0, pendingAction: null,
     cumulativeScores: {}, winner: null, roundNum: 0, hostId: null,
+    roundEndReady: [],
   });
 
   const metaRef = useRef(null);
   const yLobbyRef = useRef(null);
+  const disconnectTimesRef = useRef({}); // mirrors disconnectTimes for interval access
   // Prevents double-add in React StrictMode dev double-mount
   const hasJoinedRef = useRef(false);
 
@@ -516,7 +579,11 @@ export default function Flip7Room() {
 
     const stored = localStorage.getItem('poordown_identity');
     const identity = stored ? JSON.parse(stored) : null;
-    if (!identity) { router.push('/'); return; }
+    if (!identity) {
+      localStorage.setItem('poordown_redirect', window.location.pathname + window.location.search);
+      router.push('/');
+      return;
+    }
     setMyUuid(identity.uuid);
 
     const isHost = new URLSearchParams(window.location.search).get('host') === 'true';
@@ -535,7 +602,21 @@ export default function Flip7Room() {
     provider.awareness.setLocalStateField('player', { uuid: identity.uuid });
     provider.awareness.on('change', () => {
       const states = Array.from(provider.awareness.getStates().values());
+      const onlineSet = new Set(states.filter(s => s.player?.uuid).map(s => s.player.uuid));
+      setOnlineUuids(onlineSet);
       setPeers(states.filter(s => s.player?.uuid && s.player.uuid !== identity.uuid).length);
+
+      const lobbyAll = yLobbyRef.current ? yLobbyRef.current.toArray() : [];
+      const now = Date.now();
+      const next = { ...disconnectTimesRef.current };
+      for (const p of lobbyAll) {
+        if (!onlineSet.has(p.uuid) && !next[p.uuid]) next[p.uuid] = now;
+      }
+      for (const uuid of Object.keys(next)) {
+        if (onlineSet.has(uuid)) delete next[uuid];
+      }
+      disconnectTimesRef.current = next;
+      setDisconnectTimes(next);
     });
 
     const meta = doc.getMap('meta');
@@ -571,6 +652,7 @@ export default function Flip7Room() {
         winner: meta.get('winner') || null,
         roundNum: meta.get('roundNum') ?? 0,
         hostId: meta.get('hostId') || null,
+        roundEndReady: JSON.parse(meta.get('roundEndReady') || '[]'),
       });
     };
 
@@ -602,6 +684,20 @@ export default function Flip7Room() {
   useEffect(() => {
     setLastDrawnCard(null);
   }, [gameState.currentPlayerIdx]);
+
+  useEffect(() => {
+    const refresh = () => {
+      const stored = localStorage.getItem('poordown_active_room');
+      if (!stored) return;
+      try {
+        const room = JSON.parse(stored);
+        localStorage.setItem('poordown_active_room', JSON.stringify({ ...room, lastSeen: Date.now() }));
+      } catch {}
+    };
+    refresh();
+    const interval = setInterval(refresh, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // ── Game logic ───────────────────────────────────────────────────────────────
 
@@ -635,7 +731,7 @@ export default function Flip7Room() {
 
     if (card.type === 'number') {
       if (p.numberCards.includes(card.value)) {
-        if (p.hasSecondChance) { p.hasSecondChance = false; }
+        if (p.hasSecondChance) { p.hasSecondChance = false; p.secondChanceCard = card.value; }
         else { p.busted = true; p.bustCard = card.value; }
       } else {
         p.numberCards = [...p.numberCards, card.value].sort((a, b) => a - b);
@@ -773,6 +869,14 @@ export default function Flip7Room() {
     if (!pending || pending.type !== 'flip-three-target') return;
 
     let players = JSON.parse(meta.get('players') || '[]');
+
+    // If no valid targets exist (e.g. everyone busted after a chain), fizzle the action
+    const validTargets = players.filter(p => !p.busted && !p.stayed);
+    if (!targetUuid || validTargets.length === 0) {
+      resolveNextOrAdvance(meta, players);
+      return;
+    }
+
     let deck = JSON.parse(meta.get('deck') || '[]');
     let discardPile = JSON.parse(meta.get('discardPile') || '[]');
 
@@ -810,8 +914,8 @@ export default function Flip7Room() {
       } else {
         const { player: updated, extras } = applyCard(players[targetIdx], card, players, targetIdx);
         players[targetIdx] = updated;
-        if (extras.giveSecondChanceTo !== undefined) {
-          players[extras.giveSecondChanceTo] = { ...players[extras.giveSecondChanceTo], hasSecondChance: true };
+        if (extras.needsSecondChancePass) {
+          queuedActions.push({ type: 'second-chance-pass', drawerIdx: targetIdx });
         }
       }
     }
@@ -819,6 +923,9 @@ export default function Flip7Room() {
     meta.set('deck', JSON.stringify(deck));
     meta.set('discardPile', JSON.stringify(discardPile));
     meta.set('players', JSON.stringify(players));
+
+    // Per official rules: chain reactions only trigger if the target didn't bust
+    if (players[targetIdx].busted) queuedActions.length = 0;
 
     // Merge new queued actions with any existing queue
     const existingQueue = JSON.parse(meta.get('pendingQueue') || '[]');
@@ -905,11 +1012,92 @@ export default function Flip7Room() {
     const meta = metaRef.current;
     const yLobby = yLobbyRef.current;
     if (!meta || !yLobby) return;
+    meta.set('roundEndReady', '[]');
     meta.set('winner', null);
     const all = yLobby.toArray();
     const seen = new Set();
     startRound(meta, all.filter(p => { if (seen.has(p.uuid)) return false; seen.add(p.uuid); return true; }));
   }, []);
+
+  const handleReadyForNextRound = useCallback(() => {
+    const meta = metaRef.current;
+    if (!meta || !myUuid) return;
+    const ready = JSON.parse(meta.get('roundEndReady') || '[]');
+    if (!ready.includes(myUuid)) {
+      meta.set('roundEndReady', JSON.stringify([...ready, myUuid]));
+    }
+  }, [myUuid]);
+
+  // Host: remove players offline for > 30s from the game entirely
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const meta = metaRef.current;
+      const yLobby = yLobbyRef.current;
+      if (!meta || !yLobby || !myUuid) return;
+      if (myUuid !== meta.get('hostId')) return;
+      const phase = meta.get('phase');
+      if (phase !== 'playing' && phase !== 'round-end') return;
+
+      const times = disconnectTimesRef.current;
+      const now = Date.now();
+      const toRemove = Object.entries(times)
+        .filter(([, ts]) => now - ts >= 30_000)
+        .map(([uuid]) => uuid);
+      if (toRemove.length === 0) return;
+
+      // Remove from lobbyPlayers
+      const lobbyArr = yLobby.toArray();
+      for (const uuid of toRemove) {
+        const idx = lobbyArr.findIndex(p => p.uuid === uuid);
+        if (idx !== -1) yLobby.delete(idx, 1);
+      }
+
+      // Also clear from local disconnect tracking
+      const next = { ...disconnectTimesRef.current };
+      toRemove.forEach(uuid => delete next[uuid]);
+      disconnectTimesRef.current = next;
+      setDisconnectTimes(next);
+
+      if (phase !== 'playing') return;
+      let players = JSON.parse(meta.get('players') || '[]');
+      let changed = false;
+      for (const uuid of toRemove) {
+        const idx = players.findIndex(p => p.uuid === uuid);
+        if (idx !== -1 && !players[idx].busted && !players[idx].stayed) {
+          players[idx] = { ...players[idx], busted: true };
+          changed = true;
+        }
+      }
+      if (!changed) return;
+      meta.set('players', JSON.stringify(players));
+      const allDone = players.every(p => p.busted || p.stayed);
+      if (allDone) {
+        endRound(meta, players, JSON.parse(meta.get('cumulativeScores') || '{}'));
+      } else {
+        const currentIdx = meta.get('currentPlayerIdx') ?? 0;
+        if (players[currentIdx].busted || players[currentIdx].stayed) {
+          advanceTurn(meta, players);
+        }
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [myUuid, advanceTurn, endRound]);
+
+  // Host: immediately skip offline player's turn; auto-end round when no online active players remain
+  useEffect(() => {
+    if (myUuid !== gameState.hostId || gameState.phase !== 'playing' || !onlineUuids || gameState.pendingAction) return;
+    const currentPlayer = gameState.players[gameState.currentPlayerIdx];
+    if (!currentPlayer || currentPlayer.stayed || currentPlayer.busted) return;
+    if (onlineUuids.has(currentPlayer.uuid)) return;
+    const meta = metaRef.current;
+    if (!meta) return;
+    const onlineActive = gameState.players.filter(p => !p.stayed && !p.busted && onlineUuids.has(p.uuid));
+    if (onlineActive.length === 0) {
+      endRound(meta, gameState.players, JSON.parse(meta.get('cumulativeScores') || '{}'));
+    } else {
+      advanceTurn(meta, gameState.players);
+    }
+  }, [myUuid, gameState.hostId, gameState.phase, gameState.players, gameState.currentPlayerIdx, gameState.pendingAction, onlineUuids, advanceTurn, endRound]);
 
   const handlePlayAgain = useCallback(() => {
     const meta = metaRef.current;
@@ -917,8 +1105,32 @@ export default function Flip7Room() {
     meta.set('cumulativeScores', '{}');
     meta.set('winner', null);
     meta.set('roundNum', 0);
+    meta.set('deck', 'null');
+    meta.set('discardPile', '[]');
+    meta.set('nextRoundStartIdx', 0);
+    meta.set('roundEndReady', '[]');
     meta.set('phase', 'lobby');
   }, []);
+
+  // Tick every second while any player is disconnected (drives live countdown)
+  useEffect(() => {
+    if (Object.keys(disconnectTimes).length === 0) return;
+    const id = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [disconnectTimes]);
+
+  // Host auto-starts next round when every online lobby player has marked ready
+  useEffect(() => {
+    if (gameState.phase !== 'round-end') return;
+    if (myUuid !== gameState.hostId) return;
+    if (lobbyPlayers.length === 0) return;
+    if (!onlineUuids) return;
+    const onlineLobby = lobbyPlayers.filter(p => onlineUuids.has(p.uuid));
+    if (onlineLobby.length === 0) return;
+    if (onlineLobby.every(p => gameState.roundEndReady.includes(p.uuid))) {
+      handleNextRound();
+    }
+  }, [gameState.phase, gameState.roundEndReady, gameState.hostId, lobbyPlayers, myUuid, onlineUuids, handleNextRound]);
 
   const copyLink = () => {
     navigator.clipboard.writeText(`${window.location.origin}/flip-7/room/${code}`);
@@ -928,7 +1140,7 @@ export default function Flip7Room() {
 
   // ── Derived ──────────────────────────────────────────────────────────────────
 
-  const { phase, players, currentPlayerIdx, pendingAction, cumulativeScores, winner, roundNum, hostId } = gameState;
+  const { phase, players, currentPlayerIdx, pendingAction, cumulativeScores, winner, roundNum, hostId, roundEndReady } = gameState;
   const isHost = myUuid === hostId;
   const myPlayer = players.find(p => p.uuid === myUuid);
   const activePlayer = players[currentPlayerIdx];
@@ -1080,6 +1292,8 @@ export default function Flip7Room() {
                           color={color}
                           roundScore={calcRoundScore(player)}
                           isCurrentRound={!player.busted}
+                          onlineUuids={onlineUuids}
+                          disconnectTimes={disconnectTimes}
                         />
                       </div>
                     );
@@ -1278,6 +1492,12 @@ export default function Flip7Room() {
                         <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', alignItems: 'flex-start' }}>
                           {p.numberCards.map((n, j) => <NumberCard key={j} value={n} />)}
                           {p.modifierCards.map((m, j) => <ModifierCard key={j} value={m} />)}
+                          {p.secondChanceCard !== null && p.secondChanceCard !== undefined && (
+                            <>
+                              <div style={{ width: 1, height: 48, backgroundColor: '#a07ad844', borderRadius: 1, alignSelf: 'center', marginLeft: 1, flexShrink: 0 }} />
+                              <SecondChanceCard value={p.secondChanceCard} />
+                            </>
+                          )}
                           {p.busted && p.bustCard !== null && p.bustCard !== undefined && (
                             <>
                               <div style={{ width: 1, height: 48, backgroundColor: '#ff4d5444', borderRadius: 1, alignSelf: 'center', marginLeft: 1, flexShrink: 0 }} />
@@ -1317,10 +1537,37 @@ export default function Flip7Room() {
                 })}
               </div>
 
-              {isHost
-                ? <button onClick={handleNextRound} style={{ width: '100%', padding: '14px', backgroundColor: GAME_COLOR, color: '#fff', border: 'none', borderRadius: 12, fontFamily: 'Inter, sans-serif', fontSize: 16, fontWeight: '700', cursor: 'pointer', boxShadow: `0 4px 16px ${GAME_GLOW}` }}>Next Round →</button>
-                : <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: TEXT_DIM, textAlign: 'center' }}>Waiting for host to start next round...</p>
-              }
+              {(() => {
+                const iReady = roundEndReady.includes(myUuid);
+                const onlineLobby = onlineUuids ? lobbyPlayers.filter(p => onlineUuids.has(p.uuid)) : lobbyPlayers;
+                const readyCount = roundEndReady.filter(id => onlineLobby.some(p => p.uuid === id)).length;
+                const totalCount = onlineLobby.length;
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                    <button
+                      onClick={handleReadyForNextRound}
+                      disabled={iReady}
+                      style={{
+                        width: '100%', padding: '14px',
+                        backgroundColor: iReady ? PANEL : GAME_COLOR,
+                        color: iReady ? TEXT_DIM : '#fff',
+                        border: `2px solid ${iReady ? PANEL_BORDER : GAME_COLOR}`,
+                        borderRadius: 12, fontFamily: 'Inter, sans-serif', fontSize: 16, fontWeight: '700',
+                        cursor: iReady ? 'default' : 'pointer',
+                        boxShadow: iReady ? 'none' : `0 4px 16px ${GAME_GLOW}`,
+                        transition: 'background-color 0.2s, border-color 0.2s',
+                      }}
+                    >
+                      {iReady ? 'Ready ✓' : 'Continue →'}
+                    </button>
+                    {readyCount > 0 && (
+                      <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: TEXT_DIM, margin: 0, textAlign: 'center' }}>
+                        {readyCount} / {totalCount} ready
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>

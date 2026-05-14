@@ -69,9 +69,13 @@ export default function CodenamesRoom() {
     gridRedAction:   null,
     gridBlueAction:  null,
     rematchVotes:    [],
+    disconnectedPlayers: {},
   });
 
   const [activityLog, setActivityLog] = useState([]);
+  const [onlineUuids, setOnlineUuids] = useState(null); // null = awareness not yet fired
+  const [disconnectTimes, setDisconnectTimes] = useState({}); // uuid → timestamp, local state
+  const [tick, setTick] = useState(0);
 
   const metaRef      = useRef(null);
   const yPlayersRef  = useRef(null);
@@ -84,7 +88,11 @@ export default function CodenamesRoom() {
 
     const stored = localStorage.getItem('poordown_identity');
     const identity = stored ? JSON.parse(stored) : null;
-    if (!identity) { router.push('/'); return; }
+    if (!identity) {
+      localStorage.setItem('poordown_redirect', window.location.pathname + window.location.search);
+      router.push('/');
+      return;
+    }
     setMyUuid(identity.uuid);
 
     const hostFlag = new URLSearchParams(window.location.search).get('host') === 'true';
@@ -103,9 +111,24 @@ export default function CodenamesRoom() {
 
     provider.awareness.setLocalStateField('player', { uuid: identity.uuid });
     provider.awareness.on('change', () => {
-      const peers = Array.from(provider.awareness.getStates().values())
-        .filter(s => s.player?.uuid && s.player.uuid !== identity.uuid);
+      const states = Array.from(provider.awareness.getStates().values());
+      const peers = states.filter(s => s.player?.uuid && s.player.uuid !== identity.uuid);
       if (peers.length > 0) setRoomConfirmed(true);
+      const onlineSet = new Set(states.filter(s => s.player?.uuid).map(s => s.player.uuid));
+      setOnlineUuids(onlineSet);
+      // Track per-client disconnect timestamps in local state (no meta round-trip needed)
+      setDisconnectTimes(prev => {
+        const next = { ...prev };
+        const now = Date.now();
+        for (const uuid of Object.keys(next)) {
+          if (onlineSet.has(uuid)) delete next[uuid];
+        }
+        const allPlayers = yPlayersRef.current ? yPlayersRef.current.toArray() : [];
+        for (const p of allPlayers) {
+          if (!onlineSet.has(p.uuid) && !next[p.uuid]) next[p.uuid] = now;
+        }
+        return next;
+      });
     });
     const meta      = doc.getMap('meta');
     const yPlayers  = doc.getArray('players');
@@ -143,6 +166,7 @@ export default function CodenamesRoom() {
         gridRedAction:          meta.get('gridRedAction')          || null,
         gridBlueAction:         meta.get('gridBlueAction')         || null,
         rematchVotes:           JSON.parse(meta.get('rematchVotes') || '[]'),
+        disconnectedPlayers:    JSON.parse(meta.get('disconnectedPlayers') || '{}'),
       });
     };
 
@@ -208,19 +232,46 @@ export default function CodenamesRoom() {
     }
   }, [gameState.hostId, myUuid, gameState.phase, gameState.gridRedReady, gameState.gridBlueReady]);
 
-  // ── Host: trigger rematch when 2+2 votes are reached ─────────────────────
+  // ── Host: trigger rematch when all online players have voted ─────────────
   useEffect(() => {
     const amHost = gameState.hostId === myUuid;
     if (!amHost || gameState.phase !== 'over') return;
-    const votes     = gameState.rematchVotes;
-    const redVotes  = votes.filter(id => players.some(p => p.uuid === id && p.team === 'red')).length;
-    const blueVotes = votes.filter(id => players.some(p => p.uuid === id && p.team === 'blue')).length;
-    if (redVotes >= 2 && blueVotes >= 2) {
+    if (!onlineUuids) return; // awareness not yet fired
+    const votes = gameState.rematchVotes;
+    if (votes.length === 0) return;
+    // Only require votes from currently-online players
+    const onlineRed  = players.filter(p => p.team === 'red'  && onlineUuids.has(p.uuid));
+    const onlineBlue = players.filter(p => p.team === 'blue' && onlineUuids.has(p.uuid));
+    if (onlineRed.length === 0 || onlineBlue.length === 0) return;
+    const redVoted  = onlineRed.every(p  => votes.includes(p.uuid));
+    const blueVoted = onlineBlue.every(p => votes.includes(p.uuid));
+    if (redVoted && blueVoted) {
       triggerRematch(metaRef.current, yPlayersRef.current, yRevealedRef.current);
     }
-  }, [gameState.hostId, myUuid, gameState.phase, gameState.rematchVotes, players]);
+  }, [gameState.hostId, myUuid, gameState.phase, gameState.rematchVotes, players, onlineUuids]);
+
+  // ── Tick every second while any player is disconnected ───────────────────
+  useEffect(() => {
+    if (Object.keys(disconnectTimes).length === 0) return;
+    const id = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [disconnectTimes]);
 
   // ── Activity log ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    const refresh = () => {
+      const stored = localStorage.getItem('poordown_active_room');
+      if (!stored) return;
+      try {
+        const room = JSON.parse(stored);
+        localStorage.setItem('poordown_active_room', JSON.stringify({ ...room, lastSeen: Date.now() }));
+      } catch {}
+    };
+    refresh();
+    const interval = setInterval(refresh, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     if (!gameState.words.length) return;
 
@@ -954,6 +1005,16 @@ export default function CodenamesRoom() {
             }}>
               {p.name}{isMe ? ' (you)' : ''}
             </span>
+            {onlineUuids && !onlineUuids.has(p.uuid) && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 1 }}>
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '9px', fontWeight: '700', color: '#F87171', backgroundColor: '#F871711A', padding: '1px 4px', borderRadius: 3, letterSpacing: '0.3px' }}>OFFLINE</span>
+                {disconnectTimes[p.uuid] && (
+                  <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '9px', color: '#F8717199' }}>
+                    {Math.max(0, 30 - Math.floor((Date.now() - disconnectTimes[p.uuid]) / 1000))}s
+                  </span>
+                )}
+              </span>
+            )}
           </div>
           <span style={{
             fontFamily: 'Inter, sans-serif', fontSize: '9px', fontWeight: '700',

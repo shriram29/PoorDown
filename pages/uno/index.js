@@ -29,7 +29,7 @@ export default function UnoLobby() {
     setLoading(true);
     const roomCode = generateRoomCode();
     localStorage.setItem('poordown_active_room', JSON.stringify({
-      gameId: 'uno', gameName: 'UNO', roomCode, isHost: true,
+      gameId: 'uno', gameName: 'UNO', roomCode, isHost: true, lastSeen: Date.now(),
     }));
     router.push(`/uno/room/${roomCode}?host=true`);
   };
@@ -40,7 +40,7 @@ export default function UnoLobby() {
     setLoading(true);
     const roomCode = joinCode.toUpperCase();
     localStorage.setItem('poordown_active_room', JSON.stringify({
-      gameId: 'uno', gameName: 'UNO', roomCode, isHost: false,
+      gameId: 'uno', gameName: 'UNO', roomCode, isHost: false, lastSeen: Date.now(),
     }));
     router.push(`/uno/room/${roomCode}`);
   };

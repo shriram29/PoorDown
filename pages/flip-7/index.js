@@ -29,7 +29,7 @@ export default function Flip7Lobby() {
     setLoading(true);
     const roomCode = generateRoomCode();
     localStorage.setItem('poordown_active_room', JSON.stringify({
-      gameId: 'flip-7', gameName: 'Flip 7', roomCode, isHost: true,
+      gameId: 'flip-7', gameName: 'Flip 7', roomCode, isHost: true, lastSeen: Date.now(),
     }));
     router.push(`/flip-7/room/${roomCode}?host=true`);
   };
@@ -40,7 +40,7 @@ export default function Flip7Lobby() {
     setLoading(true);
     const roomCode = joinCode.toUpperCase();
     localStorage.setItem('poordown_active_room', JSON.stringify({
-      gameId: 'flip-7', gameName: 'Flip 7', roomCode, isHost: false,
+      gameId: 'flip-7', gameName: 'Flip 7', roomCode, isHost: false, lastSeen: Date.now(),
     }));
     router.push(`/flip-7/room/${roomCode}`);
   };
