@@ -5,6 +5,11 @@ import * as Y from 'yjs';
 import { WebrtcProvider } from 'y-webrtc';
 import { startRound, endRound, calcRoundScore } from '../../../lib/games/flip-7/state';
 import { shuffleCards } from '../../../lib/games/flip-7/deck';
+import GameShell from '../../../components/card-game/GameShell';
+import GameHeader from '../../../components/card-game/GameHeader';
+import ScoreboardSidebar from '../../../components/card-game/ScoreboardSidebar';
+import RulesButton from '../../../components/card-game/RulesButton';
+import CardTable from '../../../components/card-game/CardTable';
 
 const GAME_COLOR = '#FF6B35';
 const GAME_GLOW = 'rgba(255,107,53,0.4)';
@@ -259,7 +264,7 @@ function PlayerTable({ player, isActive, isMe, color, roundScore, isCurrentRound
 
   return (
     <div style={{
-      width: 190, flexShrink: 0,
+      flex: 1, minWidth: 0,
       backgroundColor: isActive ? PANEL : SURFACE,
       border: `2px solid ${borderColor}`,
       borderLeft: `4px solid ${color}`,
@@ -1187,7 +1192,7 @@ export default function Flip7Room() {
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
             <div style={{ width: '100%', maxWidth: 400 }}>
               <div style={{ textAlign: 'center', marginBottom: 28 }}>
-                <img src="/assets/flip7.svg" alt="" style={{ width: 40, marginBottom: 10, filter: `drop-shadow(0 0 10px ${GAME_GLOW})` }} />
+                <img src="/assets/flip7.svg" alt="" style={{ width: 40, display: 'block', margin: '0 auto 10px', filter: `drop-shadow(0 0 10px ${GAME_GLOW})` }} />
                 <h2 style={{ fontFamily: 'Nunito, sans-serif', fontWeight: '800', fontSize: 22, color: TEXT, margin: '0 0 4px 0' }}>
                   {phase === 'connecting' ? 'Connecting...' : 'Waiting for players'}
                 </h2>
@@ -1239,216 +1244,244 @@ export default function Flip7Room() {
       ? players.filter((p, i) => i !== pendingAction.drawerIdx && !p.busted && !p.stayed && !p.hasSecondChance) : [];
     const drawerName = pendingAction ? players[pendingAction.drawerIdx]?.name : null;
 
+    const otherPlayers = players.filter(p => p.uuid !== myUuid);
+    const myIdx = players.findIndex(p => p.uuid === myUuid);
+
+    const flip7CssAnimations = `
+      @keyframes cardAppear {
+        from { transform: scale(0.6) rotateY(90deg); opacity: 0; }
+        to   { transform: scale(1) rotateY(0deg);   opacity: 1; }
+      }
+      @keyframes deckPulse {
+        0%, 100% { box-shadow: 0 0 16px rgba(255,107,53,0.35); }
+        50%       { box-shadow: 0 0 32px rgba(255,107,53,0.65); }
+      }
+      @keyframes blink {
+        0%, 100% { opacity: 1; } 50% { opacity: 0.2; }
+      }
+      @keyframes arrowBounce {
+        0%, 100% { transform: translateY(0px); }
+        50%       { transform: translateY(4px); }
+      }
+    `;
+
+    const flip7Center = (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+        <DeckPile count={gameState.deck.length} isActive={isMyTurn} onHit={handleHit} animKey={drawAnimKey} />
+        {lastDrawnCard && <LastDrawnCard card={lastDrawnCard} animKey={drawAnimKey} />}
+      </div>
+    );
+
+    const renderFlip7Opponent = (opponent, seatIdx, seatConfig) => {
+      const pi = players.findIndex(pl => pl.uuid === opponent.uuid);
+      const color = PLAYER_COLORS[pi % PLAYER_COLORS.length];
+      const active = !pendingAction && pi === currentPlayerIdx && !opponent.busted && !opponent.stayed;
+      const scale = seatConfig.opponentScale || 0.85;
+      const baseW = seatConfig.opponentBaseW || 320;
+
+      return (
+        <div style={{
+          display: 'flex',
+          flexDirection: seatConfig.layout === 'col' ? 'column' : seatConfig.layout === 'row' ? 'row' : 'row-reverse',
+          alignItems: 'center',
+          gap: 6,
+        }}>
+          <div style={{ transform: `scale(${scale})`, transformOrigin: 'top center', width: baseW, flexShrink: 0 }}>
+            <PlayerTable
+              player={opponent}
+              isActive={active}
+              isMe={false}
+              color={color}
+              roundScore={calcRoundScore(opponent)}
+              isCurrentRound={!opponent.busted}
+              onlineUuids={onlineUuids}
+              disconnectTimes={disconnectTimes}
+            />
+          </div>
+        </div>
+      );
+    };
+
+    const flip7MyHand = (
+      <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px', backgroundColor: PANEL_DARK, borderTop: `1px solid ${PANEL_BORDER}` }}>
+        <div style={{ maxWidth: 520, width: '100%' }}>
+          {myPlayer && (
+            <PlayerTable
+              player={myPlayer}
+              isActive={isMyTurn}
+              isMe
+              color={PLAYER_COLORS[myIdx % PLAYER_COLORS.length]}
+              roundScore={calcRoundScore(myPlayer)}
+              isCurrentRound={!myPlayer.busted}
+              onlineUuids={onlineUuids}
+              disconnectTimes={disconnectTimes}
+            />
+          )}
+        </div>
+      </div>
+    );
+
+    const flip7ActionBar = (
+      <div style={{ flexShrink: 0, backgroundColor: PANEL_DARK, borderTop: `1px solid ${PANEL_BORDER}`, padding: '14px 24px 16px' }}>
+        {isMyTurn && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: TEXT_DIM, textAlign: 'center' }}>
+              Your turn
+              {myPlayer && myPlayer.numberCards.length > 0 && (
+                <> · <span style={{ color: GOLD, fontWeight: '700' }}>~{calcRoundScore(myPlayer)} pts</span></>
+              )}
+              {myPlayer?.numberCards.length === 7 && (
+                <span style={{ marginLeft: 6, color: GAME_COLOR, fontWeight: '700' }}>Flip 7!</span>
+              )}
+            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+              <button onClick={handleHit}
+                style={{
+                  width: 76, height: 76, borderRadius: '50%',
+                  backgroundColor: GAME_COLOR, color: '#fff', border: 'none',
+                  fontFamily: 'Nunito, sans-serif', fontSize: 18, fontWeight: '900',
+                  cursor: 'pointer', letterSpacing: '1px',
+                  boxShadow: `0 0 0 4px ${GAME_COLOR}33, 0 6px 20px ${GAME_GLOW}`,
+                  animation: 'deckPulse 2.5s ease-in-out infinite',
+                  transition: 'transform 0.1s',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.07)')}
+                onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+                onMouseDown={e => (e.currentTarget.style.transform = 'scale(0.95)')}
+                onMouseUp={e => (e.currentTarget.style.transform = 'scale(1.07)')}
+              >HIT</button>
+              <button onClick={handleStay}
+                disabled={!myPlayer || myPlayer.numberCards.length === 0}
+                style={{
+                  width: 62, height: 62, borderRadius: '50%',
+                  backgroundColor: 'transparent',
+                  color: myPlayer?.numberCards.length > 0 ? TEXT : TEXT_DIM + '44',
+                  border: `2px solid ${myPlayer?.numberCards.length > 0 ? PANEL_BORDER : PANEL_BORDER + '44'}`,
+                  fontFamily: 'Nunito, sans-serif', fontSize: 13, fontWeight: '800',
+                  cursor: myPlayer?.numberCards.length > 0 ? 'pointer' : 'not-allowed',
+                  letterSpacing: '0.5px', transition: 'border-color 0.15s, transform 0.1s',
+                }}
+                onMouseEnter={e => { if (myPlayer?.numberCards.length > 0) { e.currentTarget.style.borderColor = TEXT_DIM; e.currentTarget.style.transform = 'scale(1.05)'; } }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = myPlayer?.numberCards.length > 0 ? PANEL_BORDER : PANEL_BORDER + '44'; e.currentTarget.style.transform = 'scale(1)'; }}
+              >STAY</button>
+            </div>
+          </div>
+        )}
+
+        {!isMyTurn && !pendingAction && activePlayer && !activePlayer.busted && !activePlayer.stayed && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: GAME_COLOR, animation: 'blink 1s infinite', flexShrink: 0 }} />
+            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: TEXT_DIM }}>
+              <span style={{ color: TEXT, fontWeight: '700' }}>{activePlayer.name}</span>
+              {activePlayer.uuid === myUuid ? '' : ' is deciding...'}
+            </span>
+          </div>
+        )}
+
+        {pendingAction?.type === 'freeze' && isMyPendingAction && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#60a5fa', fontWeight: '700' }}>Freeze — pick a target:</span>
+            {freezeTargets.map(t => (
+              <button key={t.uuid} onClick={() => handleFreezeTarget(t.uuid)}
+                style={{ padding: '7px 14px', backgroundColor: SURFACE, border: '2px solid #60a5fa55', borderRadius: 8, fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: '600', color: '#60a5fa', cursor: 'pointer' }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = '#60a5fa')}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = '#60a5fa55')}
+              >{t.name}</button>
+            ))}
+          </div>
+        )}
+
+        {pendingAction?.type === 'freeze' && !isMyPendingAction && (
+          <div style={{ textAlign: 'center' }}>
+            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#60a5fa' }}>
+              <span style={{ fontWeight: '700' }}>{drawerName}</span> is choosing who to freeze...
+            </span>
+          </div>
+        )}
+
+        {pendingAction?.type === 'second-chance-pass' && isMyPendingAction && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#a07ad8', fontWeight: '700' }}>You already have Second Chance — give it to:</span>
+            {scPassTargets.map(t => (
+              <button key={t.uuid} onClick={() => handleSecondChancePass(t.uuid)}
+                style={{ padding: '7px 14px', backgroundColor: SURFACE, border: '2px solid #6a3aa855', borderRadius: 8, fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: '600', color: '#a07ad8', cursor: 'pointer' }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = '#a07ad8')}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = '#6a3aa855')}
+              >{t.name}</button>
+            ))}
+          </div>
+        )}
+
+        {pendingAction?.type === 'second-chance-pass' && !isMyPendingAction && (
+          <div style={{ textAlign: 'center' }}>
+            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#a07ad8' }}>
+              <span style={{ fontWeight: '700' }}>{drawerName}</span> is passing their extra Second Chance...
+            </span>
+          </div>
+        )}
+
+        {pendingAction?.type === 'flip-three-target' && isMyPendingAction && (
+          <FlipThreeTargetPicker players={players} onPick={handleFlipThreeTarget} />
+        )}
+
+        {pendingAction?.type === 'flip-three-target' && !isMyPendingAction && (
+          <div style={{ textAlign: 'center' }}>
+            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: GAME_COLOR }}>
+              <span style={{ fontWeight: '700' }}>{drawerName}</span> is choosing who draws 3 cards...
+            </span>
+          </div>
+        )}
+      </div>
+    );
+
+    const flip7Header = (
+      <GameHeader
+        onLeave={() => router.push('/flip-7')}
+        icon={<img src="/assets/flip7.svg" alt="" style={{ width: 20 }} />}
+        name={<>Flip <span style={{ color: GAME_COLOR }}>7</span></>}
+        roundLabel={roundNum > 0 ? `Round ${roundNum}` : null}
+        code={code}
+        copied={copied}
+        onCopy={copyLink}
+        peers={peers}
+        panelDark={PANEL_DARK}
+        panelBorder={PANEL_BORDER}
+        text={TEXT}
+        textDim={TEXT_DIM}
+        gameColor={GAME_COLOR}
+        gold={GOLD}
+        surface={SURFACE}
+      />
+    );
+
     return (
       <>
         <Head><title>Room {code} — Flip 7</title></Head>
-        <div style={{ height: '100vh', backgroundColor: BG, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <HeaderBar />
-
-          <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-            {/* Sidebar scoreboard */}
-            <Scoreboard
-              players={players}
-              cumulativeScores={cumulativeScores}
-              myUuid={myUuid}
-              playerColors={PLAYER_COLORS}
-              roundNum={roundNum}
+        <CardTable
+          bg={BG}
+          tableColor="#0d2e1a"
+          tableRim="#3d2208"
+          header={flip7Header}
+          opponents={otherPlayers}
+          renderOpponent={renderFlip7Opponent}
+          center={flip7Center}
+          myHand={flip7MyHand}
+          actionBar={flip7ActionBar}
+          rulesButton={
+            <RulesButton
+              open={showRules}
+              onToggle={() => setShowRules(v => !v)}
+              onClose={() => setShowRules(false)}
+              sections={RULES_SECTIONS}
+              gameColor={GAME_COLOR}
+              panel={PANEL}
+              panelBorder={PANEL_BORDER}
+              textDim={TEXT_DIM}
+              text={TEXT}
             />
-
-            {/* Main content */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              {/* Scrollable center: deck + player tables */}
-              <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px 16px', backgroundColor: SURFACE }}>
-                {/* Deck area */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 32, marginBottom: 24, justifyContent: 'center' }}>
-                  <DeckPile
-                    count={gameState.deck.length}
-                    isActive={isMyTurn}
-                    onHit={handleHit}
-                    animKey={drawAnimKey}
-                  />
-                  <LastDrawnCard card={lastDrawnCard} animKey={drawAnimKey} />
-                </div>
-
-                {/* Player tables — fixed 190px wide each */}
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-                  {players.map((player, i) => {
-                    const active = !pendingAction && i === currentPlayerIdx && !player.busted && !player.stayed;
-                    const color = PLAYER_COLORS[i % PLAYER_COLORS.length];
-                    return (
-                      <div key={player.uuid} style={{ position: 'relative', paddingTop: active ? 28 : 0, transition: 'padding-top 0.2s' }}>
-                        {active && (
-                          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 9, fontWeight: '700', color, textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-                              {player.uuid === myUuid ? 'your turn' : 'their turn'}
-                            </span>
-                            <span style={{ color, fontSize: 13, animation: 'arrowBounce 0.7s ease-in-out infinite', display: 'inline-block' }}>▾</span>
-                          </div>
-                        )}
-                        <PlayerTable
-                          player={player}
-                          isActive={active}
-                          isMe={player.uuid === myUuid}
-                          color={color}
-                          roundScore={calcRoundScore(player)}
-                          isCurrentRound={!player.busted}
-                          onlineUuids={onlineUuids}
-                          disconnectTimes={disconnectTimes}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Action bar */}
-              <div style={{ flexShrink: 0, backgroundColor: PANEL_DARK, borderTop: `1px solid ${PANEL_BORDER}`, padding: '14px 24px 16px' }}>
-
-                {/* My turn — centered chip buttons */}
-                {isMyTurn && (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: TEXT_DIM, textAlign: 'center' }}>
-                      Your turn
-                      {myPlayer && myPlayer.numberCards.length > 0 && (
-                        <> · <span style={{ color: GOLD, fontWeight: '700' }}>~{calcRoundScore(myPlayer)} pts</span></>
-                      )}
-                      {myPlayer?.numberCards.length === 7 && (
-                        <span style={{ marginLeft: 6, color: GAME_COLOR, fontWeight: '700' }}>🎰 Flip 7!</span>
-                      )}
-                    </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-                      <button onClick={handleHit}
-                        style={{
-                          width: 76, height: 76, borderRadius: '50%',
-                          backgroundColor: GAME_COLOR, color: '#fff', border: 'none',
-                          fontFamily: 'Nunito, sans-serif', fontSize: 18, fontWeight: '900',
-                          cursor: 'pointer', letterSpacing: '1px',
-                          boxShadow: `0 0 0 4px ${GAME_COLOR}33, 0 6px 20px ${GAME_GLOW}`,
-                          animation: 'deckPulse 2.5s ease-in-out infinite',
-                          transition: 'transform 0.1s',
-                        }}
-                        onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.07)')}
-                        onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
-                        onMouseDown={e => (e.currentTarget.style.transform = 'scale(0.95)')}
-                        onMouseUp={e => (e.currentTarget.style.transform = 'scale(1.07)')}
-                      >HIT</button>
-                      <button onClick={handleStay}
-                        disabled={!myPlayer || myPlayer.numberCards.length === 0}
-                        style={{
-                          width: 62, height: 62, borderRadius: '50%',
-                          backgroundColor: 'transparent',
-                          color: myPlayer?.numberCards.length > 0 ? TEXT : TEXT_DIM + '44',
-                          border: `2px solid ${myPlayer?.numberCards.length > 0 ? PANEL_BORDER : PANEL_BORDER + '44'}`,
-                          fontFamily: 'Nunito, sans-serif', fontSize: 13, fontWeight: '800',
-                          cursor: myPlayer?.numberCards.length > 0 ? 'pointer' : 'not-allowed',
-                          letterSpacing: '0.5px', transition: 'border-color 0.15s, transform 0.1s',
-                        }}
-                        onMouseEnter={e => { if (myPlayer?.numberCards.length > 0) { e.currentTarget.style.borderColor = TEXT_DIM; e.currentTarget.style.transform = 'scale(1.05)'; } }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = myPlayer?.numberCards.length > 0 ? PANEL_BORDER : PANEL_BORDER + '44'; e.currentTarget.style.transform = 'scale(1)'; }}
-                      >STAY</button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Watching someone else */}
-                {!isMyTurn && !pendingAction && activePlayer && !activePlayer.busted && !activePlayer.stayed && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                    <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: GAME_COLOR, animation: 'blink 1s infinite', flexShrink: 0 }} />
-                    <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: TEXT_DIM }}>
-                      <span style={{ color: TEXT, fontWeight: '700' }}>{activePlayer.name}</span>
-                      {activePlayer.uuid === myUuid ? '' : ' is deciding...'}
-                    </span>
-                  </div>
-                )}
-
-                {/* Freeze targeting — my turn to pick */}
-                {pendingAction?.type === 'freeze' && isMyPendingAction && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#60a5fa', fontWeight: '700' }}>❄️ Freeze — pick a target:</span>
-                    {freezeTargets.map(t => (
-                      <button key={t.uuid} onClick={() => handleFreezeTarget(t.uuid)}
-                        style={{ padding: '7px 14px', backgroundColor: SURFACE, border: '2px solid #60a5fa55', borderRadius: 8, fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: '600', color: '#60a5fa', cursor: 'pointer' }}
-                        onMouseEnter={e => (e.currentTarget.style.borderColor = '#60a5fa')}
-                        onMouseLeave={e => (e.currentTarget.style.borderColor = '#60a5fa55')}
-                      >{t.name}</button>
-                    ))}
-                  </div>
-                )}
-
-                {/* Freeze — watching */}
-                {pendingAction?.type === 'freeze' && !isMyPendingAction && (
-                  <div style={{ textAlign: 'center' }}>
-                    <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#60a5fa' }}>
-                      ❄️ <span style={{ fontWeight: '700' }}>{drawerName}</span> is choosing who to freeze...
-                    </span>
-                  </div>
-                )}
-
-                {/* Second Chance pass — my turn to pick recipient */}
-                {pendingAction?.type === 'second-chance-pass' && isMyPendingAction && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#a07ad8', fontWeight: '700' }}>♻ You already have Second Chance — give it to:</span>
-                    {scPassTargets.map(t => (
-                      <button key={t.uuid} onClick={() => handleSecondChancePass(t.uuid)}
-                        style={{ padding: '7px 14px', backgroundColor: SURFACE, border: '2px solid #6a3aa855', borderRadius: 8, fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: '600', color: '#a07ad8', cursor: 'pointer' }}
-                        onMouseEnter={e => (e.currentTarget.style.borderColor = '#a07ad8')}
-                        onMouseLeave={e => (e.currentTarget.style.borderColor = '#6a3aa855')}
-                      >{t.name}</button>
-                    ))}
-                  </div>
-                )}
-
-                {/* Second Chance pass — watching */}
-                {pendingAction?.type === 'second-chance-pass' && !isMyPendingAction && (
-                  <div style={{ textAlign: 'center' }}>
-                    <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: '#a07ad8' }}>
-                      ♻ <span style={{ fontWeight: '700' }}>{drawerName}</span> is passing their extra Second Chance...
-                    </span>
-                  </div>
-                )}
-
-                {/* Flip Three — my turn to pick target */}
-                {pendingAction?.type === 'flip-three-target' && isMyPendingAction && (
-                  <FlipThreeTargetPicker players={players} onPick={handleFlipThreeTarget} />
-                )}
-
-                {/* Flip Three — watching */}
-                {pendingAction?.type === 'flip-three-target' && !isMyPendingAction && (
-                  <div style={{ textAlign: 'center' }}>
-                    <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: GAME_COLOR }}>
-                      <span style={{ fontWeight: '700' }}>{drawerName}</span> is choosing who draws 3 cards...
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Rules button + panel */}
-        <button
-          onClick={() => setShowRules(v => !v)}
-          style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 301, width: 40, height: 40, borderRadius: '50%', backgroundColor: showRules ? GAME_COLOR : PANEL, border: `2px solid ${showRules ? GAME_COLOR : PANEL_BORDER}`, color: showRules ? '#fff' : TEXT_DIM, fontFamily: 'Inter, sans-serif', fontSize: 16, fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.4)', transition: 'background-color 0.2s, border-color 0.2s' }}
-        >?</button>
-        <RulesPanel open={showRules} onClose={() => setShowRules(false)} />
-
-        <style>{`
-          @keyframes cardAppear {
-            from { transform: scale(0.6) rotateY(90deg); opacity: 0; }
-            to   { transform: scale(1) rotateY(0deg);   opacity: 1; }
           }
-          @keyframes deckPulse {
-            0%, 100% { box-shadow: 0 0 16px rgba(255,107,53,0.35); }
-            50%       { box-shadow: 0 0 32px rgba(255,107,53,0.65); }
-          }
-          @keyframes blink {
-            0%, 100% { opacity: 1; } 50% { opacity: 0.2; }
-          }
-          @keyframes arrowBounce {
-            0%, 100% { transform: translateY(0px); }
-            50%       { transform: translateY(4px); }
-          }
-        `}</style>
+          cssAnimations={flip7CssAnimations}
+        />
       </>
     );
   }

@@ -5,6 +5,14 @@ import * as Y from 'yjs';
 import { WebrtcProvider } from 'y-webrtc';
 import { startHand, endHand, canPlayCard, drawFromDeck } from '../../../lib/games/uno/state';
 import { handPoints } from '../../../lib/games/uno/deck';
+import GameShell from '../../../components/card-game/GameShell';
+import GameHeader from '../../../components/card-game/GameHeader';
+import ScoreboardSidebar from '../../../components/card-game/ScoreboardSidebar';
+import MyHand from '../../../components/card-game/MyHand';
+import OpponentSeat from '../../../components/card-game/OpponentSeat';
+import RulesButton from '../../../components/card-game/RulesButton';
+import CardTable from '../../../components/card-game/CardTable';
+import SeatFan from '../../../components/card-game/SeatFan';
 
 const GAME_COLOR = '#E53935';
 const GAME_GLOW = 'rgba(229,57,53,0.4)';
@@ -646,7 +654,7 @@ export default function UnoRoom() {
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
             <div style={{ width: '100%', maxWidth: 400 }}>
               <div style={{ textAlign: 'center', marginBottom: 28 }}>
-                <img src="/assets/uno.svg" alt="" style={{ width: 44, marginBottom: 10, filter: `drop-shadow(0 0 12px ${GAME_GLOW})` }} />
+                <img src="/assets/uno.svg" alt="" style={{ width: 44, marginBottom: 10, display: 'block', margin: '0 auto 10px', filter: `drop-shadow(0 0 12px ${GAME_GLOW})` }} />
                 <h2 style={{ fontFamily: 'Nunito, sans-serif', fontWeight: '800', fontSize: 22, color: TEXT, margin: '0 0 4px 0' }}>
                   {phase === 'connecting' ? 'Connecting...' : 'Waiting for players'}
                 </h2>
@@ -686,213 +694,238 @@ export default function UnoRoom() {
   if (phase === 'playing') {
     const otherPlayers = players.filter(p => p.uuid !== myUuid);
 
+    const unoCssAnimations = `
+      @keyframes cardDrop {
+        0%   { transform: scale(0.55) translateY(-40px) rotate(-18deg); opacity: 0; }
+        60%  { transform: scale(1.1) translateY(4px) rotate(3deg); opacity: 1; }
+        80%  { transform: scale(0.97) translateY(-2px) rotate(-1deg); opacity: 1; }
+        100% { transform: scale(1) translateY(0) rotate(0deg); opacity: 1; }
+      }
+      @keyframes deckPulse { 0%, 100% { filter: drop-shadow(0 0 8px ${GAME_GLOW}); } 50% { filter: drop-shadow(0 0 22px ${GAME_GLOW}); } }
+      @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+      @keyframes unoPulse {
+        0%, 100% { transform: scale(1); box-shadow: 0 0 10px ${GAME_GLOW}; }
+        50% { transform: scale(1.07); box-shadow: 0 0 32px ${GAME_GLOW}, 0 0 60px ${GAME_GLOW}; }
+      }
+      @keyframes calloutPulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.65; }
+      }
+    `;
+
+    const unoCenter = (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 40 }}>
+        {/* Draw pile */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+          <div onClick={isMyTurn ? handleDraw : undefined} style={{ cursor: isMyTurn ? 'pointer' : 'default', position: 'relative' }}>
+            <div style={{ position: 'relative', filter: isMyTurn ? `drop-shadow(0 0 18px ${GAME_GLOW})` : 'none', animation: isMyTurn ? 'deckPulse 2.5s ease-in-out infinite' : 'none' }}>
+              <CardBack large />
+            </div>
+            <div style={{ position: 'absolute', bottom: -6, right: -8, backgroundColor: GAME_COLOR, color: '#fff', fontFamily: 'JetBrains Mono, monospace', fontSize: 11, fontWeight: '700', padding: '2px 7px', borderRadius: 10, border: `2px solid ${BG}` }}>
+              {gameState.deck.length}
+            </div>
+          </div>
+          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: isMyTurn ? GAME_COLOR : TEXT_DIM, fontWeight: isMyTurn ? '700' : '400' }}>
+            {isMyTurn ? '↑ DRAW' : 'DECK'}
+          </span>
+        </div>
+
+        {/* Turn direction indicator */}
+        <div style={{ width: 36, height: 36, borderRadius: '50%', border: `2px solid ${GAME_COLOR}88`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: GAME_COLOR, fontSize: 20, fontWeight: '700', transform: direction === -1 ? 'scaleX(-1)' : 'scaleX(1)', transition: 'transform 0.4s ease', boxShadow: `0 0 12px ${GAME_COLOR}44` }}>
+          ↺
+        </div>
+
+        {/* Discard pile — drop zone */}
+        <div
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, position: 'relative' }}
+          onDragOver={isMyTurn ? (e => { e.preventDefault(); setIsDragOver(true); }) : undefined}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={isMyTurn ? handleDropOnPile : undefined}
+        >
+          {currentColor && (
+            <div style={{ width: 14, height: 14, borderRadius: '50%', backgroundColor: CARD_BG[currentColor], boxShadow: `0 0 16px ${CARD_BG[currentColor]}`, marginBottom: -4 }} />
+          )}
+          {topCard && <UnoCard key={topCard.id} card={topCard} large />}
+          {!topCard && <div style={{ width: 96, height: 144, borderRadius: 14, border: `2px dashed ${PANEL_BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: TEXT_DIM, fontSize: 11 }}>Empty</span></div>}
+          <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: TEXT_DIM }}>
+            {currentColor ? COLOR_LABEL[currentColor] : '—'} active
+          </span>
+          {isDragOver && (
+            <div style={{ position: 'absolute', inset: 0, borderRadius: 14, border: `3px dashed ${GAME_COLOR}`, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: `${GAME_COLOR}15` }}>
+              <span style={{ color: GAME_COLOR, fontWeight: '700', fontSize: 13 }}>Drop!</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+
+    const unoMyHand = (
+      <div style={{ backgroundColor: PANEL_DARK, borderTop: `1px solid ${PANEL_BORDER}`, padding: '4px 16px 0', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+        {myPlayer ? (
+          <MyHand
+            cards={myPlayer.hand}
+            isMyTurn={isMyTurn}
+            handStyle="fan"
+            panelDark={PANEL_DARK}
+            panelBorder={PANEL_BORDER}
+            textDim={TEXT_DIM}
+            renderCard={(card, i, { hovered }) => {
+              const playable = isMyTurn && !pendingAction && canPlayCard(card, topCard, currentColor);
+              const dimmed = isMyTurn && !pendingAction && !playable;
+              return (
+                <UnoCard
+                  card={card}
+                  playable={playable}
+                  dimmed={dimmed}
+                  onClick={() => handlePlayCard(card.id)}
+                  draggable={playable}
+                  onDragStart={e => {
+                    e.dataTransfer.setData('text/plain', card.id);
+                    e.dataTransfer.effectAllowed = 'move';
+                  }}
+                />
+              );
+            }}
+          />
+        ) : (
+          <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: `${TEXT_DIM}55` }}>Connecting...</span>
+          </div>
+        )}
+      </div>
+    );
+
+    const unoActionBar = (
+      <div style={{ flexShrink: 0, backgroundColor: PANEL_DARK, borderTop: `1px solid ${PANEL_BORDER}`, padding: '8px 16px 12px', display: 'flex', alignItems: 'center', gap: 10, minHeight: 52 }}>
+        {/* Status */}
+        <div style={{ flex: 1 }}>
+          {isMyTurn && !pendingAction && <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: GAME_COLOR, fontWeight: '700' }}>Your turn</span>}
+          {!isMyTurn && !pendingAction && activePlayer && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: GAME_COLOR, animation: 'blink 1s infinite' }} />
+              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: TEXT_DIM }}><span style={{ color: TEXT, fontWeight: '700' }}>{activePlayer.name}</span> is playing...</span>
+            </div>
+          )}
+          {pendingAction?.type === 'choose-color' && !isMyPendingColor && (
+            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: TEXT_DIM }}><span style={{ color: TEXT, fontWeight: '700' }}>{players[pendingAction.playerIdx]?.name}</span> is choosing a color...</span>
+          )}
+        </div>
+        {/* Card count */}
+        {myPlayer && <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: TEXT_DIM }}>{myPlayer.hand.length} card{myPlayer.hand.length !== 1 ? 's' : ''}</span>}
+        {/* Buttons */}
+        {isMyTurn && !pendingAction && (
+          <button onClick={handleDraw} style={{ padding: '7px 18px', backgroundColor: SURFACE, border: `1px solid ${PANEL_BORDER}`, borderRadius: 8, fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: '600', color: TEXT_DIM, cursor: 'pointer' }} onMouseEnter={e => { e.currentTarget.style.borderColor = TEXT_DIM; e.currentTarget.style.color = TEXT; }} onMouseLeave={e => { e.currentTarget.style.borderColor = PANEL_BORDER; e.currentTarget.style.color = TEXT_DIM; }}>
+            Draw Card
+          </button>
+        )}
+        {myNeedsUno && (
+          <button onClick={handleCallUno} style={{ padding: '7px 24px', backgroundColor: GAME_COLOR, border: 'none', borderRadius: 8, fontFamily: 'Nunito, sans-serif', fontSize: 18, fontWeight: '900', color: '#fff', cursor: 'pointer', letterSpacing: '2px', animation: 'unoPulse 0.9s ease-in-out infinite', boxShadow: `0 0 24px ${GAME_GLOW}` }}>
+            UNO!
+          </button>
+        )}
+        {myPlayer?.hand.length === 1 && unoStatus[myUuid] === true && (
+          <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: '800', fontSize: 14, color: GAME_COLOR }}>UNO called!</span>
+        )}
+        {isMyTurn && <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: `${TEXT_DIM}88` }}>drag or click</span>}
+      </div>
+    );
+
+    const unoHeader = (
+      <GameHeader
+        onLeave={() => router.push('/uno')}
+        icon={<img src="/assets/uno.svg" alt="" style={{ width: 22 }} />}
+        name={<><span style={{ color: GAME_COLOR }}>U</span>NO</>}
+        roundLabel={roundNum > 0 ? `Hand ${roundNum}` : null}
+        code={code}
+        copied={copied}
+        onCopy={copyLink}
+        peers={peers}
+        panelDark={PANEL_DARK}
+        panelBorder={PANEL_BORDER}
+        text={TEXT}
+        textDim={TEXT_DIM}
+        gameColor={GAME_COLOR}
+        gold={GOLD}
+        surface={SURFACE}
+      />
+    );
+
+    const renderUnoOpponent = (opponent, seatIdx, seatConfig) => {
+      const pi = players.findIndex(pl => pl.uuid === opponent.uuid);
+      const color = PLAYER_COLORS[pi % PLAYER_COLORS.length];
+      const isActive = !pendingAction && pi === currentPlayerIdx;
+      const canCallOut = opponent.hand.length === 1 && unoStatus[opponent.uuid] === false;
+      const avatarSize = seatConfig.avatarSize || 56;
+      const fanCardW = seatConfig.fanCardW || 56;
+      const fanCardH = seatConfig.fanCardH || 84;
+
+      return (
+        <div style={{
+          display: 'flex',
+          flexDirection: seatConfig.layout === 'col' ? 'column' : seatConfig.layout === 'row' ? 'row' : 'row-reverse',
+          alignItems: 'center',
+          gap: 8,
+        }}>
+          <SeatFan count={opponent.hand.length} color={color} fanRotation={seatConfig.fanRotation} cardWidth={fanCardW} cardHeight={fanCardH} />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+            <div style={{
+              width: avatarSize, height: avatarSize, borderRadius: '50%',
+              backgroundColor: color,
+              border: `3px solid ${isActive ? GAME_COLOR : 'transparent'}`,
+              boxShadow: isActive ? `0 0 26px ${GAME_COLOR}99` : '0 2px 10px rgba(0,0,0,0.5)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              animation: isActive ? 'blink 2s ease-in-out infinite' : 'none',
+              transition: 'border-color 0.3s, box-shadow 0.3s',
+            }}>
+              <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: '900', fontSize: Math.round(avatarSize * 0.33), color: '#fff' }}>
+                {opponent.name.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, color: isActive ? TEXT : TEXT_DIM, fontWeight: isActive ? '700' : '400', textShadow: '0 1px 4px rgba(0,0,0,0.9)', whiteSpace: 'nowrap' }}>
+              {opponent.name}
+            </span>
+            {opponent.hand.length === 1 && unoStatus[opponent.uuid] === false && (
+              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, fontWeight: '800', color: GAME_COLOR, backgroundColor: `${GAME_COLOR}22`, padding: '2px 6px', borderRadius: 4 }}>UNO!</span>
+            )}
+            {canCallOut && (
+              <button onClick={() => handleCallOut(opponent.uuid)} style={{ padding: '4px 10px', backgroundColor: `${GAME_COLOR}22`, border: `1px solid ${GAME_COLOR}77`, borderRadius: 4, fontFamily: 'Inter, sans-serif', fontSize: 10, fontWeight: '700', color: GAME_COLOR, cursor: 'pointer', animation: 'calloutPulse 1.4s ease-in-out infinite' }}>
+                Call out!
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    };
+
     return (
       <>
         <Head><title>Room {code} — UNO</title></Head>
-        <div style={{ height: '100vh', backgroundColor: BG, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <HeaderBar />
-
-          {/* Other players row */}
-          <div style={{ padding: '12px 16px', borderBottom: `1px solid ${PANEL_BORDER}`, display: 'flex', gap: 10, overflowX: 'auto', flexShrink: 0, backgroundColor: PANEL_DARK, scrollbarWidth: 'thin' }}>
-            {players.filter(p => p.uuid !== myUuid).map(p => {
-              const pi = players.findIndex(pl => pl.uuid === p.uuid);
-              const canCallOut = p.hand.length === 1 && unoStatus[p.uuid] === false;
-              return (
-                <OtherPlayer
-                  key={p.uuid}
-                  player={p}
-                  isActive={!pendingAction && pi === currentPlayerIdx}
-                  color={PLAYER_COLORS[pi % PLAYER_COLORS.length]}
-                  canCallOut={canCallOut}
-                  onCallOut={() => handleCallOut(p.uuid)}
-                />
-              );
-            })}
-            {otherPlayers.length === 0 && (
-              <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: `${TEXT_DIM}55`, margin: 0, alignSelf: 'center' }}>Waiting for other players...</p>
-            )}
-            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 11, color: TEXT_DIM }}>Order</span>
-              <span style={{ fontSize: 16, color: TEXT_DIM }}>{direction === 1 ? '→' : '←'}</span>
-            </div>
-          </div>
-
-          {/* Game table — drop zone */}
-          <div
-            style={{
-              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 40,
-              backgroundColor: isDragOver ? `${SURFACE}cc` : SURFACE,
-              padding: '16px 24px', overflowY: 'auto',
-              outline: isDragOver ? `3px dashed ${GAME_COLOR}88` : '3px dashed transparent',
-              outlineOffset: -6,
-              transition: 'outline-color 0.15s, background-color 0.15s',
-            }}
-            onDragOver={isMyTurn ? (e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setIsDragOver(true); }) : undefined}
-            onDragLeave={() => setIsDragOver(false)}
-            onDrop={isMyTurn ? handleDropOnPile : undefined}
-          >
-            {/* Draw pile */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-              <div
-                onClick={isMyTurn ? handleDraw : undefined}
-                style={{ cursor: isMyTurn ? 'pointer' : 'default', position: 'relative' }}
-              >
-                {gameState.deck.length > 2 && (
-                  <div style={{ position: 'absolute', top: 6, left: 6, right: -6, bottom: -6, borderRadius: 14, backgroundColor: '#0c1530', border: `2px solid ${GAME_COLOR}22` }} />
-                )}
-                {gameState.deck.length > 1 && (
-                  <div style={{ position: 'absolute', top: 3, left: 3, right: -3, bottom: -3, borderRadius: 14, backgroundColor: '#0e1836', border: `2px solid ${GAME_COLOR}33` }} />
-                )}
-                <div style={{ position: 'relative', filter: isMyTurn ? `drop-shadow(0 0 18px ${GAME_GLOW})` : 'none', transition: 'filter 0.2s', animation: isMyTurn ? 'deckPulse 2.5s ease-in-out infinite' : 'none' }}>
-                  <CardBack large />
-                </div>
-                <div style={{ position: 'absolute', bottom: -6, right: -8, backgroundColor: GAME_COLOR, color: '#fff', fontFamily: 'JetBrains Mono, monospace', fontSize: 11, fontWeight: '700', padding: '2px 7px', borderRadius: 10, border: `2px solid ${BG}` }}>
-                  {gameState.deck.length}
-                </div>
-              </div>
-              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: isMyTurn ? GAME_COLOR : TEXT_DIM, fontWeight: isMyTurn ? '700' : '400', letterSpacing: '0.3px' }}>
-                {isMyTurn ? '↑ DRAW' : 'DECK'}
-              </span>
-            </div>
-
-            {/* Discard pile */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-              {currentColor && (
-                <div style={{ width: 16, height: 16, borderRadius: '50%', backgroundColor: CARD_BG[currentColor], border: `3px solid ${CARD_BG[currentColor]}`, boxShadow: `0 0 16px ${CARD_BG[currentColor]}` }} />
-              )}
-              {/* key forces remount and replays cardDrop animation on each new card */}
-              {topCard && <UnoCard key={topCard.id} card={topCard} large />}
-              {!topCard && <div style={{ width: 96, height: 144, borderRadius: 14, border: `2px dashed ${PANEL_BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: TEXT_DIM, fontSize: 11 }}>Empty</span></div>}
-              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: TEXT_DIM }}>
-                {currentColor ? COLOR_LABEL[currentColor] : '—'} active
-              </span>
-            </div>
-
-            {isDragOver && (
-              <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', fontFamily: 'Nunito, sans-serif', fontWeight: '800', fontSize: 16, color: `${GAME_COLOR}cc`, pointerEvents: 'none' }}>
-                Drop to play
-              </div>
-            )}
-          </div>
-
-          {/* Hand + actions */}
-          <div style={{ flexShrink: 0, backgroundColor: PANEL_DARK, borderTop: `1px solid ${PANEL_BORDER}`, padding: '12px 16px 16px' }}>
-            {/* Status line */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              {isMyTurn && !pendingAction && (
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: TEXT_DIM }}>Your turn</span>
-              )}
-              {!isMyTurn && !pendingAction && activePlayer && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: GAME_COLOR, animation: 'blink 1s infinite', flexShrink: 0 }} />
-                  <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: TEXT_DIM }}>
-                    <span style={{ color: TEXT, fontWeight: '700' }}>{activePlayer.name}</span> is playing...
-                  </span>
-                </div>
-              )}
-              {pendingAction?.type === 'choose-color' && !isMyPendingColor && (
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: TEXT_DIM }}>
-                  <span style={{ color: TEXT, fontWeight: '700' }}>{players[pendingAction.playerIdx]?.name}</span> is choosing a color...
-                </span>
-              )}
-              {myPlayer && (
-                <span style={{ marginLeft: 'auto', fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: TEXT_DIM }}>
-                  {myPlayer.hand.length} card{myPlayer.hand.length !== 1 ? 's' : ''}
-                </span>
-              )}
-            </div>
-
-            {/* My hand */}
-            <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8, scrollbarWidth: 'thin', alignItems: 'flex-end', minHeight: 136 }}>
-              {myPlayer ? myPlayer.hand.map(card => {
-                const playable = isMyTurn && !pendingAction && canPlayCard(card, topCard, currentColor);
-                return (
-                  <UnoCard
-                    key={card.id}
-                    card={card}
-                    playable={playable}
-                    dimmed={isMyTurn && !pendingAction && !playable}
-                    onClick={() => handlePlayCard(card.id)}
-                    draggable={playable}
-                    onDragStart={e => {
-                      e.dataTransfer.setData('text/plain', card.id);
-                      e.dataTransfer.effectAllowed = 'move';
-                    }}
-                  />
-                );
-              }) : (
-                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: `${TEXT_DIM}55`, alignSelf: 'center' }}>Connecting...</span>
-              )}
-            </div>
-
-            {/* Action buttons */}
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
-              {isMyTurn && !pendingAction && (
-                <button
-                  onClick={handleDraw}
-                  style={{ padding: '8px 20px', backgroundColor: SURFACE, border: `1px solid ${PANEL_BORDER}`, borderRadius: 8, fontFamily: 'Inter, sans-serif', fontSize: 12, fontWeight: '600', color: TEXT_DIM, cursor: 'pointer', transition: 'border-color 0.15s, color 0.15s' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = TEXT_DIM; e.currentTarget.style.color = TEXT; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = PANEL_BORDER; e.currentTarget.style.color = TEXT_DIM; }}
-                >
-                  Draw Card
-                </button>
-              )}
-              {myNeedsUno && (
-                <button
-                  onClick={handleCallUno}
-                  style={{
-                    padding: '8px 28px',
-                    backgroundColor: GAME_COLOR,
-                    border: 'none',
-                    borderRadius: 8,
-                    fontFamily: 'Nunito, sans-serif',
-                    fontSize: 18,
-                    fontWeight: '900',
-                    color: '#fff',
-                    cursor: 'pointer',
-                    letterSpacing: '2px',
-                    animation: 'unoPulse 0.9s ease-in-out infinite',
-                    boxShadow: `0 0 24px ${GAME_GLOW}`,
-                  }}
-                >
-                  UNO!
-                </button>
-              )}
-              {myPlayer?.hand.length === 1 && unoStatus[myUuid] === true && (
-                <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: '800', fontSize: 14, color: GAME_COLOR }}>🎴 UNO called!</span>
-              )}
-              {isMyTurn && (
-                <span style={{ marginLeft: 'auto', fontFamily: 'Inter, sans-serif', fontSize: 11, color: `${TEXT_DIM}88` }}>
-                  drag or click a card to play
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {isMyPendingColor && <ColorChooser onChoose={handleChooseColor} />}
-
-        <button onClick={() => setShowRules(v => !v)} style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 301, width: 40, height: 40, borderRadius: '50%', backgroundColor: showRules ? GAME_COLOR : PANEL, border: `2px solid ${showRules ? GAME_COLOR : PANEL_BORDER}`, color: showRules ? '#fff' : TEXT_DIM, fontFamily: 'Inter, sans-serif', fontSize: 16, fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.4)', transition: 'background-color 0.2s' }}>?</button>
-        <RulesPanel open={showRules} onClose={() => setShowRules(false)} />
-
-        <style>{`
-          @keyframes cardDrop {
-            0%   { transform: scale(0.55) translateY(-40px) rotate(-18deg); opacity: 0; }
-            60%  { transform: scale(1.1) translateY(4px) rotate(3deg); opacity: 1; }
-            80%  { transform: scale(0.97) translateY(-2px) rotate(-1deg); opacity: 1; }
-            100% { transform: scale(1) translateY(0) rotate(0deg); opacity: 1; }
+        <CardTable
+          bg={BG}
+          tableColor="#0d4022"
+          tableRim="#4a2e0a"
+          header={unoHeader}
+          opponents={otherPlayers}
+          renderOpponent={renderUnoOpponent}
+          center={unoCenter}
+          myHand={unoMyHand}
+          actionBar={unoActionBar}
+          overlay={isMyPendingColor ? <ColorChooser onChoose={handleChooseColor} /> : null}
+          rulesButton={
+            <RulesButton
+              open={showRules}
+              onToggle={() => setShowRules(v => !v)}
+              onClose={() => setShowRules(false)}
+              sections={RULES}
+              gameColor={GAME_COLOR}
+              panel={PANEL}
+              panelBorder={PANEL_BORDER}
+              textDim={TEXT_DIM}
+              text={TEXT}
+            />
           }
-          @keyframes deckPulse { 0%, 100% { filter: drop-shadow(0 0 8px ${GAME_GLOW}); } 50% { filter: drop-shadow(0 0 22px ${GAME_GLOW}); } }
-          @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
-          @keyframes unoPulse {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 10px ${GAME_GLOW}; }
-            50% { transform: scale(1.07); box-shadow: 0 0 32px ${GAME_GLOW}, 0 0 60px ${GAME_GLOW}; }
-          }
-          @keyframes calloutPulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.65; }
-          }
-        `}</style>
+          cssAnimations={unoCssAnimations}
+        />
       </>
     );
   }
