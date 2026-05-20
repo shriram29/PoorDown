@@ -1305,7 +1305,7 @@ export default function Flip7Room() {
     };
 
     const flip7MyHand = (
-      <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px', backgroundColor: PANEL_DARK, borderTop: `1px solid ${PANEL_BORDER}` }}>
+      <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 24px' }}>
         <div style={{ maxWidth: 520, width: '100%' }}>
           {myPlayer && (
             <PlayerTable
@@ -1324,7 +1324,7 @@ export default function Flip7Room() {
     );
 
     const flip7ActionBar = (
-      <div style={{ flexShrink: 0, backgroundColor: PANEL_DARK, borderTop: `1px solid ${PANEL_BORDER}`, padding: '14px 24px 16px' }}>
+      <div style={{ backgroundColor: 'rgba(8,12,20,0.55)', backdropFilter: 'blur(6px)', border: `1px solid ${PANEL_BORDER}`, borderRadius: 18, padding: '12px 22px', boxShadow: '0 6px 24px rgba(0,0,0,0.55)' }}>
         {isMyTurn && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
             <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: TEXT_DIM, textAlign: 'center' }}>
@@ -1468,7 +1468,7 @@ export default function Flip7Room() {
           renderOpponent={renderFlip7Opponent}
           center={flip7Center}
           myHand={flip7MyHand}
-          actionBar={flip7ActionBar}
+          actionBar={(isMyTurn || !!pendingAction || (activePlayer && !activePlayer.busted && !activePlayer.stayed)) ? flip7ActionBar : null}
           rulesButton={
             <RulesButton
               open={showRules}

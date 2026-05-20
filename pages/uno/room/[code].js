@@ -763,7 +763,7 @@ export default function UnoRoom() {
     );
 
     const unoMyHand = (
-      <div style={{ backgroundColor: PANEL_DARK, borderTop: `1px solid ${PANEL_BORDER}`, padding: '4px 16px 0', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+      <div style={{ padding: '4px 16px 0', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
         {myPlayer ? (
           <MyHand
             cards={myPlayer.hand}
@@ -799,9 +799,9 @@ export default function UnoRoom() {
     );
 
     const unoActionBar = (
-      <div style={{ flexShrink: 0, backgroundColor: PANEL_DARK, borderTop: `1px solid ${PANEL_BORDER}`, padding: '8px 16px 12px', display: 'flex', alignItems: 'center', gap: 10, minHeight: 52 }}>
+      <div style={{ backgroundColor: 'rgba(8,12,20,0.55)', backdropFilter: 'blur(6px)', border: `1px solid ${PANEL_BORDER}`, borderRadius: 999, padding: '6px 14px', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 6px 24px rgba(0,0,0,0.55)' }}>
         {/* Status */}
-        <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
           {isMyTurn && !pendingAction && <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: GAME_COLOR, fontWeight: '700' }}>Your turn</span>}
           {!isMyTurn && !pendingAction && activePlayer && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

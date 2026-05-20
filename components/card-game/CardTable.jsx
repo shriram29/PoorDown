@@ -59,11 +59,11 @@ export default function CardTable({
   // Hand area height as % of the play area
   const handPct = isMobile ? 26 : isTablet ? 30 : 32;
 
-  // Oval table bounds
+  // Oval table bounds — felt now extends down behind the floating hand
   const ovalTop    = isMobile ? '1%'  : '4%';
   const ovalLeft   = isMobile ? '2%'  : isTablet ? '6%' : '8%';
   const ovalRight  = isMobile ? '2%'  : isTablet ? '6%' : '8%';
-  const ovalBottom = `${handPct + 2}%`;
+  const ovalBottom = isMobile ? '1%'  : '2%';
 
   // Size config passed to every renderOpponent call
   const sizeConfig = {
@@ -117,7 +117,21 @@ export default function CardTable({
           );
         })}
 
-        {/* My hand area */}
+        {/* Floating action controls — sit above the hand, over the felt */}
+        {actionBar && (
+          <div style={{
+            position: 'absolute',
+            bottom: `${handPct}%`, left: 0, right: 0,
+            display: 'flex', justifyContent: 'center',
+            zIndex: 4, pointerEvents: 'none',
+          }}>
+            <div style={{ pointerEvents: 'auto' }}>
+              {actionBar}
+            </div>
+          </div>
+        )}
+
+        {/* Floating hand area */}
         <div style={{
           position: 'absolute',
           bottom: 0, left: 0, right: 0, height: `${handPct}%`,
@@ -126,8 +140,6 @@ export default function CardTable({
           {myHand}
         </div>
       </div>
-
-      {actionBar}
 
       {overlay}
       {rulesButton}
