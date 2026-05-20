@@ -13,6 +13,7 @@ import OpponentSeat from '../../../components/card-game/OpponentSeat';
 import RulesButton from '../../../components/card-game/RulesButton';
 import CardTable from '../../../components/card-game/CardTable';
 import SeatFan from '../../../components/card-game/SeatFan';
+import { playDraw, playYourTurn, playBust, playRoundStart, playRoundEnd, isMuted, toggleMuted } from '../../../lib/sound';
 
 const GAME_COLOR = '#E53935';
 const GAME_GLOW = 'rgba(229,57,53,0.4)';
@@ -269,6 +270,7 @@ export default function UnoRoom() {
   const [lobbyPlayers, setLobbyPlayers] = useState([]);
   const [showRules, setShowRules] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [muted, setMutedState] = useState(false);
   const [gameState, setGameState] = useState({
     phase: 'connecting', players: [], deck: [], discardPile: [],
     currentPlayerIdx: 0, direction: 1, currentColor: null,
@@ -279,6 +281,8 @@ export default function UnoRoom() {
   const metaRef = useRef(null);
   const yLobbyRef = useRef(null);
   const hasJoinedRef = useRef(false);
+  // Tracks last-seen synced state to fire sound effects on transitions
+  const soundPrevRef = useRef(null);
 
   // ── Y.js setup ───────────────────────────────────────────────────────────────
 
@@ -370,6 +374,48 @@ export default function UnoRoom() {
       doc.destroy();
     };
   }, [code]);
+
+  useEffect(() => {
+    setMutedState(isMuted());
+  }, []);
+
+  // Fire sound effects on transitions of the synced game state (all clients react)
+  useEffect(() => {
+    if (!myUuid) return;
+    const { phase, players, discardPile, currentPlayerIdx, pendingAction } = gameState;
+    const active = players[currentPlayerIdx];
+    const myTurn = !pendingAction && active?.uuid === myUuid;
+    const handSizes = {};
+    players.forEach(p => { handSizes[p.uuid] = p.hand.length; });
+    const snapshot = { phase, discardLen: discardPile.length, myTurn, handSizes };
+
+    const prev = soundPrevRef.current;
+    soundPrevRef.current = snapshot;
+    if (!prev) return; // skip the first sync (initial load / join)
+
+    let roundJustStarted = false;
+    if (prev.phase !== 'playing' && phase === 'playing') {
+      playRoundStart();
+      roundJustStarted = true;
+    } else if (prev.phase === 'playing' && (phase === 'hand-end' || phase === 'game-over')) {
+      playRoundEnd();
+    }
+
+    if (phase === 'playing' && prev.phase === 'playing') {
+      let penalty = false, drew = false;
+      for (const p of players) {
+        const before = prev.handSizes[p.uuid];
+        if (before === undefined) continue;
+        const delta = p.hand.length - before;
+        if (delta >= 2) penalty = true;       // Draw Two / Draw Four / call-out
+        else if (delta >= 1) drew = true;     // single draw
+      }
+      if (penalty) playBust();
+      else if (snapshot.discardLen > prev.discardLen || drew) playDraw();
+    }
+
+    if (myTurn && !prev.myTurn && !roundJustStarted) playYourTurn();
+  }, [gameState, myUuid]);
 
   useEffect(() => {
     const refresh = () => {
@@ -642,6 +688,16 @@ export default function UnoRoom() {
     </div>
   );
 
+  const muteButton = (
+    <button
+      onClick={() => setMutedState(toggleMuted())}
+      title={muted ? 'Unmute sounds' : 'Mute sounds'}
+      style={{ position: 'fixed', bottom: 20, left: 20, zIndex: 301, width: 40, height: 40, borderRadius: '50%', backgroundColor: PANEL, border: `2px solid ${PANEL_BORDER}`, color: TEXT_DIM, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.4)' }}
+    >
+      {muted ? '🔇' : '🔊'}
+    </button>
+  );
+
   // ── LOBBY ─────────────────────────────────────────────────────────────────────
 
   if (phase === 'connecting' || phase === 'lobby') {
@@ -685,6 +741,7 @@ export default function UnoRoom() {
             </div>
           </div>
         </div>
+        {muteButton}
       </>
     );
   }
@@ -929,6 +986,7 @@ export default function UnoRoom() {
           }
           cssAnimations={unoCssAnimations}
         />
+        {muteButton}
       </>
     );
   }
@@ -1015,6 +1073,7 @@ export default function UnoRoom() {
         </div>
         <button onClick={() => setShowRules(v => !v)} style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 301, width: 40, height: 40, borderRadius: '50%', backgroundColor: showRules ? GAME_COLOR : PANEL, border: `2px solid ${showRules ? GAME_COLOR : PANEL_BORDER}`, color: showRules ? '#fff' : TEXT_DIM, fontFamily: 'Inter, sans-serif', fontSize: 16, fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.4)', transition: 'background-color 0.2s' }}>?</button>
         <RulesPanel open={showRules} onClose={() => setShowRules(false)} />
+        {muteButton}
         <style>{`
           @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
         `}</style>
@@ -1065,6 +1124,7 @@ export default function UnoRoom() {
         </div>
         <button onClick={() => setShowRules(v => !v)} style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 301, width: 40, height: 40, borderRadius: '50%', backgroundColor: showRules ? GAME_COLOR : PANEL, border: `2px solid ${showRules ? GAME_COLOR : PANEL_BORDER}`, color: showRules ? '#fff' : TEXT_DIM, fontFamily: 'Inter, sans-serif', fontSize: 16, fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.4)', transition: 'background-color 0.2s' }}>?</button>
         <RulesPanel open={showRules} onClose={() => setShowRules(false)} />
+        {muteButton}
       </>
     );
   }
