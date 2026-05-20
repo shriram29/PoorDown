@@ -692,7 +692,10 @@ export default function UnoRoom() {
   // ── PLAYING ───────────────────────────────────────────────────────────────────
 
   if (phase === 'playing') {
-    const otherPlayers = players.filter(p => p.uuid !== myUuid);
+    const myIdx = players.findIndex(p => p.uuid === myUuid);
+    const otherPlayers = myIdx === -1
+      ? players.filter(p => p.uuid !== myUuid)
+      : [...players.slice(myIdx + 1), ...players.slice(0, myIdx)];
 
     const unoCssAnimations = `
       @keyframes cardDrop {

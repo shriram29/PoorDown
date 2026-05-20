@@ -14,15 +14,15 @@ function getSeatConfigs(count) {
   }
   if (count === 3) {
     return [
-      { top: '2%', left: '50%', transform: 'translateX(-50%)', fanRotation: 0, layout: 'col' },
       { top: '35%', left: '0.5%', transform: 'translateY(-50%)', fanRotation: -90, layout: 'row' },
+      { top: '2%', left: '50%', transform: 'translateX(-50%)', fanRotation: 0, layout: 'col' },
       { top: '35%', right: '0.5%', transform: 'translateY(-50%)', fanRotation: 90, layout: 'row-reverse' },
     ];
   }
   return [
+    { top: '35%', left: '0.5%', transform: 'translateY(-50%)', fanRotation: -90, layout: 'row' },
     { top: '4%', left: '26%', fanRotation: 20, layout: 'col' },
     { top: '4%', right: '26%', fanRotation: -20, layout: 'col' },
-    { top: '35%', left: '0.5%', transform: 'translateY(-50%)', fanRotation: -90, layout: 'row' },
     { top: '35%', right: '0.5%', transform: 'translateY(-50%)', fanRotation: 90, layout: 'row-reverse' },
   ];
 }

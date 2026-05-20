@@ -1244,8 +1244,10 @@ export default function Flip7Room() {
       ? players.filter((p, i) => i !== pendingAction.drawerIdx && !p.busted && !p.stayed && !p.hasSecondChance) : [];
     const drawerName = pendingAction ? players[pendingAction.drawerIdx]?.name : null;
 
-    const otherPlayers = players.filter(p => p.uuid !== myUuid);
     const myIdx = players.findIndex(p => p.uuid === myUuid);
+    const otherPlayers = myIdx === -1
+      ? players.filter(p => p.uuid !== myUuid)
+      : [...players.slice(myIdx + 1), ...players.slice(0, myIdx)];
 
     const flip7CssAnimations = `
       @keyframes cardAppear {
