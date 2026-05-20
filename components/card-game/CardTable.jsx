@@ -57,7 +57,7 @@ export default function CardTable({
   const isTablet = w < 1024;
 
   // Hand area height as % of the play area
-  const handPct = isMobile ? 42 : isTablet ? 36 : 32;
+  const handPct = isMobile ? 26 : isTablet ? 30 : 32;
 
   // Oval table bounds
   const ovalTop    = isMobile ? '1%'  : '4%';

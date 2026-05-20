@@ -1,11 +1,26 @@
+import { useState, useEffect } from 'react';
+
+function useIsMobile() {
+  const [mobile, setMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+  return mobile;
+}
+
 export default function GameHeader({
   onLeave, icon, name, roundLabel, code, copied, onCopy,
   peers, panelDark, panelBorder, text, textDim, gameColor, gold, surface,
 }) {
+  const isMobile = useIsMobile();
+
   return (
     <div style={{
       position: 'relative', display: 'flex', alignItems: 'center',
-      height: 48, paddingLeft: 16, paddingRight: 16,
+      height: 48, paddingLeft: 16, paddingRight: 12,
       borderBottom: `1px solid ${panelBorder}`,
       flexShrink: 0, backgroundColor: panelDark,
     }}>
@@ -14,12 +29,12 @@ export default function GameHeader({
         style={{
           background: 'none', border: 'none', color: textDim, cursor: 'pointer',
           fontFamily: 'Inter, sans-serif', fontSize: 13, padding: 0,
-          display: 'flex', alignItems: 'center', gap: 4, zIndex: 1,
+          display: 'flex', alignItems: 'center', gap: 4, zIndex: 1, flexShrink: 0,
         }}
         onMouseEnter={e => (e.currentTarget.style.color = text)}
         onMouseLeave={e => (e.currentTarget.style.color = textDim)}
       >
-        ← Leave
+        ← {isMobile ? '' : 'Leave'}
       </button>
 
       <div style={{
@@ -44,30 +59,34 @@ export default function GameHeader({
       </div>
 
       <div style={{
-        marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10, zIndex: 1,
+        marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, zIndex: 1,
       }}>
-        <span style={{
-          fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: textDim, letterSpacing: '1px',
-        }}>
-          {code}
-        </span>
+        {!isMobile && (
+          <span style={{
+            fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: textDim, letterSpacing: '1px',
+          }}>
+            {code}
+          </span>
+        )}
         <button
           onClick={onCopy}
           style={{
-            padding: '4px 10px',
+            padding: isMobile ? '5px 8px' : '4px 10px',
             border: `1px solid ${copied ? gold : panelBorder}`,
             borderRadius: 6, backgroundColor: 'transparent',
             fontFamily: 'Inter, sans-serif', fontSize: 11,
             color: copied ? gold : textDim, cursor: 'pointer',
           }}
         >
-          {copied ? 'Copied!' : 'Copy link'}
+          {copied ? '✓' : isMobile ? '🔗' : 'Copy link'}
         </button>
-        <span style={{
-          fontFamily: 'Inter, sans-serif', fontSize: 11, color: `${textDim}66`,
-        }}>
-          {peers === 0 ? '—' : `${peers} other${peers === 1 ? '' : 's'}`}
-        </span>
+        {!isMobile && (
+          <span style={{
+            fontFamily: 'Inter, sans-serif', fontSize: 11, color: `${textDim}66`,
+          }}>
+            {peers === 0 ? '—' : `${peers} other${peers === 1 ? '' : 's'}`}
+          </span>
+        )}
       </div>
     </div>
   );
